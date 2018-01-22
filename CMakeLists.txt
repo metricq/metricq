@@ -31,14 +31,14 @@
 
 project(dataheap2)
 
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 
 set(dataheap2_VERSION 1.0)
 
 set(CORE_SRCS src/core/main.cpp)
 set(SOURCE_SRCS src/source/source.cpp)
 set(SINK_SRCS src/sink/sink.cpp)
-
+set(DB_SRCS src/db/db.cpp)
 
 add_library(dataheap2-core ${CORE_SRCS})
 target_include_directories(dataheap2-core
@@ -57,7 +57,7 @@ target_link_libraries(dataheap2-source PUBLIC dataheap2-core)
 add_library(dataheap2-sink ${SINK_SRCS})
 target_link_libraries(dataheap2-sink PUBLIC dataheap2-core)
 
-add_library(dataheap2-db ${SINK_SRCS})
+add_library(dataheap2-db ${DB_SRCS})
 target_link_libraries(dataheap2-db PUBLIC dataheap2-core dataheap2-sink)
 
 add_library(dataheap2-all INTERFACE)
