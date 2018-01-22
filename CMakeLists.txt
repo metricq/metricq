@@ -33,6 +33,11 @@ project(dataheap2)
 
 cmake_minimum_required(VERSION 3.8)
 
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
+
+find_package(libev REQUIRED)
+add_subdirectory(lib)
+
 set(dataheap2_VERSION 1.0)
 
 set(CORE_SRCS src/core/main.cpp)
@@ -47,7 +52,11 @@ target_include_directories(dataheap2-core
         $<INSTALL_INTERFACE:include>
 )
 
-target_link_libraries(dataheap2-core PUBLIC RabbitMQ::RabbitMQ)
+target_link_libraries(dataheap2-core
+    PUBLIC
+        RabbitMQ::RabbitMQ
+        libev::libev
+)
 
 target_compile_features(dataheap2-core PUBLIC cxx_std_17)
 
@@ -106,8 +115,8 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
         DESTINATION lib/cmake/dataheap2
     )
 
-    include(CTest)
-    add_subdirectory(tests)
+    # include(CTest)
+    # add_subdirectory(tests)
 else()
     set_target_properties(dataheap2-core PROPERTIES EXCLUDE_FROM_ALL TRUE)
     set_target_properties(dataheap2-source PROPERTIES EXCLUDE_FROM_ALL TRUE)
