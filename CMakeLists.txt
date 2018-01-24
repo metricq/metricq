@@ -35,7 +35,7 @@ cmake_minimum_required(VERSION 3.8)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
 
-find_package(libev REQUIRED)
+find_package(Ev REQUIRED)
 add_subdirectory(lib)
 
 set(dataheap2_VERSION 1.0)
@@ -53,9 +53,9 @@ target_include_directories(dataheap2-core
 )
 
 target_link_libraries(dataheap2-core
-    PUBLIC
-        RabbitMQ::RabbitMQ
-        libev::libev
+    PRIVATE
+        dataheap2::amqpcpp
+        ev::ev
 )
 
 target_compile_features(dataheap2-core PUBLIC cxx_std_17)
