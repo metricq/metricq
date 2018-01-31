@@ -10,7 +10,7 @@ amqpcpp/src/field.cpp
 amqpcpp/src/flags.cpp
 amqpcpp/src/receivedframe.cpp
 amqpcpp/src/table.cpp
-amqpcpp/src/tcpconnection.cpp
+amqpcpp/src/linux_tcp/tcpconnection.cpp
 amqpcpp/src/watchable.cpp
 )
 
@@ -18,9 +18,9 @@ add_library(amqpcpp ${AMQP_SRCS})
 target_include_directories(amqpcpp
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/amqpcpp/src
-    INTERFACE
+    PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/amqpcpp/include>
-        $<INSTALL_INTERFACE:include/amqpcpp>
+        $<INSTALL_INTERFACE:include>
 )
 
 add_library(dataheap2::amqpcpp ALIAS amqpcpp)
@@ -32,5 +32,5 @@ install(TARGETS amqpcpp EXPORT dataheap2Targets
     INCLUDES DESTINATION include
 )
 
-install(DIRECTORY amqpcpp/include/ DESTINATION include/amqpcpp
+install(DIRECTORY amqpcpp/include/ DESTINATION include
         FILES_MATCHING PATTERN "*.h")
