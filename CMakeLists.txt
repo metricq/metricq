@@ -36,8 +36,10 @@ cmake_minimum_required(VERSION 3.8)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
 
 find_package(Ev REQUIRED)
+set(JSON_BuildTests OFF)
 add_subdirectory(lib/json)
 add_subdirectory(lib)
+add_subdirectory(lib/protobufmessages)
 
 set(dataheap2_VERSION 1.0)
 
@@ -54,16 +56,17 @@ target_include_directories(dataheap2-core
 )
 
 target_link_libraries(dataheap2-core
-    PRIVATE
+    PUBLIC
         dataheap2::amqpcpp
         ev::ev
         nlohmann_json
+        dataheap2::protobufmessages
 )
 
 target_compile_features(dataheap2-core PUBLIC cxx_std_17)
 
 add_library(dataheap2-source ${SOURCE_SRCS})
-target_link_libraries(dataheap2-source PUBLIC dataheap2-core dataheap2::amqpcpp nlohmann_json)
+target_link_libraries(dataheap2-source PUBLIC dataheap2-core)
 
 add_library(dataheap2-sink ${SINK_SRCS})
 target_link_libraries(dataheap2-sink PUBLIC dataheap2-core)
