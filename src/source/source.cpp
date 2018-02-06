@@ -55,12 +55,12 @@ namespace source {
 void RabbitMqDatasource::newDoubleData(const std::string &dataSourceID,
                                        uint64_t timestamp,
                                        double value) noexcept {
-  // DataPoint datapoint;
-  // datapoint.set_timestamp(timestamp);
-  // datapoint.set_value(value);
+  DataPoint datapoint;
+  datapoint.set_timestamp(timestamp);
+  datapoint.set_value(value);
 
-  // std::cout << "Sending new double data for exchange " << data_exchange << "
-  // and queue " << dataSourceID << std::endl;
+  std::cout << "Sending new double data for exchange " << data_exchange << "and queue " << dataSourceID << std::endl;
+
   message_count += 1;
   if (start_time == 0) {
     start_time = time(NULL);
@@ -79,9 +79,9 @@ void RabbitMqDatasource::newDoubleData(const std::string &dataSourceID,
     step_time = time(NULL);
   }
 
-  // data_channel->publish(data_exchange, // default direct exchange
-  //                       dataSourceID,  // queue name
-  //                       datapoint.SerializeAsString());
+  data_channel->publish(data_exchange, // default direct exchange
+                        dataSourceID,  // queue name
+                        datapoint.SerializeAsString());
 }
 
 void RabbitMqDatasource::rpcResponseGetConfig(const nlohmann::json &config) {

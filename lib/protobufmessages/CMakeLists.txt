@@ -9,6 +9,7 @@ endif()
 find_package(Protobuf REQUIRED)
 protobuf_generate_cpp(PROTO_SRC PROTO_HEADER include/datapoint.proto)
 add_library(protobufmessages ${PROTO_HEADER} ${PROTO_SRC})
+target_link_libraries(protobufmessages PUBLIC ${PROTOBUF_LIBRARY})
 
 target_include_directories(protobufmessages
     INTERFACE
