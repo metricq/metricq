@@ -36,6 +36,7 @@ cmake_minimum_required(VERSION 3.8)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
 
 find_package(Ev REQUIRED)
+set(JSON_BuildTests OFF)
 add_subdirectory(lib/json)
 add_subdirectory(lib)
 add_subdirectory(lib/protobufmessages)
