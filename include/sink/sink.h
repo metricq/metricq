@@ -1,3 +1,5 @@
+#pragma once
+
 #include <core/core.h>
 #include <protobufmessages/datapoint.pb.h>
 

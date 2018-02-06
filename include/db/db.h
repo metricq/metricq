@@ -1,3 +1,5 @@
+#pragma once
+
 #include <sink/sink.h>
 
 namespace dataheap2 {
