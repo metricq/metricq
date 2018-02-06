@@ -56,16 +56,17 @@ target_include_directories(dataheap2-core
 )
 
 target_link_libraries(dataheap2-core
-    PRIVATE
+    PUBLIC
         dataheap2::amqpcpp
         ev::ev
         nlohmann_json
+        dataheap2::protobufmessages
 )
 
 target_compile_features(dataheap2-core PUBLIC cxx_std_17)
 
 add_library(dataheap2-source ${SOURCE_SRCS})
-target_link_libraries(dataheap2-source PUBLIC dataheap2-core dataheap2::amqpcpp nlohmann_json PRIVATE dataheap2::protobufmessages)
+target_link_libraries(dataheap2-source PUBLIC dataheap2-core)
 
 add_library(dataheap2-sink ${SINK_SRCS})
 target_link_libraries(dataheap2-sink PUBLIC dataheap2-core)
