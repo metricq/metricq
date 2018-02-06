@@ -32,10 +32,10 @@
 
 #include <amqpcpp.h>
 #include <ev.h>
-#include <time.h>
 #include <iomanip>
 #include <memory>
 #include <string>
+#include <time.h>
 
 #include <json.hpp>
 
@@ -123,22 +123,24 @@ void RabbitMqCore::handleRpcRespone(const AMQP::Message &message) {
   try {
     auto json_reponse = nlohmann::json::parse(responseMessage);
 
-      std::cout << "Document parsed" << std::endl;
+    std::cout << "Document parsed" << std::endl;
 
-      const std::string &functionName = json_reponse["function"];
-      const nlohmann::json &responseData = json_reponse["response"];
+    const std::string &functionName = json_reponse["function"];
+    const nlohmann::json &responseData = json_reponse["response"];
 
-      if (functionName == "getConfig") {
-        rpcResponseGetConfig(responseData);
-      } //  else if () {}
-      else {
-        std::cout << "error in rpc response: function " << functionName
-                  << " unknown" << std::endl;
-      }
-  } catch (nlohmann::json::parse_error& e) {
-    std::cout << "error in rpc response: parsing message: " << e.what() << std::endl;
-  } catch (nlohmann::json::type_error& e) {
-    std::cout << "error in rpc response: accessing parameter: " << e.what() << std::endl;
+    if (functionName == "getConfig") {
+      rpcResponseGetConfig(responseData);
+    } //  else if () {}
+    else {
+      std::cout << "error in rpc response: function " << functionName
+                << " unknown" << std::endl;
+    }
+  } catch (nlohmann::json::parse_error &e) {
+    std::cout << "error in rpc response: parsing message: " << e.what()
+              << std::endl;
+  } catch (nlohmann::json::type_error &e) {
+    std::cout << "error in rpc response: accessing parameter: " << e.what()
+              << std::endl;
   }
 }
 

@@ -59,7 +59,8 @@ void RabbitMqDatasource::newDoubleData(const std::string &dataSourceID,
   datapoint.set_timestamp(timestamp);
   datapoint.set_value(value);
 
-  std::cout << "Sending new double data for exchange " << data_exchange << "and queue " << dataSourceID << std::endl;
+  std::cout << "Sending new double data for exchange " << data_exchange
+            << "and queue " << dataSourceID << std::endl;
 
   message_count += 1;
   if (start_time == 0) {

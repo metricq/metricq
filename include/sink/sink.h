@@ -8,10 +8,10 @@ class RabbitMqDatasink : public dataheap2::core::RabbitMqCore {
 public:
   explicit RabbitMqDatasink(struct ev_loop *loop);
 
-
 protected:
   virtual void loadSinkConfig(const nlohmann::json &config) = 0;
-  virtual void handleIncomingDatapoint(const std::string&, const DataPoint&) = 0;
+  virtual void handleIncomingDatapoint(const std::string &,
+                                       const DataPoint &) = 0;
 
 private:
   std::unique_ptr<AMQP::TcpConnection> data_connection;
@@ -24,8 +24,8 @@ private:
   time_t start_time = 0, step_time = 0;
 
   void rpcResponseGetConfig(const nlohmann::json &config) override;
-  void handleAmqpData(const AMQP::Message&);
+  void handleAmqpData(const AMQP::Message &);
 };
 
-} // namespace source
+} // namespace sink
 } // namespace dataheap2

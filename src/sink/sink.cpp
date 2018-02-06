@@ -19,29 +19,36 @@ void RabbitMqDatasink::rpcResponseGetConfig(const nlohmann::json &config) {
     std::cout << "data channel error: " << message << std::endl;
   });
 
-  data_channel->declareQueue(data_queue) //  rpc queue
-        .onSuccess([this](const std::string& name, int msgcount, int consumercount) {
-            // callback function that is called when the consume operation starts
-            auto startCb = [](const std::string& consumertag) {
-                std::cout << "consume operation started" << std::endl;
+  data_channel
+      ->declareQueue(data_queue) //  rpc queue
+      .onSuccess(
+          [this](const std::string &name, int msgcount, int consumercount) {
+            // callback function that is called when the consume operation
+            // starts
+            auto startCb = [](const std::string &consumertag) {
+              std::cout << "consume operation started" << std::endl;
             };
 
-            // callback function that is called when the consume operation failed
-            auto errorCb = [](const char* message) {
-                std::cout << "consume operation failed" << std::endl;
+            // callback function that is called when the consume operation
+            // failed
+            auto errorCb = [](const char *message) {
+              std::cout << "consume operation failed" << std::endl;
             };
 
             // callback operation when a message was received
-            auto messageCb = [this](const AMQP::Message& message, uint64_t deliveryTag,
-                                           bool redelivered) {
-                handleAmqpData(message);
+            auto messageCb = [this](const AMQP::Message &message,
+                                    uint64_t deliveryTag, bool redelivered) {
+              handleAmqpData(message);
 
-                // acknowledge the message
-                data_channel->ack(deliveryTag);
+              // acknowledge the message
+              data_channel->ack(deliveryTag);
             };
 
-            data_channel->consume(name).onReceived(messageCb).onSuccess(startCb).onError(errorCb);
-        });
+            data_channel->consume(name)
+                .onReceived(messageCb)
+                .onSuccess(startCb)
+                .onError(errorCb);
+          });
 
   if (config.find("sourceConfig") != config.end()) {
     loadSinkConfig(config["sourceConfig"]);
@@ -50,11 +57,11 @@ void RabbitMqDatasink::rpcResponseGetConfig(const nlohmann::json &config) {
   }
 }
 
-void RabbitMqDatasink::handleAmqpData(const AMQP::Message& message) {
+void RabbitMqDatasink::handleAmqpData(const AMQP::Message &message) {
   DataPoint datapoint;
-    datapoint.ParseFromArray(message.body(), message.bodySize());
-  const auto& metric_name = message.routingkey();
+  datapoint.ParseFromArray(message.body(), message.bodySize());
+  const auto &metric_name = message.routingkey();
   handleIncomingDatapoint(metric_name, datapoint);
 }
-} // namespace source
+} // namespace sink
 } // namespace dataheap2
