@@ -27,7 +27,7 @@ protected:
   // handler for libev (so we don't have to implement AMQP::TcpHandler!)
   AMQP::LibEvHandler handler;
 
-  virtual void rpcResponseGetConfig(const nlohmann::json &config);
+  virtual void rpcResponseGetConfig(const nlohmann::json &config) = 0;
 
 private:
   std::unique_ptr<AMQP::TcpConnection> rpc_connection;
