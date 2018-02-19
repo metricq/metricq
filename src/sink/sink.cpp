@@ -5,6 +5,8 @@
 namespace dataheap2 {
 namespace sink {
 
+RabbitMqDatasink::RabbitMqDatasink(struct ev_loop *loop) : RabbitMqCore(loop) {}
+
 void RabbitMqDatasink::rpcResponseGetConfig(const nlohmann::json &config) {
   std::cout << "Start parsing config" << std::endl;
 
