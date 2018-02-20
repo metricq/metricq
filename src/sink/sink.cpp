@@ -60,10 +60,33 @@ void RabbitMqDatasink::rpcResponseGetConfig(const nlohmann::json &config) {
 }
 
 void RabbitMqDatasink::handleAmqpData(const AMQP::Message &message) {
-  DataPoint datapoint;
-  datapoint.ParseFromArray(message.body(), message.bodySize());
+  if(message.bodySize() < 2) {
+    return;
+  }
+  
   const auto &metric_name = message.routingkey();
-  handleIncomingDatapoint(metric_name, datapoint);
+  auto message_string = std::string(message.body(), message.bodySize());
+  auto message_coding = message_string.front();
+
+  message_string.erase(0, 1);
+
+  switch (message_coding) {
+    case MESSAGE_CODING_SINGLE:
+    {
+      DataPoint datapoint;
+      datapoint.ParseFromString(message_string);
+      handleIncomingDatapoint(metric_name, datapoint);
+      break;
+    }
+    case MESSAGE_CODING_CHUNK:
+    {
+      DataChunk datachunk;
+      datachunk.ParseFromString(message_string);
+      handleIncomingDatachunk(metric_name, datachunk);
+      break;
+    }
+  }
+
 }
 } // namespace sink
 } // namespace dataheap2

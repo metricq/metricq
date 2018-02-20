@@ -1,0 +1,7 @@
+syntax = "proto2";
+import "datapoint.proto";
+
+
+message DataChunk {
+  repeated DataPoint data = 1;
+}

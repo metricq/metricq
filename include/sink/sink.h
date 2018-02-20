@@ -1,6 +1,7 @@
 #pragma once
 
 #include <core/core.h>
+#include <protobufmessages/datachunk.pb.h>
 #include <protobufmessages/datapoint.pb.h>
 
 namespace dataheap2 {
@@ -14,6 +15,8 @@ protected:
   virtual void loadSinkConfig(const nlohmann::json &config) = 0;
   virtual void handleIncomingDatapoint(const std::string &,
                                        const DataPoint &) = 0;
+  virtual void handleIncomingDatachunk(const std::string &,
+                                       const DataChunk &) = 0;
 
 private:
   std::unique_ptr<AMQP::TcpConnection> data_connection;

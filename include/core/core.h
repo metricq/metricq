@@ -12,6 +12,9 @@
 
 #define RABBITMQ_RPC_QUEUE "rpcQueue"
 
+#define MESSAGE_CODING_SINGLE 0x1
+#define MESSAGE_CODING_CHUNK 0x2
+
 namespace dataheap2 {
 namespace core {
 

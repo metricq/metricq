@@ -11,6 +11,8 @@
 
 #include <json.hpp>
 
+#include <protobufmessages/datachunk.pb.h>
+
 #include <core/core.h>
 
 namespace dataheap2 {
@@ -29,6 +31,11 @@ public:
   void newDoubleData(const std::string &dataSourceID, uint64_t timestamp,
                      double value) noexcept;
 
+  void newChunkData();
+  void addChunkDoubleData(uint64_t timestamp,
+                     double value);
+  void flushChunkData(const std::string &dataSourceID);
+
 protected:
   virtual void loadSourceConfig(const nlohmann::json &config) = 0;
 
@@ -38,6 +45,7 @@ private:
   std::unique_ptr<AMQP::TcpChannel> data_channel;
 
   std::string data_exchange;
+  std::unique_ptr<DataChunk> chunk_data;
 
   uint64_t message_count = 0, message_count_last_step = 0;
   time_t start_time = 0, step_time = 0;
