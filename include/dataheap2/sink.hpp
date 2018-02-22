@@ -1,6 +1,7 @@
 #pragma once
 
 #include <dataheap2/connection.hpp>
+#include <dataheap2/types.hpp>
 
 #include <protobufmessages/datachunk.pb.h>
 #include <protobufmessages/datapoint.pb.h>
@@ -22,10 +23,11 @@ public:
     explicit Sink(const std::string& token, struct ev_loop* loop = EV_DEFAULT);
 
 protected:
-    virtual void sink_config_callback(const json& config){};
+    virtual void sink_config_callback(const json&){};
     virtual void ready_callback() = 0;
-    virtual void data_callback(const std::string&, const DataPoint&) = 0;
-    virtual void data_callback(const std::string&, const DataChunk&) = 0;
+    virtual void data_callback(const std::string&, TimeValue tv) = 0;
+    virtual void data_callback(const std::string&, const DataPoint&);
+    virtual void data_callback(const std::string&, const DataChunk&);
 
     void config_callback(const json& config) override;
 

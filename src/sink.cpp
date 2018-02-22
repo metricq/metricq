@@ -1,4 +1,8 @@
 #include <dataheap2/sink.hpp>
+#include <dataheap2/types.hpp>
+
+#include <protobufmessages/datachunk.pb.h>
+#include <protobufmessages/datapoint.pb.h>
 
 #include <amqpcpp.h>
 
@@ -44,19 +48,25 @@ void Sink::config_callback(const json& config)
     data_channel_
         ->declareQueue(data_queue_) //  rpc queue
         .onSuccess([this](const std::string& name, int msgcount, int consumercount) {
+            (void)msgcount;
+            (void)consumercount;
+
             // callback function that is called when the consume operation starts
             auto startCb = [](const std::string& consumertag) {
+                (void)consumertag;
                 std::cout << "consume operation started" << std::endl;
             };
 
             // callback function that is called when the consume operation failed
             auto errorCb = [](const char* message) {
+                (void)message;
                 std::cerr << "consume operation failed" << std::endl;
             };
 
             // callback operation when a message was received
             auto messageCb = [this](const AMQP::Message& message, uint64_t deliveryTag,
                                     bool redelivered) {
+                (void)redelivered;
                 data_callback(message);
                 data_channel_->ack(deliveryTag);
             };
@@ -100,6 +110,19 @@ void Sink::data_callback(const AMQP::Message& message)
         data_callback(metric_name, datachunk);
         break;
     }
+    }
+}
+
+void Sink::data_callback(const std::string& id, const DataPoint& data_point)
+{
+    data_callback(id, { TimePoint(Duration(data_point.timestamp())), data_point.value() });
+}
+
+void Sink::data_callback(const std::string& id, const DataChunk& data_chunk)
+{
+    for (const auto& data_point : data_chunk.data())
+    {
+        data_callback(id, data_point);
     }
 }
 }
