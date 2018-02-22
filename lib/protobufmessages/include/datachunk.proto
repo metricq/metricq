@@ -3,5 +3,6 @@ import "datapoint.proto";
 
 
 message DataChunk {
-  repeated DataPoint data = 1;
+  required int64 timestamp_offset = 1;
+  repeated DataPoint data = 2;
 }
