@@ -1,3 +1,6 @@
+add_subdirectory(json)
+add_subdirectory(protobufmessages)
+
 set(AMQP_SRCS
 amqpcpp/src/array.cpp
 amqpcpp/src/channelimpl.cpp

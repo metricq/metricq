@@ -17,9 +17,7 @@ endif()
 
 find_package(Ev REQUIRED)
 set(JSON_BuildTests OFF)
-add_subdirectory(lib/json)
 add_subdirectory(lib)
-add_subdirectory(lib/protobufmessages)
 
 set(dataheap2_VERSION 1.0)
 
