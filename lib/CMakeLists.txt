@@ -25,7 +25,8 @@ target_include_directories(amqpcpp SYSTEM
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/amqpcpp/include>
         $<INSTALL_INTERFACE:include>
 )
-target_link_libraries(amqpcpp PRIVATE  pthread)
+target_link_libraries(amqpcpp PRIVATE pthread)
+target_compile_features(amqpcpp PUBLIC cxx_std_14)
 
 add_library(dataheap2::amqpcpp ALIAS amqpcpp)
 
