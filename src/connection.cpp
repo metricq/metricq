@@ -80,7 +80,7 @@ void Connection::send_management(const std::string& function, json payload)
     std::string message = payload.dump();
     AMQP::Envelope env(message.data(), message.size());
 
-    env.setUserID(connection_token_);
+    env.setAppID(connection_token_);
     assert(!management_queue_.empty());
     env.setReplyTo(management_queue_);
 
