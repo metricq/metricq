@@ -21,10 +21,10 @@ add_subdirectory(lib)
 
 set(dataheap2_VERSION 1.0)
 
-set(CORE_SRCS src/core/core.cpp)
-set(SOURCE_SRCS src/source/source.cpp)
-set(SINK_SRCS src/sink/sink.cpp)
-set(DB_SRCS src/db/db.cpp)
+set(CORE_SRCS src/connection.cpp)
+set(SOURCE_SRCS src/source.cpp)
+set(SINK_SRCS src/sink.cpp)
+set(DB_SRCS src/db.cpp)
 
 add_library(dataheap2-core ${CORE_SRCS})
 target_include_directories(dataheap2-core

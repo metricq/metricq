@@ -1,6 +1,6 @@
 syntax = "proto2";
 
 message DataPoint {
-  required uint64 timestamp = 1;
+  required int64 timestamp = 1;
   required double value = 2;
 }

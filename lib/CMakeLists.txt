@@ -18,7 +18,7 @@ amqpcpp/src/watchable.cpp
 )
 
 add_library(amqpcpp ${AMQP_SRCS})
-target_include_directories(amqpcpp
+target_include_directories(amqpcpp SYSTEM
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/amqpcpp/src
     PUBLIC
