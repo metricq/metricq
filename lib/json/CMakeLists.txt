@@ -5,7 +5,7 @@ target_include_directories(json INTERFACE
 )
 add_library(json::json ALIAS json)
 
-install(TARGETS json EXPORT htaTargets
+install(TARGETS json EXPORT dataheap2Targets
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         RUNTIME DESTINATION bin

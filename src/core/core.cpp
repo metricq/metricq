@@ -5,7 +5,7 @@
 #include <string>
 #include <time.h>
 
-#include <json.hpp>
+#include <nlohmann/json.hpp>
 
 #include "core/core.h"
 

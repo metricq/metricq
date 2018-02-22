@@ -37,7 +37,7 @@ target_link_libraries(dataheap2-core
     PUBLIC
         dataheap2::amqpcpp
         ev::ev
-        nlohmann_json
+        json::json
         dataheap2::protobufmessages
 )
 

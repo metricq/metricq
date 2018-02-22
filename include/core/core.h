@@ -8,7 +8,7 @@
 #include <string>
 #include <time.h>
 
-#include <json.hpp>
+#include <nlohmann/json_fwd.hpp>
 
 #define RABBITMQ_RPC_QUEUE "rpcQueue"
 
