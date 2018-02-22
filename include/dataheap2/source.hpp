@@ -26,7 +26,7 @@ public:
     {
     }
 
-    void operator<<(TimeValue tv);
+    void send(TimeValue tv);
 
     const std::string& id() const
     {

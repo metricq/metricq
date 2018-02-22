@@ -76,7 +76,7 @@ void SourceMetric::flush()
     chunk_.clear_data();
 }
 
-void SourceMetric::operator<<(TimeValue tv)
+void SourceMetric::send(TimeValue tv)
 {
     if (chunk_size_ == 0)
     {
