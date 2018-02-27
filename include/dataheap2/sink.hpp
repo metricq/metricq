@@ -8,6 +8,8 @@
 
 #include <nlohmann/json_fwd.hpp>
 
+#include <ev.h>
+
 #include <memory>
 #include <string>
 
