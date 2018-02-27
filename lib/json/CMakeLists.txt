@@ -1,13 +1,21 @@
-add_library(json INTERFACE)
-target_include_directories(json INTERFACE
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include>
-)
-add_library(json::json ALIAS json)
+if(NOT EXISTS json::json)
+    add_library(json INTERFACE)
+    target_include_directories(json INTERFACE
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+            $<INSTALL_INTERFACE:include>
+            )
+    add_library(json::json ALIAS json)
 
-install(TARGETS json EXPORT dataheap2Targets
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-        RUNTIME DESTINATION bin
-        INCLUDES DESTINATION include
-)
+    install(TARGETS json EXPORT jsonTargets
+            LIBRARY DESTINATION lib
+            ARCHIVE DESTINATION lib
+            RUNTIME DESTINATION bin
+            INCLUDES DESTINATION include
+            )
+
+    install(EXPORT jsonTargets
+            FILE jsonTargets.cmake
+            NAMESPACE json::
+            DESTINATION lib/cmake/json
+            )
+endif()
