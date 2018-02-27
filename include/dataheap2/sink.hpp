@@ -8,8 +8,6 @@
 
 #include <nlohmann/json_fwd.hpp>
 
-#include <ev.h>
-
 #include <memory>
 #include <string>
 
@@ -40,4 +38,4 @@ private:
     std::string data_server_address_;
     std::string data_queue_;
 };
-}
+} // namespace dataheap2

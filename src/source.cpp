@@ -13,10 +13,16 @@
 #include <memory>
 #include <string>
 
+#include "ev++.h"
+
 namespace dataheap2
 {
 
 Source::Source(const std::string& token, struct ev_loop* loop) : Connection(token, loop)
+{
+}
+
+Source::~Source()
 {
 }
 
@@ -70,6 +76,31 @@ void Source::config_callback(const nlohmann::json& config)
     ready_callback();
 }
 
+void Source::__timer_callback(ev::timer&, int)
+{
+    timer_callback_();
+}
+
+void Source::register_timer(std::function<void()> callback, Duration duration)
+{
+    if (timer_)
+    {
+        std::cerr << "One timer already registerd. Can only have one :(" << std::endl;
+        std::abort();
+    }
+
+    auto interval = std::chrono::duration_cast<std::chrono::duration<double>>(duration).count();
+
+    std::cout << "Register a timer callback every " << interval << " seconds." << std::endl;
+
+    timer_ = std::make_unique<ev::timer>(loop_);
+
+    timer_callback_ = callback;
+
+    timer_->set<Source, &Source::__timer_callback>(this);
+    timer_->start(0, interval);
+}
+
 void SourceMetric::flush()
 {
     source_.send(id_, chunk_);
@@ -97,4 +128,4 @@ void SourceMetric::send(TimeValue tv)
         }
     }
 }
-}
+} // namespace dataheap2

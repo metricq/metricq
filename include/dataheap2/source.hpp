@@ -1,5 +1,6 @@
 #pragma once
 #include <dataheap2/connection.hpp>
+#include <dataheap2/source_metric.hpp>
 #include <dataheap2/types.hpp>
 
 #include <protobufmessages/datachunk.pb.h>
@@ -9,48 +10,22 @@
 
 #include <nlohmann/json.hpp>
 
-#include <ev.h>
-
 #include <memory>
 #include <string>
 
+namespace ev
+{
+class timer;
+}
+
 namespace dataheap2
 {
-
-class Source;
-
-class SourceMetric
-{
-public:
-    SourceMetric(const std::string& id, Source& source) : id_(id), source_(source)
-    {
-    }
-
-    void send(TimeValue tv);
-
-    const std::string& id() const
-    {
-        return id_;
-    }
-
-    void enable_chunking(size_t n)
-    {
-        chunk_size_ = n;
-    }
-    void flush();
-
-private:
-    std::string id_;
-    Source& source_;
-    // It wasn't me, it's protobuf
-    int chunk_size_ = 0;
-    DataChunk chunk_;
-};
 
 class Source : public Connection
 {
 public:
     Source(const std::string& token, struct ev_loop* loop = EV_DEFAULT);
+    ~Source();
 
     void send(const std::string& id, TimeValue tv);
     void send(const std::string& id, const DataChunk& dc);
@@ -65,8 +40,12 @@ protected:
     virtual void source_config_callback(const nlohmann::json& config) = 0;
     virtual void ready_callback() = 0;
 
+    void register_timer(std::function<void()> callback, Duration duration);
+
 private:
     void config_callback(const nlohmann::json& config) override;
+
+    void __timer_callback(ev::timer& watcher, int revents);
 
 private:
     std::unique_ptr<AMQP::TcpConnection> data_connection_;
@@ -75,5 +54,8 @@ private:
     std::string data_server_address_;
 
     std::unordered_map<std::string, SourceMetric> metrics_;
+
+    std::unique_ptr<ev::timer> timer_;
+    std::function<void()> timer_callback_;
 };
-}
+} // namespace dataheap2

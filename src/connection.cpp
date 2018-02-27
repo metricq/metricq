@@ -15,7 +15,7 @@ namespace dataheap2
 const std::string management_queue = "managementQueue";
 
 Connection::Connection(const std::string& connection_token, struct ev_loop* loop)
-: handler(loop), connection_token_(connection_token)
+: handler(loop), connection_token_(connection_token), loop_(loop)
 {
     register_management_callback("config", [this](auto& response) { config_callback(response); });
 }
@@ -24,13 +24,20 @@ Connection::~Connection()
 {
 }
 
+void Connection::main_loop()
+{
+    ev_run(loop_, 0);
+}
+
 void Connection::connect(const std::string& server_address)
 {
     management_connection_ =
         std::make_unique<AMQP::TcpConnection>(&handler, AMQP::Address(server_address));
     management_channel_ = std::make_unique<AMQP::TcpChannel>(management_connection_.get());
-    management_channel_->onError(
-        [](const char* message) { std::cout << "channel error: " << message << std::endl; });
+    management_channel_->onError([](const char* message) {
+        std::cerr << "channel error: " << message << std::endl;
+        throw std::runtime_error(message);
+    });
 
     management_channel_
         ->declareQueue(AMQP::exclusive) //  rpc queue
@@ -65,6 +72,7 @@ void Connection::connect(const std::string& server_address)
             send_management("register");
             // TODO call subclasses on_init or so
         });
+    ;
 }
 
 void Connection::register_management_callback(const std::string& function, ManagementCallback cb)
@@ -109,4 +117,4 @@ void Connection::dispatch_management(const AMQP::Message& message)
                   << std::endl;
     }
 }
-}
+} // namespace dataheap2

@@ -24,6 +24,9 @@ enum class MessageCoding : char
 
 class Connection
 {
+public:
+    void main_loop();
+
 protected:
     using ManagementCallback = std::function<void(const json& response)>;
 
@@ -44,6 +47,8 @@ protected:
     // handler for libev (so we don't have to implement AMQP::TcpHandler!)
     AMQP::LibEvHandler handler;
 
+    struct ev_loop* loop_;
+
 private:
     std::string connection_token_;
 
@@ -53,4 +58,4 @@ private:
     std::unordered_map<std::string, ManagementCallback> management_callbacks_;
     std::string management_queue_;
 };
-}
+} // namespace dataheap2
