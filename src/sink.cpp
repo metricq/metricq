@@ -85,9 +85,9 @@ void Sink::data_callback(const AMQP::Message& message)
 {
     const auto& metric_name = message.routingkey();
     auto message_string = std::string(message.body(), message.bodySize());
-    DataChunk datachunk;
-    datachunk.ParseFromString(message_string);
-    data_callback(metric_name, datachunk);
+    datachunk_.Clear();
+    datachunk_.ParseFromString(message_string);
+    data_callback(metric_name, datachunk_);
 }
 
 void Sink::data_callback(const std::string& id, const DataChunk& data_chunk)

@@ -38,5 +38,6 @@ private:
     std::unique_ptr<AMQP::TcpChannel> data_channel_;
     std::string data_server_address_;
     std::string data_queue_;
+    DataChunk datachunk_;
 };
 } // namespace dataheap2
