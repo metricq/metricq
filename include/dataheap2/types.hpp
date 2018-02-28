@@ -99,12 +99,12 @@ private:
     bool end = false;
 };
 
-DataChunkIter begin(const DataChunk& dc)
+inline DataChunkIter begin(const DataChunk& dc)
 {
     return DataChunkIter(dc, dc.data().begin(), false);
 }
 
-DataChunkIter end(const DataChunk& dc)
+inline DataChunkIter end(const DataChunk& dc)
 {
     return { dc, dc.data().end(), true };
 }
