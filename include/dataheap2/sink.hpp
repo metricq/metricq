@@ -26,7 +26,6 @@ protected:
     virtual void sink_config_callback(const json&){};
     virtual void ready_callback() = 0;
     virtual void data_callback(const std::string&, TimeValue tv) = 0;
-    virtual void data_callback(const std::string&, const DataPoint&);
     virtual void data_callback(const std::string&, const DataChunk&);
 
     void config_callback(const json& config) override;

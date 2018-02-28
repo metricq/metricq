@@ -28,17 +28,13 @@ Source::~Source()
 
 void Source::send(const std::string& id, const DataChunk& dc)
 {
-    std::string chunk_string(1, static_cast<char>(MessageCoding::chunk));
-    chunk_string += dc.SerializeAsString();
-    data_channel_->publish(data_exchange_, id, chunk_string);
+    data_channel_->publish(data_exchange_, id, dc.SerializeAsString());
 }
 
 void Source::send(const std::string& id, TimeValue tv)
 {
-    std::string datapoint_string(1, static_cast<char>(MessageCoding::single));
-    datapoint_string += DataPoint(tv).SerializeAsString();
     // TODO evaluate optimization of string construction
-    data_channel_->publish(data_exchange_, id, datapoint_string);
+    data_channel_->publish(data_exchange_, id, DataChunk(tv).SerializeAsString());
 }
 
 void Source::config_callback(const nlohmann::json& config)

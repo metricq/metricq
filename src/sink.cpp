@@ -83,43 +83,21 @@ void Sink::config_callback(const json& config)
 
 void Sink::data_callback(const AMQP::Message& message)
 {
-    if (message.bodySize() < 2)
-    {
-        return;
-    }
-
     const auto& metric_name = message.routingkey();
     auto message_string = std::string(message.body(), message.bodySize());
-    MessageCoding message_coding = static_cast<MessageCoding>(message_string.front());
-
-    message_string.erase(0, 1);
-
-    switch (message_coding)
-    {
-    case MessageCoding::single:
-    {
-        DataPoint datapoint;
-        datapoint.ParseFromString(message_string);
-        data_callback(metric_name, datapoint);
-        break;
-    }
-    case MessageCoding::chunk:
-    {
-        DataChunk datachunk;
-        datachunk.ParseFromString(message_string);
-        data_callback(metric_name, datachunk);
-        break;
-    }
-    }
-}
-
-void Sink::data_callback(const std::string& id, const DataPoint& data_point)
-{
-    data_callback(id, { TimePoint(Duration(data_point.timestamp())), data_point.value() });
+    DataChunk datachunk;
+    datachunk.ParseFromString(message_string);
+    data_callback(metric_name, datachunk);
 }
 
 void Sink::data_callback(const std::string& id, const DataChunk& data_chunk)
 {
+    if(data_chunk.has_value()) {
+      data_callback(id,
+                    { TimePoint(Duration(data_chunk.timestamp_offset())), data_chunk.value() });
+      return;
+    }
+
     auto offset = data_chunk.timestamp_offset();
     for (const auto& data_point : data_chunk.data())
     {
