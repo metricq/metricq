@@ -1,5 +1,9 @@
 find_package(benchmark QUIET)
 
+add_executable(dataheap2.test_data_sizes test_data_sizes.cpp)
+add_test(dataheap2.test_data_sizes dataheap2.test_data_sizes)
+target_link_libraries(dataheap2.test_data_sizes PRIVATE dataheap2::core)
+
 if (benchmark_FOUND)
     message(STATUS "Looking for google benchmark - found, will build benchmark tests.")
 
