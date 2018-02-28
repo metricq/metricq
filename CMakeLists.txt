@@ -4,16 +4,9 @@ cmake_minimum_required(VERSION 3.8)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
 
-# Intialize git submodules if not done already
-file(GLOB SUBMODULE_FILES "lib/json/*")
-list(LENGTH SUBMODULE_FILES COUNT_JSON)
-file(GLOB SUBMODULE_FILES "lib/amqpcpp/*")
-list(LENGTH SUBMODULE_FILES COUNT_AMQPCPP)
-if(${COUNT_JSON} EQUAL 0 OR ${COUNT_AMQPCPP} EQUAL 0)
-    message(STATUS "Initializing git submodule")
-    execute_process(COMMAND "git" "submodule" "init" WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
-    execute_process(COMMAND "git" "submodule" "update" WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
-endif()
+include(cmake/DefaultBuildType.cmake)
+include(cmake/GitSubmoduleUpdate.cmake)
+git_submodule_update()
 
 find_package(Ev REQUIRED)
 set(JSON_BuildTests OFF)
@@ -98,8 +91,8 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
         DESTINATION lib/cmake/dataheap2
     )
 
-    # include(CTest)
-    # add_subdirectory(tests)
+    include(CTest)
+    add_subdirectory(tests)
 else()
     set_target_properties(dataheap2-core PROPERTIES EXCLUDE_FROM_ALL TRUE)
     set_target_properties(dataheap2-source PROPERTIES EXCLUDE_FROM_ALL TRUE)
