@@ -12,7 +12,7 @@ dataheap2::DataChunk generate(benchmark::State& state)
 {
     dataheap2::DataChunk data_chunk;
     double value = 1.0;
-    int64_t time = 123;
+    int64_t time = 1519832293179227888;
     data_chunk.set_timestamp_offset(time);
     for (int i = 0; i < state.range(0); i++)
     {

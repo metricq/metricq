@@ -10,7 +10,7 @@
 dataheap2::DataChunk generate(benchmark::State &)
 {
     dataheap2::DataChunk data_chunk;
-    data_chunk.set_timestamp_offset(1519829070761463639ll);
+    data_chunk.set_timestamp_offset(1519832293179227888);
     data_chunk.set_value(1.);
     return data_chunk;
 }
