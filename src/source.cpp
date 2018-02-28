@@ -115,8 +115,9 @@ void SourceMetric::send(TimeValue tv)
         {
             chunk_.set_timestamp_offset(tv.time.time_since_epoch().count());
         }
+        auto last_data = chunk_.data(chunk_.data_size() - 1);
         auto new_data = chunk_.add_data();
-        new_data->set_timestamp(tv.time.time_since_epoch().count() - chunk_.timestamp_offset());
+        new_data->set_timestamp(tv.time.time_since_epoch().count() - last_data.timestamp());
         new_data->set_value(tv.value);
         if (chunk_.data_size() == chunk_size_)
         {

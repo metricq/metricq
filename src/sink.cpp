@@ -101,8 +101,9 @@ void Sink::data_callback(const std::string& id, const DataChunk& data_chunk)
     auto offset = data_chunk.timestamp_offset();
     for (const auto& data_point : data_chunk.data())
     {
+        offset += data_point.timestamp();
         data_callback(id,
-                      { TimePoint(Duration(data_point.timestamp() + offset)), data_point.value() });
+                      { TimePoint(Duration(offset)), data_point.value() });
     }
 }
 }
