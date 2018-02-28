@@ -1,6 +1,6 @@
 syntax = "proto2";
 import "datapoint.proto";
-
+package dataheap2;
 
 message DataChunk {
   required int64 timestamp_offset = 1;

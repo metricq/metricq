@@ -1,4 +1,5 @@
 syntax = "proto2";
+package dataheap2;
 
 message DataPoint {
   required int64 timestamp = 1;
