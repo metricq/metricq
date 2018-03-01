@@ -92,18 +92,9 @@ void Sink::data_callback(const AMQP::Message& message)
 
 void Sink::data_callback(const std::string& id, const DataChunk& data_chunk)
 {
-    if(data_chunk.has_value()) {
-      data_callback(id,
-                    { TimePoint(Duration(data_chunk.timestamp_offset())), data_chunk.value() });
-      return;
-    }
-
-    auto offset = data_chunk.timestamp_offset();
-    for (const auto& data_point : data_chunk.data())
+    for (auto tv : data_chunk)
     {
-        offset += data_point.timestamp();
-        data_callback(id,
-                      { TimePoint(Duration(offset)), data_point.value() });
+        data_callback(id, tv);
     }
 }
 }

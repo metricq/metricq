@@ -4,6 +4,7 @@
 
 #include <protobufmessages/datachunk.pb.h>
 
+#include <algorithm>
 #include <string>
 
 namespace dataheap2
@@ -26,15 +27,17 @@ public:
 
     void enable_chunking(size_t n)
     {
-        chunk_size_ = n;
+        // TODO improve
+        chunk_size_ = std::max<size_t>(n, 1);
     }
     void flush();
 
 private:
     std::string id_;
     Source& source_;
-    // It wasn't me, it's protobuf
-    int chunk_size_ = 0;
+
+    int chunk_size_ = 1;
+    int64_t previous_timestamp_ = 0;
     DataChunk chunk_;
 };
 } // namespace dataheap2

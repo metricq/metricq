@@ -18,8 +18,9 @@ struct TimeValue
     operator DataChunk() const
     {
         DataChunk dc;
-        dc.set_timestamp_offset(time.time_since_epoch().count());
-        dc.set_value(value);
+        auto data_point = dc.add_data();
+        data_point->set_time_delta(time.time_since_epoch().count());
+        data_point->set_value(value);
         return dc;
     }
 };
@@ -27,18 +28,11 @@ struct TimeValue
 template <typename T>
 void data_chunk_foreach(const DataChunk& dc, T cb)
 {
-    if (dc.has_value())
-    {
-        cb(dataheap2::TimeValue(dataheap2::TimePoint(dataheap2::Duration(dc.timestamp_offset())),
-                                dc.value()));
-        return;
-    }
-
-    auto offset = dc.timestamp_offset();
+    int64_t timestamp = 0;
     for (const auto& data_point : dc.data())
     {
-        offset += data_point.timestamp();
-        cb(dataheap2::TimeValue(dataheap2::TimePoint(dataheap2::Duration(offset)),
+        timestamp += data_point.time_delta();
+        cb(dataheap2::TimeValue(dataheap2::TimePoint(dataheap2::Duration(timestamp)),
                                 data_point.value()));
     }
 }
@@ -47,66 +41,42 @@ class DataChunkIter
 {
 public:
     DataChunkIter(const DataChunk& dc,
-                  google::protobuf::internal::RepeatedPtrIterator<const DataPoint> iter,
-                  bool end = false)
-    : dc(dc), iter(iter), end(end)
+                  google::protobuf::internal::RepeatedPtrIterator<const DataPoint> iter)
+    : dc(dc), iter(iter)
     {
     }
 
     dataheap2::TimeValue operator*() const
     {
-        if (dc.has_value())
-        {
-            return { dataheap2::TimePoint(dataheap2::Duration(dc.timestamp_offset())), dc.value() };
-        }
-        else
-        {
-            return { dataheap2::TimePoint(
-                         dataheap2::Duration(dc.timestamp_offset() + iter->timestamp())),
-                     iter->value() };
-        }
+        return { dataheap2::TimePoint(dataheap2::Duration(timestamp + iter->time_delta())),
+                 iter->value() };
     }
 
     DataChunkIter& operator++()
     {
-        if (dc.has_value())
-        {
-            assert(!end);
-            end = true;
-        }
-        else
-        {
-            iter++;
-        }
+        timestamp += iter->time_delta();
+        iter++;
         return *this;
     }
 
     bool operator!=(const DataChunkIter& other)
     {
-        if (dc.has_value())
-        {
-            return end != other.end;
-        }
-        else
-        {
-            return iter != other.iter;
-        }
+        return iter != other.iter;
     }
 
 private:
     const DataChunk& dc;
     google::protobuf::internal::RepeatedPtrIterator<const DataPoint> iter;
-    bool end = false;
+    int64_t timestamp = 0;
 };
 
 inline DataChunkIter begin(const DataChunk& dc)
 {
-    return DataChunkIter(dc, dc.data().begin(), false);
+    return { dc, dc.data().begin() };
 }
 
 inline DataChunkIter end(const DataChunk& dc)
 {
-    return { dc, dc.data().end(), true };
+    return { dc, dc.data().end() };
 }
 }
-

@@ -101,28 +101,18 @@ void SourceMetric::flush()
 {
     source_.send(id_, chunk_);
     chunk_.clear_data();
+    previous_timestamp_ = 0;
 }
 
 void SourceMetric::send(TimeValue tv)
 {
-    if (chunk_size_ == 0)
+    auto data_point = chunk_.add_data();
+    data_point->set_time_delta(tv.time.time_since_epoch().count() - previous_timestamp_);
+    data_point->set_value(tv.value);
+
+    if (chunk_.data_size() == chunk_size_)
     {
-        source_.send(id_, tv);
-    }
-    else
-    {
-        if (chunk_.data_size() == 0)
-        {
-            chunk_.set_timestamp_offset(tv.time.time_since_epoch().count());
-        }
-        auto last_data = chunk_.data(chunk_.data_size() - 1);
-        auto new_data = chunk_.add_data();
-        new_data->set_timestamp(tv.time.time_since_epoch().count() - last_data.timestamp());
-        new_data->set_value(tv.value);
-        if (chunk_.data_size() == chunk_size_)
-        {
-            flush();
-        }
+        flush();
     }
 }
 } // namespace dataheap2

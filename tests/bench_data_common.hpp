@@ -13,18 +13,11 @@ void consume(dataheap2::TimeValue tv)
 
 void consume_manual(const dataheap2::DataChunk& data_chunk)
 {
-    if (data_chunk.has_value())
-    {
-        consume({ dataheap2::TimePoint(dataheap2::Duration(data_chunk.timestamp_offset())),
-                  data_chunk.value() });
-        return;
-    }
-
-    auto offset = data_chunk.timestamp_offset();
+    int64_t timestamp = 0;
     for (const auto& data_point : data_chunk.data())
     {
-        offset += data_point.timestamp();
-        consume({ dataheap2::TimePoint(dataheap2::Duration(offset)), data_point.value() });
+        timestamp += data_point.time_delta();
+        consume({ dataheap2::TimePoint(dataheap2::Duration(timestamp)), data_point.value() });
     }
 }
 

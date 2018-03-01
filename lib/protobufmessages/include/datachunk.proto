@@ -1,9 +1,7 @@
-syntax = "proto2";
+syntax = "proto3";
 import "datapoint.proto";
 package dataheap2;
 
 message DataChunk {
-  required int64 timestamp_offset = 1;
-  optional double value = 2;
-  repeated DataPoint data = 3;
+  repeated DataPoint data = 1;
 }

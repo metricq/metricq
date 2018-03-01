@@ -11,12 +11,18 @@ void generate(dataheap2::DataChunk& data_chunk, benchmark::State& state)
 {
     constexpr double value = 1.0 / 3;
     int64_t time = 1519832293179227888;
-    data_chunk.set_timestamp_offset(time);
 
     for (int i = 0; i < state.range(0); i++)
     {
         auto data_point = data_chunk.add_data();
-        data_point->set_timestamp(time);
+        if (i == 0)
+        {
+            data_point->set_time_delta(time);
+        }
+        else
+        {
+            data_point->set_time_delta(1000);
+        }
         data_point->set_value(value + i);
     }
 }
@@ -28,8 +34,6 @@ static void BM_generate(benchmark::State& state)
     {
         generate(data_chunk, state);
         benchmark::DoNotOptimize(data_chunk);
-        data_chunk.clear_timestamp_offset();
-        data_chunk.clear_value();
         data_chunk.clear_data();
     }
     state.SetBytesProcessed(int64_t(state.iterations()) * int64_t(state.range(0)));
