@@ -1,8 +1,7 @@
 #pragma once
 
+#include <dataheap2/datachunk.pb.h>
 #include <dataheap2/types.hpp>
-
-#include <protobufmessages/datachunk.pb.h>
 
 #include <algorithm>
 #include <string>

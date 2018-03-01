@@ -1,7 +1,7 @@
 #pragma once
 
 #include <dataheap2/chrono.hpp>
-#include <protobufmessages/datachunk.pb.h>
+#include <dataheap2/datachunk.pb.h>
 
 namespace dataheap2
 {
@@ -41,17 +41,15 @@ class DataChunkIter
 {
 public:
     DataChunkIter(
-        const DataChunk& dc,
         google::protobuf::RepeatedField<const google::protobuf::int64>::iterator iter_time,
         google::protobuf::RepeatedField<const double>::iterator iter_value)
-    : dc(dc), iter_time(iter_time), iter_value(iter_value)
+    : iter_time(iter_time), iter_value(iter_value)
     {
     }
 
     dataheap2::TimeValue operator*() const
     {
-        return { dataheap2::TimePoint(dataheap2::Duration(timestamp + *iter_time)),
-                 *iter_value };
+        return { dataheap2::TimePoint(dataheap2::Duration(timestamp + *iter_time)), *iter_value };
     }
 
     DataChunkIter& operator++()
@@ -68,7 +66,6 @@ public:
     }
 
 private:
-    const DataChunk& dc;
     google::protobuf::RepeatedField<const google::protobuf::int64>::iterator iter_time;
     google::protobuf::RepeatedField<const double>::iterator iter_value;
     int64_t timestamp = 0;
@@ -76,11 +73,11 @@ private:
 
 inline DataChunkIter begin(const DataChunk& dc)
 {
-    return { dc, dc.time_delta().begin(), dc.value().begin() };
+    return { dc.time_delta().begin(), dc.value().begin() };
 }
 
 inline DataChunkIter end(const DataChunk& dc)
 {
-    return { dc, dc.time_delta().end(), dc.value().end() };
+    return { dc.time_delta().end(), dc.value().end() };
 }
-}
+} // namespace dataheap2

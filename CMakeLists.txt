@@ -8,11 +8,27 @@ include(cmake/DefaultBuildType.cmake)
 include(cmake/GitSubmoduleUpdate.cmake)
 git_submodule_update()
 
+find_package(Protobuf 3.0 REQUIRED)
 find_package(Ev REQUIRED)
-set(JSON_BuildTests OFF)
+
 add_subdirectory(lib)
 
 set(dataheap2_VERSION 1.0)
+
+
+protobuf_generate_cpp(PROTO_SRC PROTO_HEADER src/datachunk.proto)
+add_library(dataheap2-messages ${PROTO_SRC})
+# this is needed to get the generated protobuf files in a sane location :(
+add_custom_command(TARGET dataheap2-messages PRE_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/include/dataheap2
+    COMMAND ${CMAKE_COMMAND} -E copy ${PROTO_HEADER} ${CMAKE_CURRENT_BINARY_DIR}/include/dataheap2
+    COMMENT "Copy generated protobuf headers..."
+)
+target_include_directories(dataheap2-messages
+    INTERFACE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
+)
+target_link_libraries(dataheap2-messages PUBLIC protobuf::libprotobuf)
 
 set(CORE_SRCS src/connection.cpp)
 set(SOURCE_SRCS src/source.cpp)
@@ -31,7 +47,7 @@ target_link_libraries(dataheap2-core
         dataheap2::amqpcpp
         ev::ev
         json::json
-        dataheap2::protobufmessages
+        dataheap2::messages
 )
 
 target_compile_features(dataheap2-core PUBLIC cxx_std_17)
@@ -59,6 +75,7 @@ add_library(dataheap2::core ALIAS dataheap2-core)
 add_library(dataheap2::source ALIAS dataheap2-source)
 add_library(dataheap2::sink ALIAS dataheap2-sink)
 add_library(dataheap2::db ALIAS dataheap2-db)
+add_library(dataheap2::messages ALIAS dataheap2-messages)
 
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     target_compile_options(dataheap2-core

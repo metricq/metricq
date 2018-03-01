@@ -1,7 +1,0 @@
-syntax = "proto3";
-package dataheap2;
-
-message DataPoint {
-  int64 time_delta = 1;
-  double value = 2;
-}

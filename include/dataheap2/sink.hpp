@@ -1,10 +1,8 @@
 #pragma once
 
 #include <dataheap2/connection.hpp>
+#include <dataheap2/datachunk.pb.h>
 #include <dataheap2/types.hpp>
-
-#include <protobufmessages/datachunk.pb.h>
-#include <protobufmessages/datapoint.pb.h>
 
 #include <nlohmann/json_fwd.hpp>
 
