@@ -107,6 +107,7 @@ void SourceMetric::flush()
 void SourceMetric::send(TimeValue tv)
 {
     chunk_.add_time_delta(tv.time.time_since_epoch().count() - previous_timestamp_);
+    previous_timestamp_ = tv.time.time_since_epoch().count();
     chunk_.add_value(tv.value);
 
     assert(chunk_.time_delta_size() == chunk_.value_size());
