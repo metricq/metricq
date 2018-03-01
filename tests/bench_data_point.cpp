@@ -1,4 +1,3 @@
-#include "../cmake-build-debug/lib/protobufmessages/datachunk.pb.h"
 #include "bench_data_common.hpp"
 
 #include <protobufmessages/datachunk.pb.h>
@@ -97,4 +96,4 @@ static void BM_for(benchmark::State& state)
 }
 BENCHMARK(BM_for);
 
-BENCHMARK_MAIN();
+BENCHMARK_MAIN()
