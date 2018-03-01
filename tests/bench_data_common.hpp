@@ -11,16 +11,6 @@ void consume(dataheap2::TimeValue tv)
     consume_sum += tv.value;
 }
 
-void consume_manual(const dataheap2::DataChunk& data_chunk)
-{
-    int64_t timestamp = 0;
-    for (const auto& data_point : data_chunk.data())
-    {
-        timestamp += data_point.time_delta();
-        consume({ dataheap2::TimePoint(dataheap2::Duration(timestamp)), data_point.value() });
-    }
-}
-
 void consume_for(const dataheap2::DataChunk& data_chunk)
 {
     for (const auto& elem : data_chunk)

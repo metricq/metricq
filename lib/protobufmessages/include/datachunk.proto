@@ -1,7 +1,7 @@
 syntax = "proto3";
-import "datapoint.proto";
 package dataheap2;
 
 message DataChunk {
-  repeated DataPoint data = 1;
+    repeated int64 time_delta = 1;
+    repeated double value = 2;
 }

@@ -100,17 +100,18 @@ void Source::register_timer(std::function<void()> callback, Duration duration)
 void SourceMetric::flush()
 {
     source_.send(id_, chunk_);
-    chunk_.clear_data();
+    chunk_.clear_time_delta();
+    chunk_.clear_value();
     previous_timestamp_ = 0;
 }
 
 void SourceMetric::send(TimeValue tv)
 {
-    auto data_point = chunk_.add_data();
-    data_point->set_time_delta(tv.time.time_since_epoch().count() - previous_timestamp_);
-    data_point->set_value(tv.value);
+    chunk_.add_time_delta(tv.time.time_since_epoch().count() - previous_timestamp_);
+    chunk_.add_value(tv.value);
 
-    if (chunk_.data_size() == chunk_size_)
+    assert(chunk_.time_delta_size() == chunk_.value_size());
+    if (chunk_.time_delta_size() == chunk_size_)
     {
         flush();
     }
