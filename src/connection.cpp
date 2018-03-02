@@ -57,7 +57,7 @@ void Connection::connect(const std::string& server_address)
             // callback operation when a message was received
             auto messageCb = [this](const AMQP::Message& message, uint64_t deliveryTag,
                                     bool redelivered) {
-                std::cout << "message received: " << message.body() << std::endl;
+                std::cout << "message received: " << std::endl;
 
                 dispatch_management(message);
 
