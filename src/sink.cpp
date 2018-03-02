@@ -88,6 +88,10 @@ void Sink::data_callback(const AMQP::Message& message)
     data_callback(metric_name, datachunk_);
 }
 
+void Sink::data_callback(const std::string&, TimeValue tv)
+{
+}
+
 void Sink::data_callback(const std::string& id, const DataChunk& data_chunk)
 {
     for (auto tv : data_chunk)
