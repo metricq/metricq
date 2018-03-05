@@ -1,5 +1,4 @@
-#include <protobufmessages/datachunk.pb.h>
-#include <protobufmessages/datapoint.pb.h>
+#include <dataheap2/datachunk.pb.h>
 
 #include <dataheap2/types.hpp>
 

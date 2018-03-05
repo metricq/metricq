@@ -1,11 +1,11 @@
 #pragma once
 
+#include <asio/io_service.hpp>
+
 #include <amqpcpp.h>
-#include <amqpcpp/libev.h>
+#include <amqpcpp/libasio.h>
 
 #include <nlohmann/json.hpp>
-
-#include <ev.h>
 
 #include <functional>
 #include <memory>
@@ -30,7 +30,7 @@ public:
 protected:
     using ManagementCallback = std::function<void(const json& response)>;
 
-    explicit Connection(const std::string& connection_token, struct ev_loop* loop);
+    explicit Connection(const std::string& connection_token);
     virtual ~Connection() = 0;
 
     void connect(const std::string& server_address);
@@ -44,10 +44,8 @@ private:
     void dispatch_management(const AMQP::Message& message);
 
 protected:
-    // handler for libev (so we don't have to implement AMQP::TcpHandler!)
-    AMQP::LibEvHandler handler;
-
-    struct ev_loop* loop_;
+    asio::io_service io_service;
+    AMQP::LibAsioHandler handler;
 
 private:
     std::string connection_token_;

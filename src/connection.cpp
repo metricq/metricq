@@ -4,8 +4,6 @@
 
 #include <nlohmann/json.hpp>
 
-#include <ev.h>
-
 #include <iostream>
 #include <memory>
 #include <string>
@@ -14,8 +12,8 @@ namespace dataheap2
 {
 const std::string management_queue = "managementQueue";
 
-Connection::Connection(const std::string& connection_token, struct ev_loop* loop)
-: handler(loop), connection_token_(connection_token), loop_(loop)
+Connection::Connection(const std::string& connection_token)
+: io_service(4), handler(io_service), connection_token_(connection_token)
 {
     register_management_callback("config", [this](auto& response) { config_callback(response); });
 }
@@ -26,7 +24,7 @@ Connection::~Connection()
 
 void Connection::main_loop()
 {
-    ev_run(loop_, 0);
+    io_service.run();
 }
 
 void Connection::connect(const std::string& server_address)

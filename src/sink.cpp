@@ -12,7 +12,7 @@ namespace dataheap2
 {
 using json = nlohmann::json;
 
-Sink::Sink(const std::string& token, struct ev_loop* loop) : Connection(token, loop)
+Sink::Sink(const std::string& token) : Connection(token)
 {
 }
 
@@ -88,7 +88,7 @@ void Sink::data_callback(const AMQP::Message& message)
     data_callback(metric_name, datachunk_);
 }
 
-void Sink::data_callback(const std::string&, TimeValue tv)
+void Sink::data_callback(const std::string&, TimeValue)
 {
 }
 

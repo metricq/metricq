@@ -22,19 +22,49 @@ target_include_directories(amqpcpp SYSTEM
         ${CMAKE_CURRENT_SOURCE_DIR}/amqpcpp/src
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/amqpcpp/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/amqpcpp-asio/include>
         $<INSTALL_INTERFACE:include>
 )
 target_link_libraries(amqpcpp PRIVATE pthread)
 target_compile_features(amqpcpp PUBLIC cxx_std_14)
 
-add_library(dataheap2::amqpcpp ALIAS amqpcpp)
+add_library(amqpcpp::amqpcpp ALIAS amqpcpp)
 
-install(TARGETS amqpcpp EXPORT dataheap2Targets
+install(TARGETS amqpcpp EXPORT amqpcppTargets
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
     RUNTIME DESTINATION bin
     INCLUDES DESTINATION include
 )
 
-install(DIRECTORY amqpcpp/include/ DESTINATION include
+install(EXPORT amqpcppTargets
+    DESTINATION lib/cmake/amqpcpp
+    NAMESPACE amqpcpp::
+)
+
+install(DIRECTORY amqpcpp/include/ amqpcpp-asio/include DESTINATION include
         FILES_MATCHING PATTERN "*.h")
+
+add_library(asio INTERFACE)
+target_include_directories(asio
+    INTERFACE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/asio/asio/include>
+        $<INSTALL_INTERFACE:include>
+)
+
+add_library(asio::asio ALIAS asio)
+
+install(TARGETS asio EXPORT asioTargets
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+    RUNTIME DESTINATION bin
+    INCLUDES DESTINATION include
+)
+
+install(EXPORT asioTargets
+    DESTINATION lib/cmake/asio
+    NAMESPACE asio::
+)
+
+install(DIRECTORY asio/asio/include/ DESTINATION include
+FILES_MATCHING PATTERN "*.hpp")

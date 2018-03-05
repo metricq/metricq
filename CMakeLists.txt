@@ -9,7 +9,6 @@ include(cmake/GitSubmoduleUpdate.cmake)
 git_submodule_update()
 
 find_package(Protobuf 3.0 REQUIRED)
-find_package(Ev REQUIRED)
 
 add_subdirectory(lib)
 
@@ -44,8 +43,8 @@ target_include_directories(dataheap2-core
 
 target_link_libraries(dataheap2-core
     PUBLIC
-        dataheap2::amqpcpp
-        ev::ev
+        asio::asio
+        amqpcpp::amqpcpp
         json::json
         dataheap2::messages
 )
@@ -87,7 +86,7 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
         ${CMAKE_CURRENT_SOURCE_DIR}/include/dataheap2
         DESTINATION include
     )
-    install(TARGETS dataheap2-core dataheap2-all dataheap2-source dataheap2-sink EXPORT dataheap2Targets
+    install(TARGETS dataheap2-core dataheap2-all dataheap2-source dataheap2-sink dataheap2-messages EXPORT dataheap2Targets
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         RUNTIME DESTINATION bin

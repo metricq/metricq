@@ -13,3 +13,7 @@ if (benchmark_FOUND)
 else()
     message(STATUS "Looking for google benchmark - not found, skipping benchmark tests.")
 endif()
+
+
+add_executable(asio_event_loop_test asio_event_loop_test.cpp)
+target_link_libraries(asio_event_loop_test PRIVATE asio::asio amqpcpp::amqpcpp)

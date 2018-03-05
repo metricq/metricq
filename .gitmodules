@@ -1,3 +1,6 @@
 [submodule "lib/amqpcpp"]
 	path = lib/amqpcpp
 	url = https://github.com/CopernicaMarketingSoftware/AMQP-CPP.git
+[submodule "lib/asio"]
+	path = lib/asio
+	url = https://github.com/chriskohlhoff/asio.git

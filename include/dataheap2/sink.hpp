@@ -6,8 +6,6 @@
 
 #include <nlohmann/json_fwd.hpp>
 
-#include <ev.h>
-
 #include <memory>
 #include <string>
 
@@ -18,7 +16,7 @@ using json = nlohmann::json;
 class Sink : public Connection
 {
 public:
-    explicit Sink(const std::string& token, struct ev_loop* loop = EV_DEFAULT);
+    explicit Sink(const std::string& token);
 
 protected:
     virtual void sink_config_callback(const json&){};
