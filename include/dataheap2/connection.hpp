@@ -40,6 +40,9 @@ protected:
     void send_management(const std::string& function, json payload = json());
     void register_management_callback(const std::string& function, ManagementCallback cb);
 
+    void stop();
+    virtual void close();
+
 private:
     void dispatch_management(const AMQP::Message& message);
 

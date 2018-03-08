@@ -29,11 +29,12 @@ void Connection::main_loop()
 
 void Connection::connect(const std::string& server_address)
 {
+    std::cerr << "connecting to management server: " << server_address << std::endl;
     management_connection_ =
         std::make_unique<AMQP::TcpConnection>(&handler, AMQP::Address(server_address));
     management_channel_ = std::make_unique<AMQP::TcpChannel>(management_connection_.get());
     management_channel_->onError([](const char* message) {
-        std::cerr << "channel error: " << message << std::endl;
+        std::cerr << "management channel error: " << message << std::endl;
         throw std::runtime_error(message);
     });
 
@@ -42,29 +43,27 @@ void Connection::connect(const std::string& server_address)
         .onSuccess([this](const std::string& name, int msgcount, int consumercount) {
             management_queue_ = name;
 
-            // callback function that is called when the consume operation starts
-            auto startCb = [](const std::string& consumertag) {
-                std::cout << "consume operation started" << std::endl;
+            auto start_cb = [](const std::string& consumertag) {
+                std::cerr << "management consume operation started: " << consumertag << std::endl;
             };
 
-            // callback function that is called when the consume operation failed
-            auto errorCb = [](const char* message) {
-                std::cout << "consume operation failed" << std::endl;
+            auto error_cb = [](const char* message) {
+                std::cerr << "management consume operation failed: " << message << std::endl;
             };
 
             // callback operation when a message was received
-            auto messageCb = [this](const AMQP::Message& message, uint64_t deliveryTag,
-                                    bool redelivered) {
-                std::cout << "message received: " << std::endl;
+            auto message_cb = [this](const AMQP::Message& message, uint64_t deliveryTag,
+                                     bool redelivered) {
+                std::cerr << "message received: " << std::endl;
 
                 dispatch_management(message);
-
-                // acknowledge the message
                 management_channel_->ack(deliveryTag);
             };
 
-            management_channel_->consume(name).onReceived(messageCb).onSuccess(startCb).onError(
-                errorCb);
+            management_channel_->consume(name)
+                .onReceived(message_cb)
+                .onSuccess(start_cb)
+                .onError(error_cb);
 
             // request initial config
             send_management("register");
@@ -114,5 +113,25 @@ void Connection::dispatch_management(const AMQP::Message& message)
         std::cerr << "RPC response to unknown correlation id: " << message.correlationID()
                   << std::endl;
     }
+}
+
+void Connection::close()
+{
+    if (!management_connection_)
+    {
+        std::cerr << "closing connection, no management_connection up yet." << std::endl;
+        return;
+    }
+    auto alive = management_connection_->close();
+    std::cerr << "closed management_connection: " << alive << "\n";
+}
+
+void Connection::stop()
+{
+    std::cerr << "requesting stop." << std::endl;
+    close();
+    std::cerr << "stopping io_service." << std::endl;
+    // Maybe this isn't a good idea... who knows ¯\_(ツ)_/¯
+    io_service.stop();
 }
 } // namespace dataheap2

@@ -26,6 +26,8 @@ protected:
 
     void config_callback(const json& config) override;
 
+    void close() override;
+
 private:
     void data_callback(const AMQP::Message&);
 

@@ -18,18 +18,20 @@ Sink::Sink(const std::string& token) : Connection(token)
 
 void Sink::config_callback(const json& config)
 {
-    std::cout << "Start parsing config" << std::endl;
+    std::cerr << "sink parsing config" << std::endl;
 
     if (data_connection_)
     {
         if (config["dataServerAddress"] != data_server_address_)
         {
-            std::cerr << "Changing dataServerAddress on the fly is not currently supported.\n";
+            std::cerr << "FATAL: Changing dataServerAddress on the fly is not currently supported."
+                      << std::endl;
             std::abort();
         }
         if (config["dataQueue"] != data_queue_)
         {
-            std::cerr << "Changing dataQueue on the fly is not currently supported.\n";
+            std::cerr << "FATAL: Changing dataQueue on the fly is not currently supported."
+                      << std::endl;
             std::abort();
         }
     }
@@ -46,30 +48,28 @@ void Sink::config_callback(const json& config)
     data_channel_
         ->declareQueue(data_queue_) //  rpc queue
         .onSuccess([this](const std::string& name, int msgcount, int consumercount) {
-            (void)msgcount;
-            (void)consumercount;
+            std::cerr << "setting up sink queue. msgcount: " << msgcount << ", consumercount"
+                      << consumercount << std::endl;
 
-            // callback function that is called when the consume operation starts
-            auto startCb = [](const std::string& consumertag) {
-                (void)consumertag;
-                std::cout << "consume operation started" << std::endl;
+            auto start_cb = [](const std::string& consumertag) {
+                std::cerr << "data consume operation started: " << consumertag << std::endl;
             };
 
-            // callback function that is called when the consume operation failed
-            auto errorCb = [](const char* message) {
-                (void)message;
-                std::cerr << "consume operation failed" << std::endl;
+            auto error_cb = [](const char* message) {
+                std::cerr << "data consume operation failed: " << message << std::endl;
             };
 
-            // callback operation when a message was received
-            auto messageCb = [this](const AMQP::Message& message, uint64_t deliveryTag,
-                                    bool redelivered) {
+            auto message_cb = [this](const AMQP::Message& message, uint64_t deliveryTag,
+                                     bool redelivered) {
                 (void)redelivered;
                 data_callback(message);
                 data_channel_->ack(deliveryTag);
             };
 
-            data_channel_->consume(name).onReceived(messageCb).onSuccess(startCb).onError(errorCb);
+            data_channel_->consume(name)
+                .onReceived(message_cb)
+                .onSuccess(start_cb)
+                .onError(error_cb);
         });
 
     if (config.find("sinkConfig") != config.end())
@@ -98,5 +98,17 @@ void Sink::data_callback(const std::string& id, const DataChunk& data_chunk)
     {
         data_callback(id, tv);
     }
+}
+
+void Sink::close()
+{
+    Connection::close();
+    if (!data_connection_)
+    {
+        std::cerr << "closing sink, no data_connection up yet." << std::endl;
+        return;
+    }
+    auto alive = data_connection_->close();
+    std::cerr << "closed sink data connection: " << alive << std::endl;
 }
 } // namespace dataheap2
