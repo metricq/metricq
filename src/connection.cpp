@@ -131,7 +131,6 @@ void Connection::stop()
     std::cerr << "requesting stop." << std::endl;
     close();
     std::cerr << "stopping io_service." << std::endl;
-    // Maybe this isn't a good idea... who knows ¯\_(ツ)_/¯
-    io_service.stop();
+    // Note the io_service will stop itself once all connections are closed
 }
 } // namespace dataheap2
