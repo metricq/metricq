@@ -33,9 +33,9 @@
 
 // C++17 has 'weak_from_this()' support.
 #if __cplusplus >= 201701L
-#define PTR_FROM_THIS weak_from_this
+#define PTR_FROM_THIS(T) weak_from_this()
 #else
-#define PTR_FROM_THIS shared_from_this
+#define PTR_FROM_THIS(T) std::weak_ptr<T>(shared_from_this())
 #endif
 
 /**
@@ -137,7 +137,7 @@ private:
         handler_cb get_read_handler(TcpConnection* const connection, const int fd)
         {
             auto fn = std::bind(&Watcher::read_handler, this, std::placeholders::_1,
-                                std::placeholders::_2, PTR_FROM_THIS(), connection, fd);
+                                std::placeholders::_2, PTR_FROM_THIS(Watcher), connection, fd);
             return get_dispatch_wrapper(fn);
         }
 
@@ -150,7 +150,7 @@ private:
         handler_cb get_write_handler(TcpConnection* const connection, const int fd)
         {
             auto fn = std::bind(&Watcher::write_handler, this, std::placeholders::_1,
-                                std::placeholders::_2, PTR_FROM_THIS(), connection, fd);
+                                std::placeholders::_2, PTR_FROM_THIS(Watcher), connection, fd);
             return get_dispatch_wrapper(fn);
         }
 
@@ -321,7 +321,8 @@ private:
          */
         handler_fn get_handler(TcpConnection* const connection, const uint16_t timeout)
         {
-            const auto fn = std::bind(&Timer::timeout, this, std::placeholders::_1, PTR_FROM_THIS(),
+            const auto fn = std::bind(&Timer::timeout, this, std::placeholders::_1,
+                                      PTR_FROM_THIS(Timer),
                                       connection, timeout);
 
             const strand_weak_ptr wpstrand = _wpstrand;
@@ -544,6 +545,11 @@ public:
     asio::io_service& service()
     {
         return _ioservice;
+    }
+
+    void onClosed(TcpConnection* connection) override
+    {
+        _timer.reset();
     }
 
     /**
