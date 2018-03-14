@@ -19,19 +19,19 @@ public:
     explicit Sink(const std::string& token);
 
 protected:
-    virtual void sink_config_callback(const json&){};
+    virtual void sink_config_callback([[maybe_unused]] const json& config){};
     virtual void ready_callback() = 0;
-    virtual void data_callback(const std::string&, TimeValue tv);
-    virtual void data_callback(const std::string&, const DataChunk&);
+    virtual void data_callback(const std::string& id, TimeValue tv);
+    virtual void data_callback(const std::string& id, const DataChunk& chunk);
 
     void config_callback(const json& config) override;
 
     void close() override;
 
-private:
+protected:
     void data_callback(const AMQP::Message&);
 
-private:
+protected:
     std::unique_ptr<AMQP::TcpConnection> data_connection_;
     std::unique_ptr<AMQP::TcpChannel> data_channel_;
     std::string data_server_address_;

@@ -45,8 +45,7 @@ void Sink::config_callback(const json& config)
     data_channel_->onError(
         [](const char* message) { std::cerr << "data channel error: " << message << std::endl; });
 
-    data_channel_
-        ->declareQueue(data_queue_) //  rpc queue
+    data_channel_->declareQueue(data_queue_)
         .onSuccess([this](const std::string& name, int msgcount, int consumercount) {
             std::cerr << "setting up sink queue. msgcount: " << msgcount << ", consumercount"
                       << consumercount << std::endl;
