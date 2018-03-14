@@ -14,6 +14,12 @@ add_subdirectory(lib)
 
 set(dataheap2_VERSION 1.0)
 
+if(NOT DATAHEAP2_POSITION_INDEPENDENT_CODE)
+    set(DATAHEAP2_POSITION_INDEPENDENT_CODE OFF)
+endif()
+option(DATAHEAP2_POSITION_INDEPENDENT_CODE "Whether to build Dataheap2 libraries with position
+independent code" ${DATAHEAP2_POSITION_INDEPENDENT_CODE})
+
 
 protobuf_generate_cpp(PROTO_SRC PROTO_HEADER src/datachunk.proto)
 add_library(dataheap2-messages ${PROTO_SRC})
@@ -28,6 +34,9 @@ target_include_directories(dataheap2-messages
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
 )
 target_link_libraries(dataheap2-messages PUBLIC protobuf::libprotobuf)
+set_target_properties(dataheap2-messages PROPERTIES
+    POSITION_INDEPENDENT_CODE ${DATAHEAP2_POSITION_INDEPENDENT_CODE}
+)
 
 set(CORE_SRCS src/connection.cpp)
 set(SOURCE_SRCS src/source.cpp)
@@ -49,16 +58,29 @@ target_link_libraries(dataheap2-core
         dataheap2::messages
 )
 
+set_target_properties(dataheap2-core PROPERTIES
+    POSITION_INDEPENDENT_CODE ${DATAHEAP2_POSITION_INDEPENDENT_CODE}
+)
+
 target_compile_features(dataheap2-core PUBLIC cxx_std_17)
 
 add_library(dataheap2-source ${SOURCE_SRCS})
 target_link_libraries(dataheap2-source PUBLIC dataheap2-core)
+set_target_properties(dataheap2-source PROPERTIES
+    POSITION_INDEPENDENT_CODE ${DATAHEAP2_POSITION_INDEPENDENT_CODE}
+)
 
 add_library(dataheap2-sink ${SINK_SRCS})
 target_link_libraries(dataheap2-sink PUBLIC dataheap2-core)
+set_target_properties(dataheap2-sink PROPERTIES
+    POSITION_INDEPENDENT_CODE ${DATAHEAP2_POSITION_INDEPENDENT_CODE}
+)
 
 add_library(dataheap2-db ${DB_SRCS})
 target_link_libraries(dataheap2-db PUBLIC dataheap2-core dataheap2-sink)
+set_target_properties(dataheap2-db PROPERTIES
+    POSITION_INDEPENDENT_CODE ${DATAHEAP2_POSITION_INDEPENDENT_CODE}
+)
 
 add_library(dataheap2-all INTERFACE)
 target_link_libraries(dataheap2-all

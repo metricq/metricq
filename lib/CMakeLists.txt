@@ -27,6 +27,9 @@ target_include_directories(amqpcpp SYSTEM
 )
 target_link_libraries(amqpcpp PRIVATE pthread)
 target_compile_features(amqpcpp PUBLIC cxx_std_14)
+set_target_properties(amqpcpp PROPERTIES
+    POSITION_INDEPENDENT_CODE ${DATAHEAP2_POSITION_INDEPENDENT_CODE}
+)
 
 add_library(amqpcpp::amqpcpp ALIAS amqpcpp)
 

@@ -1,9 +1,10 @@
 #pragma once
 
-#include "hta.hpp"
+#include <dataheap2/types.hpp>
+
 #include <ostream>
 
-namespace hta
+namespace dataheap2
 {
 std::ostream& operator<<(std::ostream& os, Duration duration)
 {
@@ -17,18 +18,9 @@ std::ostream& operator<<(std::ostream& os, TimePoint tp)
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const Aggregate& aggregate)
+std::ostream& operator<<(std::ostream& os, TimeValue tv)
 {
-    os << "min: " << aggregate.minimum << ", max: " << aggregate.maximum
-       << ", mean: " << aggregate.mean() << ", count: " << aggregate.count
-       << ", active: " << aggregate.active_time;
-    return os;
-}
-
-std::ostream& operator<<(std::ostream& os, const Row& row)
-{
-    os << "[ " << row.time << " - " << row.end_time() << " ] (" << row.interval << ") "
-       << row.aggregate;
+    os << tv.time << " " << tv.value;
     return os;
 }
 }
