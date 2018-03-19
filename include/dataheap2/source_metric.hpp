@@ -24,10 +24,14 @@ public:
         return id_;
     }
 
-    void enable_chunking(size_t n)
+    /**
+     * @param n size of the chunk for automatic flushing
+     * set to 0 to do only manual flushes - use at your own risk!
+     * set to 1 to flush on every new value
+     */
+    void set_chunksize(size_t n)
     {
-        // TODO improve
-        chunk_size_ = std::max<size_t>(n, 1);
+        chunk_size_ = n;
     }
     void flush();
 

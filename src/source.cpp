@@ -81,7 +81,7 @@ void SourceMetric::send(TimeValue tv)
     chunk_.add_value(tv.value);
 
     assert(chunk_.time_delta_size() == chunk_.value_size());
-    if (chunk_.time_delta_size() == chunk_size_)
+    if (chunk_size_ && chunk_.time_delta_size() == chunk_size_)
     {
         flush();
     }
