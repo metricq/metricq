@@ -18,18 +18,27 @@ public:
         data_queue_ = queue;
     }
 
-    void add_metric(const std::string& metric)
+    void add(const std::string &metric)
     {
         metrics_.emplace_back(metric);
     }
+    template <typename T>
+    void add(const T& metrics)
+    {
+        for (const auto& metric : metrics)
+        {
+            add(metric);
+        }
+    }
 
+protected:
     void setup_complete() override;
 
 private:
     void end();
     void unsubscribe_complete(const json& response);
 
-private:
+protected:
     std::vector<std::string> metrics_;
 };
 }

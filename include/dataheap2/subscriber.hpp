@@ -10,10 +10,19 @@ namespace dataheap2
 class Subscriber : public Connection
 {
 public:
-    explicit Subscriber(const std::string& token, bool add_uuid=true);
+    explicit Subscriber(const std::string& token, bool add_uuid = true);
 
     void add(const std::string& metric);
-    const std::string& queue() const {
+    template <typename T>
+    void add(const T& metrics)
+    {
+        for (const auto& metric : metrics)
+        {
+            add(metric);
+        }
+    }
+    const std::string& queue() const
+    {
         return queue_;
     }
 
