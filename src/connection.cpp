@@ -122,7 +122,7 @@ void Connection::handle_management_message(const AMQP::Message& incoming_message
             envelope.setContentType("application/json");
 
             std::cerr << "sending reply '" << reply_message << "' to " << incoming_message.replyTo()
-                      << " / " << incoming_message.correlationID();
+                      << " / " << incoming_message.correlationID() << "\n";
             management_channel_->publish("", incoming_message.replyTo(), envelope);
         }
         else
