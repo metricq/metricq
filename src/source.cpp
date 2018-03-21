@@ -5,6 +5,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include <cstdlib>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -14,10 +15,20 @@ namespace dataheap2
 
 Source::Source(const std::string& token) : Connection(token)
 {
+    register_management_callback("discover", [token](const json& body) {
+        json response;
+        response["alive"] = true;
+        return response;
+    });
 }
 
 Source::~Source()
 {
+}
+
+void Source::setup_complete()
+{
+    rpc("source.register", [this](const auto& config) { config_callback(config); });
 }
 
 void Source::send(const std::string& id, const DataChunk& dc)
@@ -41,7 +52,7 @@ void Source::config_callback(const nlohmann::json& config)
             std::cerr << "Changing dataServerAddress on the fly is not currently supported.\n";
             std::abort();
         }
-        if (config["dataQueue"] != data_exchange_)
+        if (config["dataExchange"] != data_exchange_)
         {
             std::cerr << "Changing dataQueue on the fly is not currently supported.\n";
             std::abort();
@@ -59,9 +70,9 @@ void Source::config_callback(const nlohmann::json& config)
         std::cout << "data channel error: " << message << std::endl;
     });
 
-    if (config.find("sourceConfig") != config.end())
+    if (config.find("config") != config.end())
     {
-        source_config_callback(config["sourceConfig"]);
+        source_config_callback(config["config"]);
     }
     ready_callback();
 }

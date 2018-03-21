@@ -32,7 +32,7 @@ protected:
     virtual void setup_complete() = 0;
 
     void rpc(const std::string& function, ManagementResponseCallback callback,
-             json payload = json());
+             json payload = json({}));
     void register_management_callback(const std::string& function, ManagementCallback callback);
 
     void stop();
@@ -40,7 +40,7 @@ protected:
 
 private:
     void handle_management_message(const AMQP::Message& incoming_message, uint64_t deliveryTag,
-                                   bool redelivere);
+                                   bool redelivered);
     void handle_broadcast_message(const AMQP::Message& message);
 
 protected:
@@ -55,7 +55,8 @@ private:
     std::unique_ptr<AMQP::TcpChannel> management_channel_;
     std::unordered_map<std::string, ManagementCallback> management_callbacks_;
     std::unordered_map<std::string, ManagementResponseCallback> management_rpc_response_callbacks_;
-    std::string management_queue_;
+    std::string management_client_queue_;
+    std::string management_queue_ = "management";
     std::string management_exchange_ = "dh2.management";
     std::string management_broadcast_exchange_ = "dh2.broadcast";
 };

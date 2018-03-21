@@ -35,11 +35,12 @@ public:
     }
 
 protected:
+    void setup_complete() override;
     virtual void source_config_callback(const nlohmann::json& config) = 0;
     virtual void ready_callback() = 0;
 
 private:
-    void config_callback(const nlohmann::json& config) override;
+    void config_callback(const nlohmann::json& config);
 
 private:
     std::unique_ptr<AMQP::TcpConnection> data_connection_;

@@ -12,8 +12,6 @@
 
 namespace dataheap2
 {
-const std::string management_queue = "dh2.management";
-
 Connection::Connection(const std::string& connection_token, std::size_t concurrency_hint)
 : io_service(concurrency_hint), handler(io_service), connection_token_(connection_token)
 {
@@ -46,12 +44,11 @@ void Connection::connect(const std::string& server_address)
     management_channel_ = std::make_unique<AMQP::TcpChannel>(management_connection_.get());
     management_channel_->onError(debug_error_cb("management channel error"));
 
-    management_queue_ = std::string("client-") + connection_token_ + "-rpc";
+    management_client_queue_ = std::string("client-") + connection_token_ + "-rpc";
 
-    management_channel_->declareQueue(management_queue, AMQP::exclusive)
+    management_channel_->declareQueue(management_client_queue_, AMQP::exclusive)
         .onSuccess([this](const std::string& name, int msgcount, int consumercount) {
-            management_queue_ = name;
-            management_channel_->bindQueue(management_broadcast_exchange_, management_queue_, "#")
+            management_channel_->bindQueue(management_broadcast_exchange_, management_client_queue_, "#")
                 .onError(debug_error_cb("error binding management queue to broadcast exchange"))
                 .onSuccess([this, name]() {
                     management_channel_->consume(name)
@@ -74,19 +71,21 @@ void Connection::register_management_callback(const std::string& function, Manag
 void Connection::rpc(const std::string& function, ManagementResponseCallback response_callback,
                      json payload)
 {
+    std::cerr << "management rpc " << function << std::endl;
+    payload["function"] = function;
     std::string message = payload.dump();
-    AMQP::Envelope env(message.data(), message.size());
+    AMQP::Envelope envelope(message.data(), message.size());
 
     auto correlation_id = uuid(std::string("dh2-rpc-") + connection_token_ + "-");
-    env.setCorrelationID(correlation_id);
-    env.setAppID(connection_token_);
-    assert(!management_queue_.empty());
-    env.setReplyTo(management_queue_);
+    envelope.setCorrelationID(correlation_id);
+    envelope.setAppID(connection_token_);
+    assert(!management_client_queue_.empty());
+    envelope.setReplyTo(management_client_queue_);
 
     auto ret =
         management_rpc_response_callbacks_.emplace(correlation_id, std::move(response_callback));
     assert(ret.second);
-    management_channel_->publish(management_broadcast_exchange_, function, env);
+    management_channel_->publish(management_exchange_, function, envelope);
 }
 
 void Connection::handle_management_message(const AMQP::Message& incoming_message,
@@ -105,14 +104,15 @@ void Connection::handle_management_message(const AMQP::Message& incoming_message
         {
             // Incoming message is a RPC-response, call the response handler
             it->second(content);
+            management_rpc_response_callbacks_.erase(it);
         }
-        else if (auto it = management_callbacks_.find(incoming_message.routingkey());
+        else if (auto it = management_callbacks_.find(content["function"]);
                  it != management_callbacks_.end())
         {
             // incoming message is a RPC-call
             auto response = it->second(content);
 
-            std::string reply_message; // = response.dump();
+            std::string reply_message = response.dump();
             AMQP::Envelope env(reply_message.data(), reply_message.size());
             env.setCorrelationID(incoming_message.correlationID());
             env.setAppID(connection_token_);
@@ -121,7 +121,7 @@ void Connection::handle_management_message(const AMQP::Message& incoming_message
         else
         {
             std::cerr << "message not found as rpc response or callback." << std::endl;
-        };
+        }
     }
     catch (nlohmann::json::parse_error& e)
     {
