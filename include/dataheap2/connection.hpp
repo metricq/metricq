@@ -24,7 +24,7 @@ public:
 protected:
     using ManagementCallback = std::function<void(const json& response)>;
 
-    explicit Connection(const std::string& connection_token);
+    explicit Connection(const std::string& connection_token, std::size_t concurrency_hint = 1);
     virtual ~Connection() = 0;
 
     void connect(const std::string& server_address);

@@ -12,8 +12,8 @@ namespace dataheap2
 {
 const std::string management_queue = "managementQueue";
 
-Connection::Connection(const std::string& connection_token)
-: io_service(4), handler(io_service), connection_token_(connection_token)
+Connection::Connection(const std::string& connection_token, std::size_t concurrency_hint)
+: io_service(concurrency_hint), handler(io_service), connection_token_(connection_token)
 {
     register_management_callback("config", [this](auto& response) { config_callback(response); });
 }
