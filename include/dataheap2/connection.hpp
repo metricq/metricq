@@ -25,10 +25,14 @@ protected:
     using ManagementCallback = std::function<json(const json& response)>;
     using ManagementResponseCallback = std::function<void(const json& response)>;
 
-    explicit Connection(const std::string& connection_token, std::size_t concurrency_hint = 1);
+    explicit Connection(const std::string& connection_token, bool add_uuid = false,
+                        std::size_t concurrency_hint = 1);
     virtual ~Connection() = 0;
 
+public:
     void connect(const std::string& server_address);
+
+protected:
     virtual void setup_complete() = 0;
 
     void rpc(const std::string& function, ManagementResponseCallback callback,

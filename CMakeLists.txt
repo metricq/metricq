@@ -40,7 +40,7 @@ set_target_properties(dataheap2-messages PROPERTIES
 
 set(CORE_SRCS src/connection.cpp)
 set(SOURCE_SRCS src/source.cpp)
-set(SINK_SRCS src/sink.cpp)
+set(SINK_SRCS src/sink.cpp src/drain.cpp src/subscriber.cpp)
 set(DB_SRCS src/db.cpp)
 
 add_library(dataheap2-core ${CORE_SRCS})

@@ -2,20 +2,31 @@
 #include <dataheap2/sink.hpp>
 #include <dataheap2/types.hpp>
 
-#include <amqpcpp.h>
+#include "util.hpp"
 
-#include <nlohmann/json.hpp>
+#include <amqpcpp.h>
 
 #include <iostream>
 
 namespace dataheap2
 {
-using json = nlohmann::json;
-
-Sink::Sink(const std::string& token) : Connection(token)
+Sink::Sink(const std::string& token, bool add_uuid) : Connection(token, add_uuid)
 {
 }
 
+void Sink::setup_data_queue(const AMQP::QueueCallback& callback)
+{
+    assert(!data_server_address_.empty());
+    assert(!data_queue_.empty());
+    data_connection_ =
+        std::make_unique<AMQP::TcpConnection>(&handler, AMQP::Address(data_server_address_));
+    data_channel_ = std::make_unique<AMQP::TcpChannel>(data_connection_.get());
+    data_channel_->onError(debug_error_cb("sink data channel error"));
+
+    data_channel_->declareQueue(data_queue_).onSuccess(callback);
+}
+
+/*
 void Sink::config_callback(const json& config)
 {
     std::cerr << "sink parsing config" << std::endl;
@@ -77,14 +88,15 @@ void Sink::config_callback(const json& config)
     }
     ready_callback();
 }
+*/
 
 void Sink::data_callback(const AMQP::Message& message)
 {
     const auto& metric_name = message.routingkey();
     auto message_string = std::string(message.body(), message.bodySize());
-    datachunk_.Clear();
-    datachunk_.ParseFromString(message_string);
-    data_callback(metric_name, datachunk_);
+    data_chunk_.Clear();
+    data_chunk_.ParseFromString(message_string);
+    data_callback(metric_name, data_chunk_);
 }
 
 void Sink::data_callback(const std::string&, TimeValue)

@@ -12,8 +12,19 @@
 
 namespace dataheap2
 {
-Connection::Connection(const std::string& connection_token, std::size_t concurrency_hint)
-: io_service(concurrency_hint), handler(io_service), connection_token_(connection_token)
+static std::string make_token(const std::string& token, bool add_uuid)
+{
+    if (add_uuid)
+    {
+        return uuid(token);
+    }
+    return token;
+}
+
+Connection::Connection(const std::string& connection_token, bool add_uuid,
+                       std::size_t concurrency_hint)
+: io_service(concurrency_hint), handler(io_service),
+  connection_token_(make_token(connection_token, add_uuid))
 {
 }
 
@@ -24,16 +35,6 @@ Connection::~Connection()
 void Connection::main_loop()
 {
     io_service.run();
-}
-
-static auto debug_error_cb(const std::string& prefix)
-{
-    return [prefix](const auto& message) { std::cerr << prefix << ": " << message << std::endl; };
-}
-
-static auto debug_success_cb(const std::string& prefix)
-{
-    return [prefix]() { std::cerr << prefix << std::endl; };
 }
 
 void Connection::connect(const std::string& server_address)
@@ -72,7 +73,7 @@ void Connection::register_management_callback(const std::string& function, Manag
 void Connection::rpc(const std::string& function, ManagementResponseCallback response_callback,
                      json payload)
 {
-    std::cerr << "management rpc sent " << function << std::endl;
+    std::cerr << "management rpc sending " << function << std::endl;
     payload["function"] = function;
     std::string message = payload.dump();
     AMQP::Envelope envelope(message.data(), message.size());
@@ -87,7 +88,7 @@ void Connection::rpc(const std::string& function, ManagementResponseCallback res
     auto ret =
         management_rpc_response_callbacks_.emplace(correlation_id, std::move(response_callback));
     assert(ret.second);
-    management_channel_->publish("", function, envelope);
+    management_channel_->publish(management_exchange_, function, envelope);
 }
 
 void Connection::handle_management_message(const AMQP::Message& incoming_message,

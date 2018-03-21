@@ -1,0 +1,27 @@
+#pragma once
+
+#include <dataheap2/connection.hpp>
+
+#include <string>
+#include <vector>
+
+namespace dataheap2
+{
+class Subscriber : public Connection
+{
+public:
+    explicit Subscriber(const std::string& token, bool add_uuid=true);
+
+    void add(const std::string& metric);
+    const std::string& queue() const {
+        return queue_;
+    }
+
+protected:
+    void setup_complete() override;
+
+protected:
+    std::vector<std::string> metrics_;
+    std::string queue_;
+};
+}
