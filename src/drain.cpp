@@ -19,6 +19,7 @@ void Drain::unsubscribe_complete(const json& response)
             (void)redelivered;
             if (message.typeName() == "end")
             {
+                data_channel_->ack(deliveryTag);
                 end();
                 return;
             }
@@ -36,7 +37,9 @@ void Drain::unsubscribe_complete(const json& response)
 void Drain::end()
 {
     std::cerr << "received end message\n";
-    // don't ack the end message in case something fishy happens
+    // to avoid any stupidity, close our data connection now
+    // it will be closed once more, so what
+    data_connection_->close();
     rpc("release", [this](const auto&) { close(); }, { { "dataQueue", data_queue_ } });
 }
 
