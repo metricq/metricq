@@ -16,12 +16,6 @@ namespace dataheap2
 {
 using json = nlohmann::json;
 
-enum class MessageCoding : char
-{
-    single = 0x1,
-    chunk = 0x2,
-};
-
 class Connection
 {
 public:
