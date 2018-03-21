@@ -48,7 +48,8 @@ void Connection::connect(const std::string& server_address)
 
     management_channel_->declareQueue(management_client_queue_, AMQP::exclusive)
         .onSuccess([this](const std::string& name, int msgcount, int consumercount) {
-            management_channel_->bindQueue(management_broadcast_exchange_, management_client_queue_, "#")
+            management_channel_
+                ->bindQueue(management_broadcast_exchange_, management_client_queue_, "#")
                 .onError(debug_error_cb("error binding management queue to broadcast exchange"))
                 .onSuccess([this, name]() {
                     management_channel_->consume(name)
@@ -71,7 +72,7 @@ void Connection::register_management_callback(const std::string& function, Manag
 void Connection::rpc(const std::string& function, ManagementResponseCallback response_callback,
                      json payload)
 {
-    std::cerr << "management rpc " << function << std::endl;
+    std::cerr << "management rpc sent " << function << std::endl;
     payload["function"] = function;
     std::string message = payload.dump();
     AMQP::Envelope envelope(message.data(), message.size());
@@ -81,22 +82,23 @@ void Connection::rpc(const std::string& function, ManagementResponseCallback res
     envelope.setAppID(connection_token_);
     assert(!management_client_queue_.empty());
     envelope.setReplyTo(management_client_queue_);
+    envelope.setContentType("application/json");
 
     auto ret =
         management_rpc_response_callbacks_.emplace(correlation_id, std::move(response_callback));
     assert(ret.second);
-    management_channel_->publish(management_exchange_, function, envelope);
+    management_channel_->publish("", function, envelope);
 }
 
 void Connection::handle_management_message(const AMQP::Message& incoming_message,
                                            uint64_t deliveryTag, bool redelivered)
 {
-    std::cerr << "management message received" << std::endl;
-
     const std::string content_str(incoming_message.body(),
                                   static_cast<size_t>(incoming_message.bodySize()));
     try
     {
+        std::cerr << "management rpc response received: " << content_str << std::endl;
+
         auto content = json::parse(content_str);
 
         if (auto it = management_rpc_response_callbacks_.find(incoming_message.correlationID());
@@ -109,14 +111,19 @@ void Connection::handle_management_message(const AMQP::Message& incoming_message
         else if (auto it = management_callbacks_.find(content["function"]);
                  it != management_callbacks_.end())
         {
+            std::cerr << "management rpc call received: " << content_str << std::endl;
             // incoming message is a RPC-call
             auto response = it->second(content);
 
             std::string reply_message = response.dump();
-            AMQP::Envelope env(reply_message.data(), reply_message.size());
-            env.setCorrelationID(incoming_message.correlationID());
-            env.setAppID(connection_token_);
-            management_channel_->publish("", incoming_message.replyTo(), env);
+            AMQP::Envelope envelope(reply_message.data(), reply_message.size());
+            envelope.setCorrelationID(incoming_message.correlationID());
+            envelope.setAppID(connection_token_);
+            envelope.setContentType("application/json");
+
+            std::cerr << "sending reply '" << reply_message << "' to " << incoming_message.replyTo()
+                      << " / " << incoming_message.correlationID();
+            management_channel_->publish("", incoming_message.replyTo(), envelope);
         }
         else
         {
