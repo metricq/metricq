@@ -23,7 +23,7 @@ static std::string make_token(const std::string& token, bool add_uuid)
 
 Connection::Connection(const std::string& connection_token, bool add_uuid,
                        std::size_t concurrency_hint)
-: io_service(concurrency_hint), handler(io_service),
+: io_service(concurrency_hint), management_handler_(io_service),
   connection_token_(make_token(connection_token, add_uuid))
 {
 }
@@ -41,7 +41,7 @@ void Connection::connect(const std::string& server_address)
 {
     std::cerr << "connecting to management server: " << server_address << std::endl;
     management_connection_ =
-        std::make_unique<AMQP::TcpConnection>(&handler, AMQP::Address(server_address));
+        std::make_unique<AMQP::TcpConnection>(&management_handler_, AMQP::Address(server_address));
     management_channel_ = std::make_unique<AMQP::TcpChannel>(management_connection_.get());
     management_channel_->onError(debug_error_cb("management channel error"));
 

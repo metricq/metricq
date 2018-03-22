@@ -10,7 +10,8 @@
 
 namespace dataheap2
 {
-Sink::Sink(const std::string& token, bool add_uuid) : Connection(token, add_uuid)
+Sink::Sink(const std::string& token, bool add_uuid)
+: Connection(token, add_uuid), data_handler_(io_service)
 {
 }
 
@@ -19,7 +20,7 @@ void Sink::setup_data_queue(const AMQP::QueueCallback& callback)
     assert(!data_server_address_.empty());
     assert(!data_queue_.empty());
     data_connection_ =
-        std::make_unique<AMQP::TcpConnection>(&handler, AMQP::Address(data_server_address_));
+        std::make_unique<AMQP::TcpConnection>(&data_handler_, AMQP::Address(data_server_address_));
     data_channel_ = std::make_unique<AMQP::TcpChannel>(data_connection_.get());
     data_channel_->onError(debug_error_cb("sink data channel error"));
 

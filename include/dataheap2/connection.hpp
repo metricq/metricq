@@ -49,12 +49,12 @@ private:
 
 protected:
     asio::io_service io_service;
-    AMQP::LibAsioHandler handler;
 
 private:
     std::string connection_token_;
 
     // TODO combine & abstract to extra class
+    AMQP::LibAsioHandler management_handler_;
     std::unique_ptr<AMQP::TcpConnection> management_connection_;
     std::unique_ptr<AMQP::TcpChannel> management_channel_;
     std::unordered_map<std::string, ManagementCallback> management_callbacks_;

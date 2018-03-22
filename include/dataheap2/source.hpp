@@ -43,6 +43,7 @@ private:
     void config_callback(const nlohmann::json& config);
 
 private:
+    AMQP::LibAsioHandler data_handler_;
     std::unique_ptr<AMQP::TcpConnection> data_connection_;
     std::unique_ptr<AMQP::TcpChannel> data_channel_;
     std::string data_exchange_;

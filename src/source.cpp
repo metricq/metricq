@@ -13,7 +13,7 @@
 namespace dataheap2
 {
 
-Source::Source(const std::string& token) : Connection(token)
+Source::Source(const std::string& token) : Connection(token), data_handler_(io_service)
 {
     register_management_callback("discover", [token](const json& body) {
         json response;
@@ -63,7 +63,7 @@ void Source::config_callback(const nlohmann::json& config)
     data_exchange_ = config["dataExchange"];
 
     data_connection_ =
-        std::make_unique<AMQP::TcpConnection>(&handler, AMQP::Address(data_server_address_));
+        std::make_unique<AMQP::TcpConnection>(&data_handler_, AMQP::Address(data_server_address_));
     data_channel_ = std::make_unique<AMQP::TcpChannel>(data_connection_.get());
     data_channel_->onError([](const char* message) {
         // report error
