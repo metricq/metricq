@@ -15,6 +15,10 @@ Sink::Sink(const std::string& token, bool add_uuid)
 {
 }
 
+Sink::~Sink()
+{
+}
+
 void Sink::setup_data_queue(const AMQP::QueueCallback& callback)
 {
     assert(!data_server_address_.empty());

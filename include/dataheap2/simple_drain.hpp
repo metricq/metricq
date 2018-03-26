@@ -27,19 +27,19 @@ public:
     }
 
     /**
-     * warning this remove the entire map
+     * warning this (re)move the entire map
      */
-    std::unordered_map<std::string, std::vector<TimeValue>> get()
+    std::unordered_map<std::string, std::vector<TimeValue>>& get()
     {
-        return std::move(data_);
+        return data_;
     };
 
     /**
-     * warning this remove the vector
+     * warning this (re)moves the vector
      */
-    std::vector<TimeValue> at(const std::string& metric)
+    std::vector<TimeValue>& at(const std::string& metric)
     {
-        return std::move(data_.at(metric));
+        return data_.at(metric);
     }
 
 protected:

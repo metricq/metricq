@@ -4,6 +4,17 @@
 
 namespace dataheap2
 {
+Drain::~Drain()
+{
+}
+
+void Drain::setup_complete()
+{
+    assert(!metrics_.empty());
+    rpc("unsubscribe", [this](const auto& response) { unsubscribe_complete(response); },
+        { { "dataQueue", data_queue_ }, { "metrics", metrics_ } });
+}
+
 void Drain::unsubscribe_complete(const json& response)
 {
     assert(!data_queue_.empty());
@@ -41,12 +52,5 @@ void Drain::end()
     // it will be closed once more, so what
     data_connection_->close();
     rpc("release", [this](const auto&) { close(); }, { { "dataQueue", data_queue_ } });
-}
-
-void Drain::setup_complete()
-{
-    assert(!metrics_.empty());
-    rpc("unsubscribe", [this](const auto& response) { unsubscribe_complete(response); },
-        { { "dataQueue", data_queue_ }, { "metrics", metrics_ } });
 }
 }

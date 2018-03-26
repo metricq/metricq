@@ -17,6 +17,7 @@ public:
     {
         data_queue_ = queue;
     }
+    virtual ~Drain() = 0;
 
     void add(const std::string &metric)
     {

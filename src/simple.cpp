@@ -30,7 +30,7 @@ drain(const std::string& url, const std::string& token, const std::vector<std::s
     drain.add(metrics);
     drain.connect(url);
     drain.main_loop();
-    return drain.get();
+    return std::move(drain.get());
 }
 
 std::vector<TimeValue> drain(const std::string& url, const std::string& token,
@@ -40,6 +40,6 @@ std::vector<TimeValue> drain(const std::string& url, const std::string& token,
     drain.add(metric);
     drain.connect(url);
     drain.main_loop();
-    return drain.at(metric);
+    return std::move(drain.at(metric));
 }
 }

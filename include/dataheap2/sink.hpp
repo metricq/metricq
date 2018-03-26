@@ -14,6 +14,7 @@ class Sink : public Connection
 {
 public:
     explicit Sink(const std::string& token, bool add_uuid=false);
+    virtual ~Sink() = 0;
 
 protected:
     virtual void data_callback(const std::string& id, TimeValue tv);
