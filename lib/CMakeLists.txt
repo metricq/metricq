@@ -45,7 +45,7 @@ install(EXPORT amqpcppTargets
     NAMESPACE amqpcpp::
 )
 
-install(DIRECTORY amqpcpp/include/ amqpcpp-asio/include DESTINATION include
+install(DIRECTORY amqpcpp/include/ amqpcpp-asio/include/ DESTINATION include
         FILES_MATCHING PATTERN "*.h")
 
 add_library(asio INTERFACE)
