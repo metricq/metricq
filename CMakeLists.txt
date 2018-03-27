@@ -10,8 +10,6 @@ git_submodule_update()
 
 find_package(Protobuf 3.0 REQUIRED)
 
-add_subdirectory(lib)
-
 set(dataheap2_VERSION 1.0)
 
 if(NOT DATAHEAP2_POSITION_INDEPENDENT_CODE)
@@ -20,6 +18,7 @@ endif()
 option(DATAHEAP2_POSITION_INDEPENDENT_CODE "Whether to build Dataheap2 libraries with position
 independent code" ${DATAHEAP2_POSITION_INDEPENDENT_CODE})
 
+add_subdirectory(lib)
 
 protobuf_generate_cpp(PROTO_SRC PROTO_HEADER src/datachunk.proto)
 add_library(dataheap2-messages ${PROTO_SRC})
