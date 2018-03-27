@@ -14,6 +14,11 @@ void Db::setup_complete()
         "get_metrics", [this](const auto& response) { return get_metrics_callback(response); });
 }
 
+json Db::get_metrics_callback(const json& response)
+{
+    return {};
+}
+
 void Db::setup_history_queue(const AMQP::QueueCallback& callback)
 {
     assert(!data_server_address_.empty());
@@ -66,9 +71,10 @@ json Db::history_callback(const std::string& id, const json& content)
     return response;
 }
 
-std::vector<TimeValue> history_callback(const std::string& id, const std::string& from_timestamp,
-                                        const std::string& to_timestamp, int interval_ms,
-                                        int max_datapoints)
+std::vector<TimeValue> Db::history_callback(const std::string& id,
+                                            const std::string& from_timestamp,
+                                            const std::string& to_timestamp, int interval_ms,
+                                            int max_datapoints)
 {
     return std::vector<TimeValue>();
 }
