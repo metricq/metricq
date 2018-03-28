@@ -1,5 +1,8 @@
 add_subdirectory(json)
 
+set(FMT_INSTALL ON)
+add_subdirectory(fmt)
+
 set(AMQP_SRCS
 amqpcpp/src/array.cpp
 amqpcpp/src/channelimpl.cpp

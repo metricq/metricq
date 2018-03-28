@@ -37,7 +37,7 @@ set_target_properties(dataheap2-messages PROPERTIES
     POSITION_INDEPENDENT_CODE ${DATAHEAP2_POSITION_INDEPENDENT_CODE}
 )
 
-set(CORE_SRCS src/connection.cpp)
+set(CORE_SRCS src/connection.cpp src/log.cpp)
 set(SOURCE_SRCS src/source.cpp)
 set(SINK_SRCS src/sink.cpp src/drain.cpp src/subscriber.cpp src/simple.cpp)
 set(DB_SRCS src/db.cpp)
@@ -55,6 +55,8 @@ target_link_libraries(dataheap2-core
         amqpcpp::amqpcpp
         json::json
         dataheap2::messages
+    PRIVATE
+        fmt::fmt
 )
 
 set_target_properties(dataheap2-core PROPERTIES
@@ -64,19 +66,35 @@ set_target_properties(dataheap2-core PROPERTIES
 target_compile_features(dataheap2-core PUBLIC cxx_std_17)
 
 add_library(dataheap2-source ${SOURCE_SRCS})
-target_link_libraries(dataheap2-source PUBLIC dataheap2-core)
+target_link_libraries(dataheap2-source
+    PUBLIC
+        dataheap2-core
+    PRIVATE
+        fmt::fmt
+)
 set_target_properties(dataheap2-source PROPERTIES
     POSITION_INDEPENDENT_CODE ${DATAHEAP2_POSITION_INDEPENDENT_CODE}
 )
 
 add_library(dataheap2-sink ${SINK_SRCS})
-target_link_libraries(dataheap2-sink PUBLIC dataheap2-core)
+target_link_libraries(dataheap2-sink
+    PUBLIC
+        dataheap2-core
+    PRIVATE
+        fmt::fmt
+)
 set_target_properties(dataheap2-sink PROPERTIES
     POSITION_INDEPENDENT_CODE ${DATAHEAP2_POSITION_INDEPENDENT_CODE}
 )
 
 add_library(dataheap2-db ${DB_SRCS})
-target_link_libraries(dataheap2-db PUBLIC dataheap2-core dataheap2-sink)
+target_link_libraries(dataheap2-db
+    PUBLIC
+        dataheap2-core
+        dataheap2-sink
+    PRIVATE
+        fmt::fmt
+)
 set_target_properties(dataheap2-db PROPERTIES
     POSITION_INDEPENDENT_CODE ${DATAHEAP2_POSITION_INDEPENDENT_CODE}
 )
@@ -107,7 +125,15 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
         ${CMAKE_CURRENT_SOURCE_DIR}/include/dataheap2
         DESTINATION include
     )
-    install(TARGETS dataheap2-core dataheap2-all dataheap2-source dataheap2-sink dataheap2-messages EXPORT dataheap2Targets
+    install(
+        TARGETS
+            dataheap2-core
+            dataheap2-all
+            dataheap2-source
+            dataheap2-sink
+            dataheap2-db
+            dataheap2-messages
+        EXPORT dataheap2Targets
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         RUNTIME DESTINATION bin

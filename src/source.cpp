@@ -1,5 +1,8 @@
-#include <dataheap2/datachunk.pb.h>
 #include <dataheap2/source.hpp>
+
+#include "log.hpp"
+
+#include <dataheap2/datachunk.pb.h>
 
 #include <amqpcpp.h>
 
@@ -44,17 +47,17 @@ void Source::send(const std::string& id, TimeValue tv)
 
 void Source::config_callback(const nlohmann::json& config)
 {
-    std::cout << "Start parsing config" << std::endl;
+    log::debug("start parsing config");
     if (data_connection_)
     {
         if (config["dataServerAddress"] != data_server_address_)
         {
-            std::cerr << "Changing dataServerAddress on the fly is not currently supported.\n";
+            log::fatal("changing dataServerAddress on the fly is not currently supported");
             std::abort();
         }
         if (config["dataExchange"] != data_exchange_)
         {
-            std::cerr << "Changing dataQueue on the fly is not currently supported.\n";
+            log::fatal("changing dataQueue on the fly is not currently supported");
             std::abort();
         }
     }
@@ -67,7 +70,7 @@ void Source::config_callback(const nlohmann::json& config)
     data_channel_ = std::make_unique<AMQP::TcpChannel>(data_connection_.get());
     data_channel_->onError([](const char* message) {
         // report error
-        std::cout << "data channel error: " << message << std::endl;
+        log::error("data channel error: {}", message);
     });
 
     if (config.find("config") != config.end())

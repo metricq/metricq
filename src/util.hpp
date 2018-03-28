@@ -1,5 +1,7 @@
 #pragma once
 
+#include "log.hpp"
+
 #include <chrono>
 #include <string>
 
@@ -12,13 +14,13 @@ inline std::string uuid(const std::string& prefix)
            std::to_string(std::chrono::system_clock::now().time_since_epoch().count());
 }
 
-static auto debug_error_cb(const std::string& prefix)
+inline auto debug_error_cb(const std::string& prefix)
 {
-    return [prefix](const auto& message) { std::cerr << prefix << ": " << message << std::endl; };
+    return [prefix](const auto& message) { log::error("{}: {}", prefix, message); };
 }
 
-static auto debug_success_cb(const std::string& prefix)
+inline auto debug_success_cb(const std::string& prefix)
 {
-    return [prefix]() { std::cerr << prefix << std::endl; };
+    return [prefix]() { log::debug("{}", prefix); };
 }
 }
