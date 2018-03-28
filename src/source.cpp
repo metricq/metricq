@@ -18,7 +18,7 @@ namespace dataheap2
 
 Source::Source(const std::string& token) : Connection(token), data_handler_(io_service)
 {
-    register_management_callback("discover", [token](const json& body) {
+    register_management_callback("discover", [token](const json&) {
         json response;
         response["alive"] = true;
         return response;
