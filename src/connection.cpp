@@ -42,7 +42,7 @@ void Connection::main_loop()
 
 void Connection::connect(const std::string& server_address)
 {
-    log::error("connecting to management server: {}", server_address);
+    log::info("connecting to management server: {}", server_address);
     management_connection_ =
         std::make_unique<AMQP::TcpConnection>(&management_handler_, AMQP::Address(server_address));
     management_channel_ = std::make_unique<AMQP::TcpChannel>(management_connection_.get());

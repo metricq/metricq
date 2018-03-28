@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 
 namespace dataheap2
 {
@@ -28,6 +29,6 @@ public:
 template <typename L, typename... Args>
 inline void make_logger(Args&&... args)
 {
-    LoggerSingleton::get() = std::make_unique<L>(std::forward(args...));
+    LoggerSingleton::get() = std::make_unique<L>(std::forward<Args>(args)...);
 }
 }
