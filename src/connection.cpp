@@ -1,5 +1,8 @@
 #include <dataheap2/connection.hpp>
 
+#include <dataheap2/log.hpp>
+
+#include "log.hpp"
 #include "util.hpp"
 
 #include <amqpcpp.h>
@@ -39,7 +42,7 @@ void Connection::main_loop()
 
 void Connection::connect(const std::string& server_address)
 {
-    std::cerr << "connecting to management server: " << server_address << std::endl;
+    log::info("connecting to management server: {}", server_address);
     management_connection_ =
         std::make_unique<AMQP::TcpConnection>(&management_handler_, AMQP::Address(server_address));
     management_channel_ = std::make_unique<AMQP::TcpChannel>(management_connection_.get());
@@ -73,7 +76,7 @@ void Connection::register_management_callback(const std::string& function, Manag
 void Connection::rpc(const std::string& function, ManagementResponseCallback response_callback,
                      json payload)
 {
-    std::cerr << "management rpc sending " << function << std::endl;
+    log::debug("management rpc sending {}", function);
     payload["function"] = function;
     std::string message = payload.dump();
     AMQP::Envelope envelope(message.data(), message.size());
@@ -98,7 +101,7 @@ void Connection::handle_management_message(const AMQP::Message& incoming_message
                                   static_cast<size_t>(incoming_message.bodySize()));
     try
     {
-        std::cerr << "management rpc response received: " << content_str << std::endl;
+        log::debug("management rpc response received: {}", content_str);
 
         auto content = json::parse(content_str);
 
@@ -112,7 +115,7 @@ void Connection::handle_management_message(const AMQP::Message& incoming_message
         else if (auto it = management_callbacks_.find(content["function"]);
                  it != management_callbacks_.end())
         {
-            std::cerr << "management rpc call received: " << content_str << std::endl;
+            log::debug("management rpc call received: {}", content_str);
             // incoming message is a RPC-call
             auto response = it->second(content);
 
@@ -122,22 +125,22 @@ void Connection::handle_management_message(const AMQP::Message& incoming_message
             envelope.setAppID(connection_token_);
             envelope.setContentType("application/json");
 
-            std::cerr << "sending reply '" << reply_message << "' to " << incoming_message.replyTo()
-                      << " / " << incoming_message.correlationID() << "\n";
+            log::debug("sending reply '{}' to {} / {}", reply_message, incoming_message.replyTo(),
+                       incoming_message.correlationID());
             management_channel_->publish("", incoming_message.replyTo(), envelope);
         }
         else
         {
-            std::cerr << "message not found as rpc response or callback." << std::endl;
+            log::warn("message not found as rpc response or callback");
         }
     }
     catch (nlohmann::json::parse_error& e)
     {
-        std::cerr << "error in rpc response: parsing message: " << e.what() << std::endl;
+        log::error("error in rpc response: parsing message: {}", e.what());
     }
     catch (nlohmann::json::type_error& e)
     {
-        std::cerr << "error in rpc response: accessing parameter: " << e.what() << std::endl;
+        log::error("error in rpc response: accessing parameter: {}", e.what());
     }
 
     management_channel_->ack(deliveryTag);
@@ -147,18 +150,18 @@ void Connection::close()
 {
     if (!management_connection_)
     {
-        std::cerr << "closing connection, no management_connection up yet." << std::endl;
+        log::debug("closing connection, no management_connection up yet");
         return;
     }
     auto alive = management_connection_->close();
-    std::cerr << "closed management_connection: " << alive << "\n";
+    log::info("closed management_connection: {}", alive);
 }
 
 void Connection::stop()
 {
-    std::cerr << "requesting stop." << std::endl;
+    log::debug("requesting stop");
     close();
-    std::cerr << "stopping io_service." << std::endl;
+    log::info("stopping io_service");
     // the io_service will stop itself once all connections are closed
 }
 } // namespace dataheap2

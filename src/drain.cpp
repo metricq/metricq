@@ -1,5 +1,6 @@
 #include <dataheap2/drain.hpp>
 
+#include "log.hpp"
 #include "util.hpp"
 
 namespace dataheap2
@@ -20,8 +21,8 @@ void Drain::unsubscribe_complete(const json& response)
     assert(!data_queue_.empty());
     data_server_address_ = response["dataServerAddress"];
     setup_data_queue([this](const std::string& name, int msgcount, int consumercount) {
-        std::cerr << "setting up drain queue. msgcount: " << msgcount
-                  << ", consumercount: " << consumercount << std::endl;
+        log::notice("setting up drain queue, msgcount: {}, consumercount: {}", msgcount,
+                    consumercount);
         // we do not tolerate other consumers
         assert(consumercount == 0);
 
@@ -47,7 +48,7 @@ void Drain::unsubscribe_complete(const json& response)
 
 void Drain::end()
 {
-    std::cerr << "received end message\n";
+    log::debug("received end message");
     // to avoid any stupidity, close our data connection now
     // it will be closed once more, so what
     data_connection_->close();

@@ -25,6 +25,8 @@ protected:
     void setup_history_queue(const AMQP::QueueCallback& callback);
 
 protected:
+    virtual void db_config_callback(const json& config);
+    void config_callback(const json& response);
     void setup_complete() override;
     json get_metrics_callback(const json& response);
 

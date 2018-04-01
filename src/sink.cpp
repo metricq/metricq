@@ -2,6 +2,7 @@
 #include <dataheap2/sink.hpp>
 #include <dataheap2/types.hpp>
 
+#include "log.hpp"
 #include "util.hpp"
 
 #include <amqpcpp.h>
@@ -121,10 +122,10 @@ void Sink::close()
     Connection::close();
     if (!data_connection_)
     {
-        std::cerr << "closing sink, no data_connection up yet." << std::endl;
+        log::debug("closing sink, no data_connection up yet");
         return;
     }
     auto alive = data_connection_->close();
-    std::cerr << "closed sink data connection: " << alive << std::endl;
+    log::info("closed sink data connection: {}", alive);
 }
 } // namespace dataheap2
