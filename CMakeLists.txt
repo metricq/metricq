@@ -20,7 +20,7 @@ independent code" ${DATAHEAP2_POSITION_INDEPENDENT_CODE})
 
 add_subdirectory(lib)
 
-protobuf_generate_cpp(PROTO_SRC PROTO_HEADER src/datachunk.proto)
+protobuf_generate_cpp(PROTO_SRC PROTO_HEADER src/datachunk.proto src/history.proto)
 add_library(dataheap2-messages ${PROTO_SRC})
 # this is needed to get the generated protobuf files in a sane location :(
 add_custom_command(TARGET dataheap2-messages PRE_BUILD
