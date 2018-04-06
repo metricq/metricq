@@ -3,6 +3,10 @@ add_subdirectory(json)
 set(FMT_INSTALL ON)
 add_subdirectory(fmt)
 
+set_target_properties(fmt PROPERTIES
+    POSITION_INDEPENDENT_CODE ${DATAHEAP2_POSITION_INDEPENDENT_CODE}
+)
+
 set(AMQP_SRCS
 amqpcpp/src/array.cpp
 amqpcpp/src/channelimpl.cpp
