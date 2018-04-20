@@ -47,6 +47,7 @@ class ProtoBuildPy(build_py):
 class ProtoDevelop(develop):
     def run(self):
         self.run_command('build_py')
+        super().run()
 
 
 setup(name='dataheap2',
@@ -55,6 +56,7 @@ setup(name='dataheap2',
       python_requires=">=3.5",
       packages=['dataheap2', 'dataheap2_proto'],
       scripts=[],
-      install_requires=['aio-pika'],
+      install_requires=['aio-pika', 'protobuf'],
       cmdclass={'build_py': ProtoBuildPy, 'develop': ProtoDevelop},
-      package_dir={'': 'python', 'dataheap2_proto': 'src'})
+      package_dir={'': 'python', 'dataheap2_proto': 'src'},
+      test_suite='tests',)
