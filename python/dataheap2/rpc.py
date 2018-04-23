@@ -18,10 +18,10 @@ class RPCMeta(type):
 
 
 class RPCBase(metaclass=RPCMeta):
-    def dispatch(self, tag, *args, **kwargs):
+    async def dispatch(self, tag, *args, **kwargs):
         if tag not in self._rpc_handlers:
             raise KeyError('Missing rpc handler for {}'.format(tag))
-        return self._rpc_handlers[tag](self, *args, **kwargs)
+        return await self._rpc_handlers[tag](self, *args, **kwargs)
 
 
 def rpc(tag):

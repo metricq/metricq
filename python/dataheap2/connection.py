@@ -1,10 +1,12 @@
 import asyncio
+import json
 
 import aio_pika
 from .logging import logger
+from .rpc import rpc, RPCBase
 
 
-class Connection:
+class Connection(RPCBase):
     def __init__(self, token, rpc_url):
         self.token = token
         self.rpc_url = rpc_url
@@ -14,7 +16,9 @@ class Connection:
         self.management_channel = None
         self.management_client_queue = None
 
-        logger.info('connection object initialized {}', "ASDASDASDASD")
+        self.rpc_response_handlers = dict()
+
+        logger.info('connection object initialized')
 
     async def run(self, loop):
         logger.info("establishing rpc connection to {}", self.rpc_url)
@@ -34,4 +38,21 @@ class Connection:
         with message.process(requeue=True):
             body_str = message.body.decode()
             token = message.properties.app_id
-            logger.info('received request from {}: {}', token, body_str)
+            logger.info('received message from {}: {}', token, body_str)
+            body = json.loads(body_str)
+
+            handler = self.rpc_response_handlers.get(message.properties.correlation_id, None)
+            if not handler:
+                response = await self.dispatch(body['function'], **body)
+                if response is None:
+                    response = dict()
+                await self.management_channel.default_exchange.publish(
+                    aio_pika.Message(body=json.dumps(response).encode(),
+                                     correlation_id=message.correlation_id,
+                                     content_type="application/json"),
+                    routing_key=message.properties.reply_to
+                )
+            else:
+                # TODO add lots of sanity checks
+                await handler(**body)
+
