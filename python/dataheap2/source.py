@@ -7,12 +7,13 @@ import aio_pika
 from .logging import logger
 from . import datachunk_pb2
 from .rpc import rpc_handler
-from .connection import Connection
+from .client import Client
 from .datachunk_pb2 import DataChunk
 from .source_metric import SourceMetric
+from .types import to_timestamp
 
 
-class Source(Connection):
+class Source(Client):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.starting_time = time()
@@ -24,18 +25,18 @@ class Source(Connection):
 
         self.metrics = dict()
 
-    async def run_task(self):
-        await super().run_task()
+    async def connect(self):
+        await super().connect()
         await self.rpc('source.register', self.handle_register_response)
 
     @rpc_handler('discover')
-    async def handle_discover(self):
+    async def handle_discover(self, **kwargs):
         logger.info('responding to discover')
         t = time()
         return {
             'alive': True,
-            'uptime': t - self.starting_time,
-            'time': t,
+            'uptime': to_timestamp(t - self.starting_time),
+            'time': to_timestamp(t),
         }
 
     @rpc_handler('config')
@@ -53,7 +54,7 @@ class Source(Connection):
             name=response['dataExchange'], passive=True)
 
         if 'config' in response:
-            await self.dispatch('config', **response['config'])
+            await self.rpc_dispatch('config', **response['config'])
 
         await self.ready_callback()
         if hasattr(self, 'run_forever'):

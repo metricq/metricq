@@ -22,7 +22,7 @@ class RPCMeta(ABCMeta):
 
 
 class RPCBase(metaclass=RPCMeta):
-    async def dispatch(self, function, **kwargs):
+    async def rpc_dispatch(self, function, **kwargs):
         if function not in self._rpc_handlers:
             raise KeyError('Missing rpc handler for {}'.format(function))
         task = self._rpc_handlers[function](self, **kwargs)

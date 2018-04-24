@@ -16,7 +16,7 @@ if __name__ == "__main__":
 
 
     loop = asyncio.get_event_loop()
-    c = dataheap2.Connection("pytest", "amqp://localhost")
+    c = dataheap2.Client("pytest", "amqp://localhost")
     loop.create_task(c.run(loop))
     with aiomonitor.start_monitor(loop, locals={'connection': c}):
         loop.run_forever()
