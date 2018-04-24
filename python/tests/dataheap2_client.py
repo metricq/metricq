@@ -1,5 +1,5 @@
 #!/bin/env python3
-
+know
 import asyncio
 
 import aiomonitor
@@ -12,8 +12,6 @@ if __name__ == "__main__":
 
     dataheap2.logger.setLevel(logging.DEBUG)
     dataheap2.logger.addHandler(ch)
-
-
 
     loop = asyncio.get_event_loop()
     c = dataheap2.Client("pytest", "amqp://localhost")

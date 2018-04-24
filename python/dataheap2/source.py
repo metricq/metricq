@@ -57,14 +57,14 @@ class Source(Client):
             await self.rpc_dispatch('config', **response['config'])
 
         await self.ready_callback()
+
         if hasattr(self, 'run_forever'):
             asyncio.get_event_loop().create_task(self.run_forever())
 
         #TODO @bmario make a nice timer class
 
-    @abstractmethod
     async def ready_callback(self):
-        pass
+        logger.debug('source {} ready', self.token)
 
     def __getitem__(self, id):
         if id not in self.metrics:

@@ -38,13 +38,8 @@ class Agent(RPCBase):
         self._rpc_response_handlers = dict()
         logger.debug('Agent initialized')
 
-    @property
-    @abstractmethod
-    def name(self):
-        pass
-
     def make_correlation_id(self):
-        return 'dh2-rpc-py-{}-{}'.format(self.name, uuid.uuid4().hex)
+        return 'dh2-rpc-py-{}-{}'.format(self.token, uuid.uuid4().hex)
 
     @property
     def event_loop(self):
@@ -63,11 +58,15 @@ class Agent(RPCBase):
         self._management_connection = await aio_pika.connect_robust(self._management_url)
         self._management_channel = await self._management_connection.channel()
         self._management_agent_queue = await self._management_channel.declare_queue(
-            '{}-rpc'.format(self.name), exclusive=True)
+            '{}-rpc'.format(self.token), exclusive=True)
 
-    async def _management_consume(self):
+    async def _management_consume(self, extra_queues=[]):
         logger.info('starting RPC consume')
-        await self._management_agent_queue.consume(self.handle_management_message)
+        queues = [self._management_agent_queue] + extra_queues
+        await asyncio.wait([
+            queue.consume(self.handle_management_message)
+            for queue in queues
+        ])
 
     async def _rpc(self, function, response_callback,
                    exchange: aio_pika.Exchange, routing_key: str,
@@ -96,34 +95,40 @@ class Agent(RPCBase):
             self.event_loop.call_later(timeout, cleanup)
 
     async def handle_management_message(self, message: aio_pika.Message):
-        body = message.body.decode()
-        from_token = message.app_id
-        correlation_id = message.correlation_id.decode()
+        with message.process(requeue=True):
+            body = message.body.decode()
+            from_token = message.app_id
+            correlation_id = message.correlation_id.decode()
 
-        logger.info('received message from {}, correlation id: {}, reply_to: {}\n{}',
-                    from_token, correlation_id, message.reply_to, body)
-        arguments = json.loads(body)
-        arguments['from_token'] = from_token
+            logger.info('received message from {}, correlation id: {}, reply_to: {}\n{}',
+                        from_token, correlation_id, message.reply_to, body)
+            arguments = json.loads(body)
+            arguments['from_token'] = from_token
 
-        if 'function' in arguments:
-            logger.debug('message is an RPC')
-            response = await self.rpc_dispatch(**arguments)
-            if response is None:
-                response = dict()
-            await self._management_channel.default_exchange.publish(
-                aio_pika.Message(body=json.dumps(response).encode(),
-                                 correlation_id=correlation_id,
-                                 content_type='application/json',
-                                 app_id=self.token),
-                routing_key=message.reply_to)
-        else:
-            logger.debug('message is an RPC response')
-            try:
-                handler, cleanup = self._rpc_response_handlers[correlation_id]
-            except KeyError:
-                logger.error('received RPC response with unknown correlation id {} from {}',
-                             correlation_id, from_token)
-            if cleanup:
-                del self._rpc_response_handlers[correlation_id]
+            if 'function' in arguments:
+                logger.debug('message is an RPC')
+                response = await self.rpc_dispatch(**arguments)
+                if response is None:
+                    response = dict()
+                await self._management_channel.default_exchange.publish(
+                    aio_pika.Message(body=json.dumps(response).encode(),
+                                     correlation_id=correlation_id,
+                                     content_type='application/json',
+                                     app_id=self.token),
+                    routing_key=message.reply_to)
+            else:
+                logger.debug('message is an RPC response')
+                try:
+                    handler, cleanup = self._rpc_response_handlers[correlation_id]
+                except KeyError:
+                    logger.error('received RPC response with unknown correlation id {} from {}',
+                                 correlation_id, from_token)
+                    return
+                if cleanup:
+                    del self._rpc_response_handlers[correlation_id]
 
-            await handler(**arguments)
+                # Allow simple handlers that are not coroutines
+                # But only None to not get any confusion
+                r = handler(**arguments)
+                if r is not None:
+                    await r
