@@ -37,7 +37,7 @@ set_target_properties(dataheap2-messages PROPERTIES
     POSITION_INDEPENDENT_CODE ${DATAHEAP2_POSITION_INDEPENDENT_CODE}
 )
 
-set(CORE_SRCS src/connection.cpp src/log.cpp)
+set(CORE_SRCS src/chrono.cpp src/connection.cpp src/log.cpp)
 set(SOURCE_SRCS src/source.cpp)
 set(SINK_SRCS src/sink.cpp src/drain.cpp src/subscriber.cpp src/simple.cpp)
 set(DB_SRCS src/db.cpp)

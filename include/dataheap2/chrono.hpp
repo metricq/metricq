@@ -1,6 +1,7 @@
 #pragma once
 
 #include <chrono>
+#include <string>
 
 #include <cinttypes>
 
@@ -22,6 +23,12 @@ struct Clock
         return time_point(std::chrono::duration_cast<duration>(
             std::chrono::system_clock::now().time_since_epoch()));
     }
+    static std::string format_iso(time_point tp);
+    static std::string format(time_point tp, std::string fmt);
+    static std::time_t to_time_t(time_point tp)
+    {
+        return std::chrono::system_clock::to_time_t(tp);
+    }
 };
 
 using TimePoint = Clock::time_point;
@@ -31,4 +38,4 @@ constexpr ToDuration duration_cast(const FromDuration& dtn)
 {
     return std::chrono::duration_cast<ToDuration>(dtn);
 }
-}
+} // namespace dataheap2

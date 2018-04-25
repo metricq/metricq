@@ -1,4 +1,5 @@
 #pragma once
+#include <dataheap2/chrono.hpp>
 #include <dataheap2/connection.hpp>
 #include <dataheap2/datachunk.pb.h>
 #include <dataheap2/source_metric.hpp>

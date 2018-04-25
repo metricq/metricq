@@ -18,9 +18,12 @@ namespace dataheap2
 
 Source::Source(const std::string& token) : Connection(token), data_handler_(io_service)
 {
-    register_management_callback("discover", [token](const json&) {
+    TimePoint starting_time = Clock::now();
+    register_management_callback("discover", [token, starting_time](const json&) {
         json response;
         response["alive"] = true;
+        response["currentTime"] = Clock::format_iso(Clock::now());
+        response["startingTime"] = Clock::format_iso(starting_time);
         return response;
     });
 }
