@@ -22,7 +22,7 @@ class SourceMetric:
             await self.flush()
 
     async def flush(self):
-        await self.source.send(self.id, self.chunk)
+        await self.source._send(self.id, self.chunk)
         del self.chunk.time_delta[:]
         del self.chunk.value[:]
         self.previous_timestamp = 0

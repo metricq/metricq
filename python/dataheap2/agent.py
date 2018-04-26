@@ -10,8 +10,8 @@ from .logging import logger
 from .rpc import RPCBase
 
 
-def panic(loop, context):
-    logger.error("exception in event loop: {}".format(context['message']))
+def _panic(loop, context):
+    logger.error('[Agent] exception in event loop: {}'.format(context['message']))
     if context['exception']:
         print(context['exception'])
         # TODO figure out how to logger
@@ -20,8 +20,10 @@ def panic(loop, context):
 
 
 class Agent(RPCBase):
-    def __init__(self, token, management_url):
+    def __init__(self, token, management_url, event_loop=None):
         self.token = token
+
+        self._event_loop = event_loop
 
         self._management_url = management_url
         self._management_broadcast_exchange_name = 'dh2.broadcast'
@@ -36,32 +38,42 @@ class Agent(RPCBase):
         self._management_exchange = None
 
         self._rpc_response_handlers = dict()
-        logger.debug('Agent initialized')
+        logger.debug('[Agent] initialized')
 
     def make_correlation_id(self):
         return 'dh2-rpc-py-{}-{}'.format(self.token, uuid.uuid4().hex)
 
     @property
     def event_loop(self):
-        return asyncio.get_event_loop()
+        # TODO maybe we should instead **TRY** to get the loop of the current context
+        if self._event_loop is None:
+            self._event_loop = asyncio.new_event_loop()
+        return self._event_loop
 
-    def run(self, die_on_exception=True):
-        loop = asyncio.get_event_loop()
-        if die_on_exception:
-            loop.set_exception_handler(panic)
-        loop.create_task(self.connect())
-        loop.run_forever()
+    @event_loop.setter
+    def event_loop(self, loop):
+        assert self._event_loop is None
+        self._event_loop = loop
+
+    def run(self, exception_handler=_panic):
+        if exception_handler:
+            self.event_loop.set_exception_handler(exception_handler)
+        self.event_loop.create_task(self.connect())
+        logger.debug('[Agent] running event loop {}', self.event_loop)
+        self.event_loop.run_forever()
+        logger.debug('[Agent] run_forever completed')
 
     async def connect(self):
-        logger.info("establishing management connection to {}", self._management_url)
+        logger.info("[Agent] establishing management connection to {}", self._management_url)
 
-        self._management_connection = await aio_pika.connect_robust(self._management_url)
+        self._management_connection = await aio_pika.connect_robust(
+            self._management_url, loop=self.event_loop)
         self._management_channel = await self._management_connection.channel()
         self._management_agent_queue = await self._management_channel.declare_queue(
             '{}-rpc'.format(self.token), exclusive=True)
 
     async def _management_consume(self, extra_queues=[]):
-        logger.info('starting RPC consume')
+        logger.info('[Agent] starting RPC consume')
         queues = [self._management_agent_queue] + extra_queues
         await asyncio.wait([
             queue.consume(self.handle_management_message)
@@ -71,7 +83,7 @@ class Agent(RPCBase):
     async def _rpc(self, function, response_callback,
                    exchange: aio_pika.Exchange, routing_key: str,
                    arguments=None, timeout=10, cleanup_on_response=True):
-        logger.info('sending RPC {}, exchange: {}, rk: {}, arguments: {}',
+        logger.info('[Agent] sending RPC {}, exchange: {}, rk: {}, arguments: {}',
                     function, exchange.name, routing_key, arguments)
 
         if arguments is None:
@@ -100,13 +112,13 @@ class Agent(RPCBase):
             from_token = message.app_id
             correlation_id = message.correlation_id.decode()
 
-            logger.info('received message from {}, correlation id: {}, reply_to: {}\n{}',
+            logger.info('[Agent] received message from {}, correlation id: {}, reply_to: {}\n{}',
                         from_token, correlation_id, message.reply_to, body)
             arguments = json.loads(body)
             arguments['from_token'] = from_token
 
             if 'function' in arguments:
-                logger.debug('message is an RPC')
+                logger.debug('[Agent] message is an RPC')
                 response = await self.rpc_dispatch(**arguments)
                 if response is None:
                     response = dict()
@@ -117,12 +129,12 @@ class Agent(RPCBase):
                                      app_id=self.token),
                     routing_key=message.reply_to)
             else:
-                logger.debug('message is an RPC response')
+                logger.debug('[Agent] message is an RPC response')
                 try:
                     handler, cleanup = self._rpc_response_handlers[correlation_id]
                 except KeyError:
-                    logger.error('received RPC response with unknown correlation id {} from {}',
-                                 correlation_id, from_token)
+                    logger.error('[Agent] received RPC response with unknown correlation id {} '
+                                 'from {}', correlation_id, from_token)
                     return
                 if cleanup:
                     del self._rpc_response_handlers[correlation_id]

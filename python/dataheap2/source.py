@@ -1,6 +1,7 @@
 from abc import abstractmethod
 import asyncio
 from time import time
+import threading
 
 import aio_pika
 
@@ -31,7 +32,7 @@ class Source(Client):
 
     @rpc_handler('discover')
     async def handle_discover(self, **kwargs):
-        logger.info('responding to discover')
+        logger.info('[Source] responding to discover')
         t = time()
         return {
             'alive': True,
@@ -40,15 +41,15 @@ class Source(Client):
         }
 
     @rpc_handler('config')
-    async def handle_config(self, config):
+    async def handle_config(self, **config):
         pass
 
     async def handle_register_response(self, **response):
-        logger.info('source register response: {}', response)
+        logger.info('[Source] register response: {}', response)
         assert not self.data_connection
         self.data_server_address = response['dataServerAddress']
-        self.data_connection = await aio_pika.connect_robust(self.data_server_address,
-                                                             loop=self.event_loop)
+        self.data_connection = await aio_pika.connect_robust(
+            self.data_server_address, loop=self.event_loop)
         self.data_channel = await self.data_connection.channel()
         self.data_exchange = await self.data_channel.declare_exchange(
             name=response['dataExchange'], passive=True)
@@ -64,13 +65,25 @@ class Source(Client):
         #TODO @bmario make a nice timer class
 
     async def ready_callback(self):
-        logger.debug('source {} ready', self.token)
+        logger.debug('[Source] {} ready', self.token)
 
     def __getitem__(self, id):
         if id not in self.metrics:
             self.metrics[id] = SourceMetric(id, self)
         return self.metrics[id]
 
-    async def send(self, id, datachunk: DataChunk):
+    async def send(self, id, time, value):
+        """
+        Logical send.
+        Dispatches to the SourceMetric for chunking
+        """
+        logger.debug('[Source] send({},{},{})', id, time, value)
+        await self[id].send(time, value)
+
+    async def _send(self, id, datachunk: DataChunk):
+        """
+        Actual send of a chunk,
+        don't call from anywhere other than SourceMetric
+        """
         msg = aio_pika.Message(datachunk.SerializeToString())
         await self.data_exchange.publish(msg, routing_key=id)
