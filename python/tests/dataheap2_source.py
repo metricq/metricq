@@ -3,7 +3,9 @@ import logging
 from time import time
 
 import dataheap2
-from dataheap2.logging import logger
+from dataheap2.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class TestSource(dataheap2.Source):

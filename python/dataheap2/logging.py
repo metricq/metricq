@@ -34,6 +34,3 @@ def get_logger(name=None):
         log.handle = _handle_wrap(log.handle)
     log._newstyle = True
     return log
-
-
-logger = get_logger(__name__)

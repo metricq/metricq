@@ -3,7 +3,10 @@ from threading import Thread, Lock, Event
 import traceback
 
 from .source import Source
-from .logging import logger
+from .logging import get_logger
+from .agent import handle_exception
+
+logger = get_logger(__name__)
 
 
 class _SynchronousSource(Source):
@@ -17,16 +20,11 @@ class _SynchronousSource(Source):
 
     async def ready_callback(self):
         await super().ready_callback()
+        self.event_loop.set_exception_handler(handle_exception)
         self._ready_event.set()
 
     def _panic(self, loop, context):
-        logger.error('[_SynchronousSource] exception in event loop: {}'.format(context['message']))
-        if context['exception']:
-            print(context['exception'])
-
-        # TODO figure out how to logger
-        traceback.print_tb(context['exception'].__traceback__)
-        loop.stop()
+        handle_exception(loop, context)
 
         self.exception = context['exception']
         self._ready_event.set()
@@ -59,7 +57,7 @@ class SynchronousSource:
         self._thread.start()
         logger.debug('[SynchronousSource] spawning new thread {}', self._thread.name)
         try:
-            self._source.wait_for_ready(10)
+            self._source.wait_for_ready(60)
         except Exception as e:
             self.stop()
             raise e
@@ -71,11 +69,12 @@ class SynchronousSource:
             self._source.send(id, time, value),
             self._source.event_loop
         )
-        exception = f.exception(10) or self._source.exception
+        exception = f.exception(60)
         if exception:
             logger.error('[SynchronousSource] failed to send data {}', exception)
-            self.stop()
-            raise exception
+            # Keep going for reconnect. If you want to panic, do the following instead
+            # self.stop()
+            # raise exception
 
     def stop(self):
         logger.info('[SynchronousSource] stopping')

@@ -1,7 +1,9 @@
 import logging
 import time
 
-from dataheap2 import SynchronousSource, logger
+from dataheap2 import SynchronousSource, get_logger
+
+logger = get_logger(__name__)
 
 
 def run_source(ssource):
@@ -12,15 +14,7 @@ def run_source(ssource):
 
 
 if __name__ == '__main__':
-    formatter = logging.Formatter(fmt='%(asctime)s %(threadName)-16s %(levelname)-8s %(message)s',
-                                  datefmt='%Y-%m-%d %H:%M:%S')
-
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-    ch.setFormatter(formatter)
-
-    logger.setLevel(logging.DEBUG)
-    logger.addHandler(ch)
+    logging.basicConfig(level=logging.INFO)
 
     ssource = SynchronousSource('pySynchronousTestSource', 'amqp://localhost')
     run_source(ssource)

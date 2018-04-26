@@ -1,5 +1,7 @@
-from .logging import logger
+from .logging import get_logger
 from .agent import Agent
+
+logger = get_logger(__name__)
 
 
 class Client(Agent):

@@ -5,13 +5,15 @@ import threading
 
 import aio_pika
 
-from .logging import logger
+from .logging import get_logger
 from . import datachunk_pb2
 from .rpc import rpc_handler
 from .client import Client
 from .datachunk_pb2 import DataChunk
 from .source_metric import SourceMetric
 from .types import to_timestamp
+
+logger = get_logger(__name__)
 
 
 class Source(Client):
@@ -32,7 +34,7 @@ class Source(Client):
 
     @rpc_handler('discover')
     async def handle_discover(self, **kwargs):
-        logger.info('[Source] responding to discover')
+        logger.info('responding to discover')
         t = time()
         return {
             'alive': True,
@@ -45,11 +47,10 @@ class Source(Client):
         pass
 
     async def handle_register_response(self, **response):
-        logger.info('[Source] register response: {}', response)
+        logger.info('register response: {}', response)
         assert not self.data_connection
         self.data_server_address = response['dataServerAddress']
-        self.data_connection = await aio_pika.connect_robust(
-            self.data_server_address, loop=self.event_loop)
+        self.data_connection = await self._connect(self.data_server_address)
         self.data_channel = await self.data_connection.channel()
         self.data_exchange = await self.data_channel.declare_exchange(
             name=response['dataExchange'], passive=True)
@@ -65,7 +66,7 @@ class Source(Client):
         #TODO @bmario make a nice timer class
 
     async def ready_callback(self):
-        logger.debug('[Source] {} ready', self.token)
+        logger.debug('{} ready', self.token)
 
     def __getitem__(self, id):
         if id not in self.metrics:
@@ -77,8 +78,10 @@ class Source(Client):
         Logical send.
         Dispatches to the SourceMetric for chunking
         """
-        logger.debug('[Source] send({},{},{})', id, time, value)
-        await self[id].send(time, value)
+        logger.debug('send({},{},{})', id, time, value)
+        metric = self[id]
+        assert metric is not None
+        await metric.send(time, value)
 
     async def _send(self, id, datachunk: DataChunk):
         """
