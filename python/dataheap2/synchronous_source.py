@@ -64,17 +64,18 @@ class SynchronousSource:
 
         logger.info('[SynchronousSource] ready')
 
-    def send(self, id, time, value):
+    def send(self, id, time, value, block=True, timeout=60):
         f = asyncio.run_coroutine_threadsafe(
             self._source.send(id, time, value),
             self._source.event_loop
         )
-        exception = f.exception(60)
-        if exception:
-            logger.error('[SynchronousSource] failed to send data {}', exception)
-            # Keep going for reconnect. If you want to panic, do the following instead
-            # self.stop()
-            # raise exception
+        if block:
+            exception = f.exception(timeout)
+            if exception:
+                logger.error('[SynchronousSource] failed to send data {}', exception)
+                # Keep going for reconnect. If you want to panic, do the following instead
+                # self.stop()
+                # raise exception
 
     def stop(self):
         logger.info('[SynchronousSource] stopping')
