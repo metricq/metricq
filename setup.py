@@ -42,6 +42,7 @@ def make_proto(command):
 class ProtoBuildPy(build_py):
     def run(self):
         make_proto(self)
+        super().run()
 
 
 class ProtoDevelop(develop):
