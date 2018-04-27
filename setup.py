@@ -36,7 +36,7 @@ def make_proto(command):
             subprocess.check_call([find_protoc(), '--proto_path=' + proto_dir,
                                    '--python_out=' +
                                    out_dir,
-                                   proto_file])
+                                   os.path.join(proto_dir, proto_file)])
 
 
 class ProtoBuildPy(build_py):
