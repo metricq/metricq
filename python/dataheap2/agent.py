@@ -76,7 +76,8 @@ class Agent(RPCBase):
         logger.debug('run_forever completed')
 
     async def _connect(self, url):
-        connection = await aio_pika.connect_robust(url, loop=self.event_loop, reconnect_interval=5)
+        ssl = url.startswith("amqps")
+        connection = await aio_pika.connect_robust(url, loop=self.event_loop, reconnect_interval=5, ssl=ssl)
         # How stupid that we can't easily add the handlers *before* actually connecting.
         # We could make our own RobustConnection object, but then we loose url parsing convenience
         connection.add_reconnect_callback(self.on_reconnect)
