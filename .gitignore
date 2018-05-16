@@ -1,2 +1,6 @@
 *_pb2.py
 dataheap2.egg-info
+.eggs/
+__pycache__/
+venv/
+build/
