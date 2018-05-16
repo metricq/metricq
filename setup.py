@@ -34,8 +34,7 @@ def make_proto(command):
             out_dir = command.get_package_dir('dataheap2')
             sys.stderr.write('[protobuf] {} -> {}\n'.format(source, out_dir))
             subprocess.check_call([find_protoc(), '--proto_path=' + proto_dir,
-                                   '--python_out=' +
-                                   out_dir,
+                                   '--python_out=' + out_dir,
                                    os.path.join(proto_dir, proto_file)])
 
 
