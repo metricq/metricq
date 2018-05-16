@@ -98,7 +98,7 @@ class Agent(RPCBase):
         await asyncio.wait([
             queue.consume(self.handle_management_message)
             for queue in queues
-        ])
+        ], loop=self.event_loop)
 
     async def _rpc(self, function, response_callback,
                    exchange: aio_pika.Exchange, routing_key: str,
