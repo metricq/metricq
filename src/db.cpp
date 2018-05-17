@@ -86,8 +86,9 @@ void Db::config_callback(const json& response)
 
         data_channel_->consume(name)
             .onReceived(message_cb)
-            .onSuccess(debug_success_cb("sink data channel consume success"))
-            .onError(debug_error_cb("sink data channel consume error"));
+            .onSuccess(debug_success_cb("sink data queue consume success"))
+            .onError(debug_error_cb("sink data queue consume error"))
+            .onFinalize([]() { log::info("sink data queue consume finalize"); });
     });
 
     setup_history_queue([this](const std::string& name, int msgcount, int consumercount) {
@@ -106,8 +107,9 @@ void Db::config_callback(const json& response)
 
         data_channel_->consume(name)
             .onReceived(message_cb)
-            .onSuccess(debug_success_cb("sink data channel consume success"))
-            .onError(debug_error_cb("sink data channel consume error"));
+            .onSuccess(debug_success_cb("sink history queue consume success"))
+            .onError(debug_error_cb("sink history queue consume error"))
+            .onFinalize([]() { log::info("sink history queue consume finalize"); });
     });
 }
 } // namespace dataheap2
