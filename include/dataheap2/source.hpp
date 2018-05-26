@@ -37,6 +37,7 @@ public:
 
 protected:
     void setup_complete() override;
+    void send_metrics_list();
     virtual void source_config_callback(const nlohmann::json& config) = 0;
     virtual void ready_callback() = 0;
 

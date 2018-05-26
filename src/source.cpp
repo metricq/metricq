@@ -80,7 +80,18 @@ void Source::config_callback(const nlohmann::json& config)
     {
         source_config_callback(config["config"]);
     }
+    send_metrics_list();
     ready_callback();
+}
+
+void Source::send_metrics_list()
+{
+    json payload;
+    for (auto& metric : metrics_)
+    {
+        payload["metrics"].push_back(metric.second.id());
+    }
+    rpc("source.metrics_list", [this](const auto& config) {}, payload);
 }
 
 void SourceMetric::flush()
