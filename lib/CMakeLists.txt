@@ -7,23 +7,29 @@ set_target_properties(fmt PROPERTIES
     POSITION_INDEPENDENT_CODE ${DATAHEAP2_POSITION_INDEPENDENT_CODE}
 )
 
+find_package(OpenSSL REQUIRED)
+
 set(AMQP_SRCS
 amqpcpp/src/array.cpp
 amqpcpp/src/channelimpl.cpp
 amqpcpp/src/connectionimpl.cpp
 amqpcpp/src/deferredcancel.cpp
+amqpcpp/src/deferredconfirm.cpp
 amqpcpp/src/deferredconsumer.cpp
-amqpcpp/src/deferredconsumerbase.cpp
+amqpcpp/src/deferredextreceiver.cpp
 amqpcpp/src/deferredget.cpp
+amqpcpp/src/deferredpublisher.cpp
+amqpcpp/src/deferredreceiver.cpp
 amqpcpp/src/field.cpp
 amqpcpp/src/flags.cpp
 amqpcpp/src/receivedframe.cpp
 amqpcpp/src/table.cpp
+amqpcpp/src/linux_tcp/openssl.cpp
 amqpcpp/src/linux_tcp/tcpconnection.cpp
 amqpcpp/src/watchable.cpp
 )
 
-add_library(amqpcpp ${AMQP_SRCS})
+add_library(amqpcpp STATIC ${AMQP_SRCS})
 target_include_directories(amqpcpp SYSTEM
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/amqpcpp/src
@@ -32,7 +38,7 @@ target_include_directories(amqpcpp SYSTEM
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/amqpcpp-asio/include>
         $<INSTALL_INTERFACE:include>
 )
-target_link_libraries(amqpcpp PRIVATE pthread)
+target_link_libraries(amqpcpp PRIVATE pthread OpenSSL::SSL ${CMAKE_DL_LIBS})
 target_compile_features(amqpcpp PUBLIC cxx_std_14)
 set_target_properties(amqpcpp PROPERTIES
     POSITION_INDEPENDENT_CODE ${DATAHEAP2_POSITION_INDEPENDENT_CODE}

@@ -6,6 +6,10 @@
 #include "util.hpp"
 
 #include <amqpcpp.h>
+extern "C"
+{
+#include <openssl/ssl.h>
+}
 
 #include <nlohmann/json.hpp>
 
@@ -40,8 +44,29 @@ void Connection::main_loop()
     io_service.run();
 }
 
+static void init_ssl()
+{
+    // THIS IS NOT THREADSAFE
+    static bool is_initialized = false;
+    if (is_initialized)
+    {
+        return;
+    }
+
+    // init the SSL library (this works for openssl 1.1, for openssl 1.0 use SSL_library_init())
+    // OPENSSL_init_ssl(0, NULL);
+    SSL_library_init();
+
+    is_initialized = true;
+}
+
 void Connection::connect(const std::string& server_address)
 {
+    if (server_address.substr(0, 5) == "amqps")
+    {
+        init_ssl();
+    }
+
     log::info("connecting to management server: {}", server_address);
     management_connection_ =
         std::make_unique<AMQP::TcpConnection>(&management_handler_, AMQP::Address(server_address));
