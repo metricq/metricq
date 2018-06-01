@@ -27,7 +27,9 @@ struct Clock
     static std::string format(time_point tp, std::string fmt);
     static std::time_t to_time_t(time_point tp)
     {
-        return std::chrono::system_clock::to_time_t(tp);
+        return std::chrono::system_clock::to_time_t(std::chrono::system_clock::time_point(
+            std::chrono::duration_cast<std::chrono::system_clock::duration>(
+                tp.time_since_epoch())));
     }
 };
 
