@@ -35,7 +35,6 @@ target_include_directories(amqpcpp SYSTEM
         ${CMAKE_CURRENT_SOURCE_DIR}/amqpcpp/src
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/amqpcpp/include>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/amqpcpp-asio/include>
         $<INSTALL_INTERFACE:include>
 )
 target_link_libraries(amqpcpp PRIVATE pthread OpenSSL::SSL ${CMAKE_DL_LIBS})
@@ -58,7 +57,7 @@ install(EXPORT amqpcppTargets
     NAMESPACE amqpcpp::
 )
 
-install(DIRECTORY amqpcpp/include/ amqpcpp-asio/include/ DESTINATION include
+install(DIRECTORY amqpcpp/include/ DESTINATION include
         FILES_MATCHING PATTERN "*.h")
 
 add_library(asio INTERFACE)
