@@ -40,6 +40,7 @@ protected:
     void send_metrics_list();
     virtual void source_config_callback(const nlohmann::json& config) = 0;
     virtual void ready_callback() = 0;
+    void close() override;
 
 private:
     void config_callback(const nlohmann::json& config);

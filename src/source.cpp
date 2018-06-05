@@ -94,6 +94,18 @@ void Source::send_metrics_list()
     rpc("source.metrics_list", [this](const auto& config) {}, payload);
 }
 
+void Source::close()
+{
+    Connection::close();
+    if (!data_connection_)
+    {
+        log::debug("closing source, no data_connection up yet");
+        return;
+    }
+    auto alive = data_connection_->close();
+    log::info("closed source data connection: {}", alive);
+}
+
 void SourceMetric::flush()
 {
     source_.send(id_, chunk_);
@@ -114,4 +126,5 @@ void SourceMetric::send(TimeValue tv)
         flush();
     }
 }
+
 } // namespace dataheap2
