@@ -19,7 +19,7 @@ std::string subscribe(const std::string& url, const std::string& token,
 
 std::string subscribe(const std::string& url, const std::string& token, const std::string& metric)
 {
-    return subscribe(url, token, { metric });
+    return subscribe(url, token, std::vector<std::string>{ metric });
 }
 
 std::unordered_map<std::string, std::vector<TimeValue>>
@@ -42,4 +42,4 @@ std::vector<TimeValue> drain(const std::string& url, const std::string& token,
     drain.main_loop();
     return std::move(drain.at(metric));
 }
-}
+} // namespace dataheap2
