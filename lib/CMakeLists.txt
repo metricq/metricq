@@ -37,7 +37,13 @@ target_include_directories(amqpcpp SYSTEM
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/amqpcpp/include>
         $<INSTALL_INTERFACE:include>
 )
-target_link_libraries(amqpcpp PRIVATE pthread OpenSSL::SSL ${CMAKE_DL_LIBS})
+target_link_libraries(amqpcpp
+    PRIVATE
+        pthread
+        ${CMAKE_DL_LIBS}
+    PUBLIC
+        OpenSSL::SSL
+)
 target_compile_features(amqpcpp PUBLIC cxx_std_14)
 set_target_properties(amqpcpp PROPERTIES
     POSITION_INDEPENDENT_CODE ${DATAHEAP2_POSITION_INDEPENDENT_CODE}
