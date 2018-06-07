@@ -15,8 +15,13 @@ void Db::setup_history_queue(const AMQP::QueueCallback& callback)
     assert(!history_queue_.empty());
     if (!data_connection_)
     {
+        auto raw_data_server_address = AMQP::Address(data_server_address_);
+        auto management_address = AMQP::Address(management_address_);
         data_connection_ = std::make_unique<AMQP::TcpConnection>(
-            &data_handler_, AMQP::Address(data_server_address_));
+            &data_handler_,
+            AMQP::Address(raw_data_server_address.hostname(), raw_data_server_address.port(),
+                          management_address.login(), raw_data_server_address.vhost(),
+                          raw_data_server_address.secure()));
     }
     if (!data_channel_)
     {

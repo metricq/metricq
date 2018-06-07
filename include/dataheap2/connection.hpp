@@ -49,6 +49,7 @@ private:
 
 protected:
     asio::io_service io_service;
+    std::string management_address_;
 
 private:
     std::string connection_token_;

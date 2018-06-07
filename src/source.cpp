@@ -68,8 +68,13 @@ void Source::config_callback(const nlohmann::json& config)
     data_server_address_ = config["dataServerAddress"];
     data_exchange_ = config["dataExchange"];
 
-    data_connection_ =
-        std::make_unique<AMQP::TcpConnection>(&data_handler_, AMQP::Address(data_server_address_));
+    auto raw_data_server_address = AMQP::Address(data_server_address_);
+    auto management_address = AMQP::Address(management_address_);
+    data_connection_ = std::make_unique<AMQP::TcpConnection>(
+        &data_handler_,
+        AMQP::Address(raw_data_server_address.hostname(), raw_data_server_address.port(),
+                      management_address.login(), raw_data_server_address.vhost(),
+                      raw_data_server_address.secure()));
     data_channel_ = std::make_unique<AMQP::TcpChannel>(data_connection_.get());
     data_channel_->onError([](const char* message) {
         // report error
