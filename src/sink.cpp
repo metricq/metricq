@@ -29,7 +29,7 @@ void Sink::setup_data_queue(const AMQP::QueueCallback& callback)
     data_channel_ = std::make_unique<AMQP::TcpChannel>(data_connection_.get());
     data_channel_->onError(debug_error_cb("sink data channel error"));
 
-    data_channel_->declareQueue(data_queue_).onSuccess(callback);
+    data_channel_->declareQueue(data_queue_, AMQP::passive).onSuccess(callback);
 }
 
 /*

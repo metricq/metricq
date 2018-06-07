@@ -24,7 +24,7 @@ void Db::setup_history_queue(const AMQP::QueueCallback& callback)
         data_channel_->onError(debug_error_cb("db data channel error"));
     }
 
-    data_channel_->declareQueue(history_queue_).onSuccess(callback);
+    data_channel_->declareQueue(history_queue_, AMQP::passive).onSuccess(callback);
 }
 
 void Db::history_callback(const AMQP::Message& incoming_message)
