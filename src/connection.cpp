@@ -135,6 +135,11 @@ void Connection::handle_management_message(const AMQP::Message& incoming_message
             it != management_rpc_response_callbacks_.end())
         {
             // Incoming message is a RPC-response, call the response handler
+            if (content.count("error"))
+            {
+                log::error("management rpc failed: {}. stopping", content["error"]);
+                stop();
+            }
             it->second(content);
             management_rpc_response_callbacks_.erase(it);
         }

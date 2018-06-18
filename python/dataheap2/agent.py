@@ -102,7 +102,7 @@ class Agent(RPCBase):
 
     async def _rpc(self, function, response_callback,
                    exchange: aio_pika.Exchange, routing_key: str,
-                   arguments=None, timeout=10, cleanup_on_response=True):
+                   arguments=None, timeout=60, cleanup_on_response=True):
         logger.info('sending RPC {}, exchange: {}, rk: {}, arguments: {}',
                     function, exchange.name, routing_key, arguments)
 
@@ -139,7 +139,10 @@ class Agent(RPCBase):
 
             if 'function' in arguments:
                 logger.debug('message is an RPC')
-                response = await self.rpc_dispatch(**arguments)
+                try:
+                    response = await self.rpc_dispatch(**arguments)
+                except Exception as e:
+                    response = {'error': str(e)}
                 if response is None:
                     response = dict()
                 await self._management_channel.default_exchange.publish(
