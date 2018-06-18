@@ -141,7 +141,12 @@ void Connection::handle_management_message(const AMQP::Message& incoming_message
                            content["error"].get<std::string>());
                 stop();
             }
-            it->second(content);
+            else
+            {
+                // This may be debatable... but right now we don't want to bother the caller with
+                // error handling. We may need it in the future.
+                it->second(content);
+            }
             management_rpc_response_callbacks_.erase(it);
         }
         else if (auto it = management_callbacks_.find(content["function"]);
