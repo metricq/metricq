@@ -142,6 +142,7 @@ class Agent(RPCBase):
                 try:
                     response = await self.rpc_dispatch(**arguments)
                 except Exception as e:
+                    logger.error('error handling RPC {}: {}', arguments['function'], e)
                     response = {'error': str(e)}
                 if response is None:
                     response = dict()
