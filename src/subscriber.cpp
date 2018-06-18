@@ -1,12 +1,13 @@
 #include <dataheap2/subscriber.hpp>
 
+#include <chrono>
 #include <string>
 
 namespace dataheap2
 {
 
-Subscriber::Subscriber(const std::string& token, bool add_uuid)
-: Connection(token, add_uuid)
+Subscriber::Subscriber(const std::string& token, std::chrono::seconds timeout, bool add_uuid)
+: Connection(token, add_uuid), timeout_(timeout)
 {
 }
 
@@ -22,6 +23,6 @@ void Subscriber::setup_complete()
             queue_ = response["dataQueue"];
             stop();
         },
-        { { "metrics", metrics_ } });
+        { { "metrics", metrics_ }, { "expires", timeout_.count() } });
 }
-}
+} // namespace dataheap2

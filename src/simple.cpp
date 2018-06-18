@@ -4,12 +4,14 @@
 #include <dataheap2/simple_drain.hpp>
 #include <dataheap2/subscriber.hpp>
 
+#include <chrono>
+
 namespace dataheap2
 {
 std::string subscribe(const std::string& url, const std::string& token,
-                      const std::vector<std::string>& metrics)
+                      const std::vector<std::string>& metrics, std::chrono::seconds timeout)
 {
-    Subscriber subscriber(token);
+    Subscriber subscriber(token, timeout);
 
     subscriber.add(metrics);
     subscriber.connect(url);
@@ -17,9 +19,10 @@ std::string subscribe(const std::string& url, const std::string& token,
     return subscriber.queue();
 }
 
-std::string subscribe(const std::string& url, const std::string& token, const std::string& metric)
+std::string subscribe(const std::string& url, const std::string& token, const std::string& metric,
+                      std::chrono::seconds timeout)
 {
-    return subscribe(url, token, std::vector<std::string>{ metric });
+    return subscribe(url, token, std::vector<std::string>{ metric }, timeout);
 }
 
 std::unordered_map<std::string, std::vector<TimeValue>>
