@@ -27,7 +27,7 @@
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#include <dataheap2/chrono.hpp>
+#include <metricq/chrono.hpp>
 
 #include <iomanip>
 #include <regex>
@@ -36,9 +36,9 @@
 
 #include <ctime>
 
-namespace dataheap2
+namespace metricq
 {
-std::string Clock::format(dataheap2::Clock::time_point tp, std::string fmt)
+std::string Clock::format(metricq::Clock::time_point tp, std::string fmt)
 {
     if (fmt.find("%f") != std::string::npos)
     {
@@ -75,8 +75,8 @@ std::string Clock::format(dataheap2::Clock::time_point tp, std::string fmt)
     return buffer;
 }
 
-std::string Clock::format_iso(dataheap2::Clock::time_point tp)
+std::string Clock::format_iso(metricq::Clock::time_point tp)
 {
     return format(tp, "%Y-%m-%dT%H:%M:%S.%f%z");
 }
-} // namespace dataheap2
+} // namespace metricq

@@ -29,60 +29,47 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#include <asio/basic_waitable_timer.hpp>
-#include <asio/io_service.hpp>
+#include <metricq/datachunk.pb.h>
+#include <metricq/types.hpp>
 
-#include <functional>
-#include <system_error>
+#include <algorithm>
+#include <string>
 
-namespace dataheap2
+namespace metricq
 {
+class Source;
 
-class Timer
+class SourceMetric
 {
 public:
-    enum class TimerResult
-    {
-        repeat,
-        cancel
-    };
-
-    using Callback = std::function<TimerResult(std::error_code)>;
-
-    Timer(asio::io_service& io_service, Callback callback = Callback())
-    : timer_(io_service), callback_(callback)
+    SourceMetric(const std::string& id, Source& source) : id_(id), source_(source)
     {
     }
 
-    void start(std::chrono::microseconds interval)
+    void send(TimeValue tv);
+
+    const std::string& id() const
     {
-        interval_ = interval;
-        timer_.expires_from_now(interval);
-        timer_.async_wait([this](auto error) { this->timer_callback(error); });
+        return id_;
     }
 
-    void start(Callback callback, std::chrono::microseconds interval)
+    /**
+     * @param n size of the chunk for automatic flushing
+     * set to 0 to do only manual flushes - use at your own risk!
+     * set to 1 to flush on every new value
+     */
+    void set_chunksize(size_t n)
     {
-        callback_ = callback;
-        start(interval);
+        chunk_size_ = n;
     }
+    void flush();
 
 private:
-    void timer_callback(std::error_code err)
-    {
-        auto res = callback_(err);
+    std::string id_;
+    Source& source_;
 
-        if (res == TimerResult::repeat)
-        {
-            timer_.expires_at(timer_.expires_at() + interval_);
-            timer_.async_wait([this](auto error) { this->timer_callback(error); });
-        }
-    }
-
-private:
-    asio::basic_waitable_timer<std::chrono::system_clock> timer_;
-    Callback callback_;
-    std::chrono::microseconds interval_;
+    int chunk_size_ = 1;
+    int64_t previous_timestamp_ = 0;
+    DataChunk chunk_;
 };
-
-} // namespace dataheap2
+} // namespace metricq

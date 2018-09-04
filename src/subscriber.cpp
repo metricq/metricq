@@ -27,12 +27,12 @@
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#include <dataheap2/subscriber.hpp>
+#include <metricq/subscriber.hpp>
 
 #include <chrono>
 #include <string>
 
-namespace dataheap2
+namespace metricq
 {
 
 Subscriber::Subscriber(const std::string& token, std::chrono::seconds timeout, bool add_uuid)
@@ -54,4 +54,4 @@ void Subscriber::setup_complete()
         },
         { { "metrics", metrics_ }, { "expires", timeout_.count() } });
 }
-} // namespace dataheap2
+} // namespace metricq

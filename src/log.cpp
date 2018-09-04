@@ -33,7 +33,7 @@
 #include <memory>
 #include <string>
 
-namespace dataheap2
+namespace metricq
 {
 Logger::~Logger()
 {
@@ -43,17 +43,17 @@ class DefaultLogger : public Logger
 {
     void warn(const std::string& msg) override
     {
-        std::cerr << "[dataheap2]" << msg << "\n";
+        std::cerr << "[metricq]" << msg << "\n";
     }
 
     void error(const std::string& msg) override
     {
-        std::cerr << "[dataheap2]" << msg << "\n";
+        std::cerr << "[metricq]" << msg << "\n";
     }
 
     void fatal(const std::string& msg) override
     {
-        std::cerr << "[dataheap2]" << msg << "\n";
+        std::cerr << "[metricq]" << msg << "\n";
     }
 };
 

@@ -34,7 +34,7 @@
 #include <chrono>
 #include <string>
 
-namespace dataheap2
+namespace metricq
 {
 inline std::string uuid(const std::string& prefix)
 {

@@ -33,7 +33,7 @@
 #include <string>
 #include <utility>
 
-namespace dataheap2
+namespace metricq
 {
 class Logger
 {

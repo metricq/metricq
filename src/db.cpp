@@ -27,12 +27,12 @@
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#include <dataheap2/db.hpp>
+#include <metricq/db.hpp>
 
 #include "log.hpp"
 #include "util.hpp"
 
-namespace dataheap2
+namespace metricq
 {
 Db::Db(const std::string& token) : Sink(token)
 {
@@ -146,4 +146,4 @@ void Db::config_callback(const json& response)
             .onFinalize([]() { log::info("sink history queue consume finalize"); });
     });
 }
-} // namespace dataheap2
+} // namespace metricq

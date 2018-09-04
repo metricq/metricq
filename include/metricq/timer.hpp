@@ -29,35 +29,60 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#include <dataheap2/types.hpp>
+#include <asio/basic_waitable_timer.hpp>
+#include <asio/io_service.hpp>
 
-#include <ostream>
+#include <functional>
+#include <system_error>
 
-// USE THIS HEADER WITH CARE
-// Don't use if you have other operator<< on std::chrono::duration defined
+namespace metricq
+{
 
-// Unfortunately duration is actually a (using) std type, so we can't
-// define this in datheap2
-namespace std
+class Timer
 {
-inline std::ostream& operator<<(std::ostream& os, dataheap2::Duration duration)
-{
-    os << duration.count();
-    return os;
-}
-} // namespace std
+public:
+    enum class TimerResult
+    {
+        repeat,
+        cancel
+    };
 
-namespace dataheap2
-{
-inline std::ostream& operator<<(std::ostream& os, TimePoint tp)
-{
-    os << tp.time_since_epoch();
-    return os;
-}
+    using Callback = std::function<TimerResult(std::error_code)>;
 
-inline std::ostream& operator<<(std::ostream& os, TimeValue tv)
-{
-    os << tv.time << " " << tv.value;
-    return os;
-}
-} // namespace dataheap2
+    Timer(asio::io_service& io_service, Callback callback = Callback())
+    : timer_(io_service), callback_(callback)
+    {
+    }
+
+    void start(std::chrono::microseconds interval)
+    {
+        interval_ = interval;
+        timer_.expires_from_now(interval);
+        timer_.async_wait([this](auto error) { this->timer_callback(error); });
+    }
+
+    void start(Callback callback, std::chrono::microseconds interval)
+    {
+        callback_ = callback;
+        start(interval);
+    }
+
+private:
+    void timer_callback(std::error_code err)
+    {
+        auto res = callback_(err);
+
+        if (res == TimerResult::repeat)
+        {
+            timer_.expires_at(timer_.expires_at() + interval_);
+            timer_.async_wait([this](auto error) { this->timer_callback(error); });
+        }
+    }
+
+private:
+    asio::basic_waitable_timer<std::chrono::system_clock> timer_;
+    Callback callback_;
+    std::chrono::microseconds interval_;
+};
+
+} // namespace metricq

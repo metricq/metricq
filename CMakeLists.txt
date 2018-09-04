@@ -1,4 +1,4 @@
-project(dataheap2)
+project(metricq)
 
 cmake_minimum_required(VERSION 3.8)
 
@@ -10,31 +10,31 @@ git_submodule_update()
 
 find_package(Protobuf 3.0 REQUIRED)
 
-set(dataheap2_VERSION 1.0)
+set(metricq_VERSION 1.0)
 
-if(NOT DATAHEAP2_POSITION_INDEPENDENT_CODE)
-    set(DATAHEAP2_POSITION_INDEPENDENT_CODE OFF)
+if(NOT METRICQ_POSITION_INDEPENDENT_CODE)
+    set(METRICQ_POSITION_INDEPENDENT_CODE OFF)
 endif()
-option(DATAHEAP2_POSITION_INDEPENDENT_CODE "Whether to build Dataheap2 libraries with position
-independent code" ${DATAHEAP2_POSITION_INDEPENDENT_CODE})
+option(METRICQ_POSITION_INDEPENDENT_CODE "Whether to build MetricQ libraries with position
+independent code" ${METRICQ_POSITION_INDEPENDENT_CODE})
 
 add_subdirectory(lib)
 
 protobuf_generate_cpp(PROTO_SRC PROTO_HEADER src/datachunk.proto src/history.proto)
-add_library(dataheap2-messages ${PROTO_SRC})
+add_library(metricq-messages ${PROTO_SRC})
 # this is needed to get the generated protobuf files in a sane location :(
-add_custom_command(TARGET dataheap2-messages PRE_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/include/dataheap2
-    COMMAND ${CMAKE_COMMAND} -E copy ${PROTO_HEADER} ${CMAKE_CURRENT_BINARY_DIR}/include/dataheap2
+add_custom_command(TARGET metricq-messages PRE_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/include/metricq
+    COMMAND ${CMAKE_COMMAND} -E copy ${PROTO_HEADER} ${CMAKE_CURRENT_BINARY_DIR}/include/metricq
     COMMENT "Copy generated protobuf headers..."
 )
-target_include_directories(dataheap2-messages
+target_include_directories(metricq-messages
     INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
 )
-target_link_libraries(dataheap2-messages PUBLIC protobuf::libprotobuf)
-set_target_properties(dataheap2-messages PROPERTIES
-    POSITION_INDEPENDENT_CODE ${DATAHEAP2_POSITION_INDEPENDENT_CODE}
+target_link_libraries(metricq-messages PUBLIC protobuf::libprotobuf)
+set_target_properties(metricq-messages PROPERTIES
+    POSITION_INDEPENDENT_CODE ${METRICQ_POSITION_INDEPENDENT_CODE}
 )
 
 set(CORE_SRCS src/chrono.cpp src/connection.cpp src/log.cpp)
@@ -42,123 +42,123 @@ set(SOURCE_SRCS src/source.cpp)
 set(SINK_SRCS src/sink.cpp src/drain.cpp src/subscriber.cpp src/simple.cpp)
 set(DB_SRCS src/db.cpp)
 
-add_library(dataheap2-core ${CORE_SRCS})
-target_include_directories(dataheap2-core
+add_library(metricq-core ${CORE_SRCS})
+target_include_directories(metricq-core
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
 )
 
-target_link_libraries(dataheap2-core
+target_link_libraries(metricq-core
     PUBLIC
         asio::asio
         amqpcpp::amqpcpp
         json::json
-        dataheap2::messages
+        metricq::messages
     PRIVATE
         fmt::fmt
 )
 
-set_target_properties(dataheap2-core PROPERTIES
-    POSITION_INDEPENDENT_CODE ${DATAHEAP2_POSITION_INDEPENDENT_CODE}
+set_target_properties(metricq-core PROPERTIES
+    POSITION_INDEPENDENT_CODE ${METRICQ_POSITION_INDEPENDENT_CODE}
 )
 
-target_compile_features(dataheap2-core PUBLIC cxx_std_17)
+target_compile_features(metricq-core PUBLIC cxx_std_17)
 
-add_library(dataheap2-source ${SOURCE_SRCS})
-target_link_libraries(dataheap2-source
+add_library(metricq-source ${SOURCE_SRCS})
+target_link_libraries(metricq-source
     PUBLIC
-        dataheap2-core
+        metricq-core
     PRIVATE
         fmt::fmt
 )
-set_target_properties(dataheap2-source PROPERTIES
-    POSITION_INDEPENDENT_CODE ${DATAHEAP2_POSITION_INDEPENDENT_CODE}
+set_target_properties(metricq-source PROPERTIES
+    POSITION_INDEPENDENT_CODE ${METRICQ_POSITION_INDEPENDENT_CODE}
 )
 
-add_library(dataheap2-sink ${SINK_SRCS})
-target_link_libraries(dataheap2-sink
+add_library(metricq-sink ${SINK_SRCS})
+target_link_libraries(metricq-sink
     PUBLIC
-        dataheap2-core
+        metricq-core
     PRIVATE
         fmt::fmt
 )
-set_target_properties(dataheap2-sink PROPERTIES
-    POSITION_INDEPENDENT_CODE ${DATAHEAP2_POSITION_INDEPENDENT_CODE}
+set_target_properties(metricq-sink PROPERTIES
+    POSITION_INDEPENDENT_CODE ${METRICQ_POSITION_INDEPENDENT_CODE}
 )
 
-add_library(dataheap2-db ${DB_SRCS})
-target_link_libraries(dataheap2-db
+add_library(metricq-db ${DB_SRCS})
+target_link_libraries(metricq-db
     PUBLIC
-        dataheap2-core
-        dataheap2-sink
+        metricq-core
+        metricq-sink
     PRIVATE
         fmt::fmt
 )
-set_target_properties(dataheap2-db PROPERTIES
-    POSITION_INDEPENDENT_CODE ${DATAHEAP2_POSITION_INDEPENDENT_CODE}
+set_target_properties(metricq-db PROPERTIES
+    POSITION_INDEPENDENT_CODE ${METRICQ_POSITION_INDEPENDENT_CODE}
 )
 
-add_library(dataheap2-all INTERFACE)
-target_link_libraries(dataheap2-all
+add_library(metricq-all INTERFACE)
+target_link_libraries(metricq-all
     INTERFACE
-        dataheap2::core
-        dataheap2::source
-        dataheap2::sink
-        dateheap2::db
+        metricq::core
+        metricq::source
+        metricq::sink
+        metricq::db
 )
 
-add_library(dataheap2::dataheap2 ALIAS dataheap2-all)
-add_library(dataheap2::core ALIAS dataheap2-core)
-add_library(dataheap2::source ALIAS dataheap2-source)
-add_library(dataheap2::sink ALIAS dataheap2-sink)
-add_library(dataheap2::db ALIAS dataheap2-db)
-add_library(dataheap2::messages ALIAS dataheap2-messages)
+add_library(metricq::metricq ALIAS metricq-all)
+add_library(metricq::core ALIAS metricq-core)
+add_library(metricq::source ALIAS metricq-source)
+add_library(metricq::sink ALIAS metricq-sink)
+add_library(metricq::db ALIAS metricq-db)
+add_library(metricq::messages ALIAS metricq-messages)
 
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-    target_compile_options(dataheap2-core
+    target_compile_options(metricq-core
         INTERFACE
             -Wall -Wextra -pedantic
     )
 
     install(DIRECTORY
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/dataheap2
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/metricq
         DESTINATION include
     )
     install(
         TARGETS
-            dataheap2-core
-            dataheap2-all
-            dataheap2-source
-            dataheap2-sink
-            dataheap2-db
-            dataheap2-messages
-        EXPORT dataheap2Targets
+            metricq-core
+            metricq-all
+            metricq-source
+            metricq-sink
+            metricq-db
+            metricq-messages
+        EXPORT metricqTargets
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         RUNTIME DESTINATION bin
         INCLUDES DESTINATION include
     )
-    install(EXPORT dataheap2Targets
-        FILE dataheap2Targets.cmake
-        NAMESPACE dataheap2::
-        DESTINATION lib/cmake/dataheap2
+    install(EXPORT metricqTargets
+        FILE metricqTargets.cmake
+        NAMESPACE metricq::
+        DESTINATION lib/cmake/metricq
     )
 
     include(CMakePackageConfigHelpers)
-    write_basic_package_version_File("dataheap2ConfigVersion.cmake"
-        VERSION ${dataheap2_VERSION}
+    write_basic_package_version_File("metricqConfigVersion.cmake"
+        VERSION ${metricq_VERSION}
         COMPATIBILITY SameMajorVersion
     )
-    install(FILES "dataheap2Config.cmake" "${CMAKE_CURRENT_BINARY_DIR}/dataheap2ConfigVersion.cmake"
-        DESTINATION lib/cmake/dataheap2
+    install(FILES "metricqConfig.cmake" "${CMAKE_CURRENT_BINARY_DIR}/metricqConfigVersion.cmake"
+        DESTINATION lib/cmake/metricq
     )
 
     include(CTest)
     add_subdirectory(tests)
 else()
-    set_target_properties(dataheap2-core PROPERTIES EXCLUDE_FROM_ALL TRUE)
-    set_target_properties(dataheap2-source PROPERTIES EXCLUDE_FROM_ALL TRUE)
-    set_target_properties(dataheap2-sink PROPERTIES EXCLUDE_FROM_ALL TRUE)
-    set_target_properties(dataheap2-db PROPERTIES EXCLUDE_FROM_ALL TRUE)
+    set_target_properties(metricq-core PROPERTIES EXCLUDE_FROM_ALL TRUE)
+    set_target_properties(metricq-source PROPERTIES EXCLUDE_FROM_ALL TRUE)
+    set_target_properties(metricq-sink PROPERTIES EXCLUDE_FROM_ALL TRUE)
+    set_target_properties(metricq-db PROPERTIES EXCLUDE_FROM_ALL TRUE)
 endif()

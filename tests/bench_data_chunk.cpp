@@ -1,12 +1,12 @@
 #include "bench_data_common.hpp"
 
-#include <dataheap2/datachunk.pb.h>
+#include <metricq/datachunk.pb.h>
 
-#include <dataheap2/types.hpp>
+#include <metricq/types.hpp>
 
 #include <benchmark/benchmark.h>
 
-void generate(dataheap2::DataChunk& data_chunk, benchmark::State& state)
+void generate(metricq::DataChunk& data_chunk, benchmark::State& state)
 {
     constexpr double value = 1.0 / 3;
     int64_t time = 1519832293179227888;
@@ -27,7 +27,7 @@ void generate(dataheap2::DataChunk& data_chunk, benchmark::State& state)
 
 static void BM_generate(benchmark::State& state)
 {
-    dataheap2::DataChunk data_chunk;
+    metricq::DataChunk data_chunk;
     for (auto _ : state)
     {
         generate(data_chunk, state);
@@ -41,7 +41,7 @@ BENCHMARK(BM_generate)->Range(1, 1 << 20);
 
 static void BM_serialize(benchmark::State& state)
 {
-    dataheap2::DataChunk data_chunk;
+    metricq::DataChunk data_chunk;
     generate(data_chunk, state);
     std::string string;
     for (auto _ : state)
@@ -55,7 +55,7 @@ BENCHMARK(BM_serialize)->Range(1, 1 << 20);
 
 static void BM_parse(benchmark::State& state)
 {
-    dataheap2::DataChunk data_chunk;
+    metricq::DataChunk data_chunk;
     generate(data_chunk, state);
     std::string string;
     data_chunk.SerializeToString(&string);
@@ -70,7 +70,7 @@ BENCHMARK(BM_parse)->Range(1, 1 << 20);
 
 static void BM_foreach(benchmark::State& state)
 {
-    dataheap2::DataChunk data_chunk;
+    metricq::DataChunk data_chunk;
     generate(data_chunk, state);
     for (auto _ : state)
     {
@@ -83,7 +83,7 @@ BENCHMARK(BM_foreach)->Range(1, 1 << 20);
 
 static void BM_for(benchmark::State& state)
 {
-    dataheap2::DataChunk data_chunk;
+    metricq::DataChunk data_chunk;
     generate(data_chunk, state);
     for (auto _ : state)
     {

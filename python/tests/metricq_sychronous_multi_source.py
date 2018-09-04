@@ -30,7 +30,7 @@
 import logging
 import time
 
-from dataheap2 import SynchronousSource, logger
+from metricq import SynchronousSource, logger
 
 
 if __name__ == '__main__':

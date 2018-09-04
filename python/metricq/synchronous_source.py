@@ -81,7 +81,7 @@ class SynchronousSource:
             thread_id = SynchronousSource._tid
             SynchronousSource._tid += 1
 
-        # DataHeap2 Synchronous Source Event Loop Thread
+        # MetricQ Synchronous Source Event Loop Thread
         self._thread.name = 'DH2SSELT#{}'.format(thread_id)
         self._thread.start()
         logger.debug('[SynchronousSource] spawning new thread {}', self._thread.name)

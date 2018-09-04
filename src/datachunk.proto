@@ -28,7 +28,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 syntax = "proto3";
-package dataheap2;
+package metricq;
 
 message DataChunk {
     repeated int64 time_delta = 1;

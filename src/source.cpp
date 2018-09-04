@@ -27,11 +27,11 @@
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#include <dataheap2/source.hpp>
+#include <metricq/source.hpp>
 
 #include "log.hpp"
 
-#include <dataheap2/datachunk.pb.h>
+#include <metricq/datachunk.pb.h>
 
 #include <amqpcpp.h>
 
@@ -42,7 +42,7 @@
 #include <memory>
 #include <string>
 
-namespace dataheap2
+namespace metricq
 {
 
 Source::Source(const std::string& token) : Connection(token), data_handler_(io_service)
@@ -161,4 +161,4 @@ void SourceMetric::send(TimeValue tv)
     }
 }
 
-} // namespace dataheap2
+} // namespace metricq

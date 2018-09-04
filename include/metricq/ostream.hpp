@@ -29,22 +29,35 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#include <dataheap2/types.hpp>
+#include <metricq/types.hpp>
 
-#include <string>
-#include <unordered_map>
-#include <vector>
+#include <ostream>
 
-namespace dataheap2
+// USE THIS HEADER WITH CARE
+// Don't use if you have other operator<< on std::chrono::duration defined
+
+// Unfortunately duration is actually a (using) std type, so we can't
+// define this in datheap2
+namespace std
 {
-std::string subscribe(const std::string& url, const std::string& token,
-                      const std::vector<std::string>& metrics, std::chrono::seconds timeout);
-std::string subscribe(const std::string& url, const std::string& token, const std::string& metric,
-                      std::chrono::seconds timeout);
+inline std::ostream& operator<<(std::ostream& os, metricq::Duration duration)
+{
+    os << duration.count();
+    return os;
+}
+} // namespace std
 
-std::unordered_map<std::string, std::vector<TimeValue>>
-drain(const std::string& url, const std::string& token, const std::vector<std::string>& metrics,
-      const std::string& queue);
-std::vector<TimeValue> drain(const std::string& url, const std::string& token,
-                             const std::string& metric, const std::string& queue);
-} // namespace dataheap2
+namespace metricq
+{
+inline std::ostream& operator<<(std::ostream& os, TimePoint tp)
+{
+    os << tp.time_since_epoch();
+    return os;
+}
+
+inline std::ostream& operator<<(std::ostream& os, TimeValue tv)
+{
+    os << tv.time << " " << tv.value;
+    return os;
+}
+} // namespace metricq

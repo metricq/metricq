@@ -29,14 +29,14 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#include <dataheap2/log.hpp>
+#include <metricq/log.hpp>
 
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 
 #include <memory>
 
-namespace dataheap2
+namespace metricq
 {
 namespace log
 {

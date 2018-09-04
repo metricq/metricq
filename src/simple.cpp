@@ -27,15 +27,15 @@
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#include <dataheap2/simple.hpp>
+#include <metricq/simple.hpp>
 
-#include <dataheap2/drain.hpp>
-#include <dataheap2/simple_drain.hpp>
-#include <dataheap2/subscriber.hpp>
+#include <metricq/drain.hpp>
+#include <metricq/simple_drain.hpp>
+#include <metricq/subscriber.hpp>
 
 #include <chrono>
 
-namespace dataheap2
+namespace metricq
 {
 std::string subscribe(const std::string& url, const std::string& token,
                       const std::vector<std::string>& metrics, std::chrono::seconds timeout)
@@ -74,4 +74,4 @@ std::vector<TimeValue> drain(const std::string& url, const std::string& token,
     drain.main_loop();
     return std::move(drain.at(metric));
 }
-} // namespace dataheap2
+} // namespace metricq

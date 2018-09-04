@@ -28,60 +28,59 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
+#include <metricq/chrono.hpp>
+#include <metricq/connection.hpp>
+#include <metricq/datachunk.pb.h>
+#include <metricq/source_metric.hpp>
+#include <metricq/types.hpp>
 
-#include <dataheap2/drain.hpp>
-#include <dataheap2/ostream.hpp>
-#include <dataheap2/types.hpp>
+#include <amqpcpp.h>
 
+#include <nlohmann/json.hpp>
+
+#include <memory>
 #include <string>
-#include <unordered_map>
-#include <vector>
 
-namespace dataheap2
+namespace ev
 {
-class SimpleDrain : public Drain
+class timer;
+}
+
+namespace metricq
+{
+
+class Source : public Connection
 {
 public:
-    SimpleDrain(const std::string& token, const std::string& queue) : Drain(token, queue)
-    {
-    }
+    Source(const std::string& token);
+    ~Source();
 
-    void data_callback(const std::string& id, const dataheap2::DataChunk& chunk) override
-    {
-        auto& d = data_.at(id);
-        for (const auto& tv : chunk)
-        {
-            d.emplace_back(tv);
-        }
-    }
+    void send(const std::string& id, TimeValue tv);
+    void send(const std::string& id, const DataChunk& dc);
 
-    /**
-     * warning this (re)move the entire map
-     */
-    std::unordered_map<std::string, std::vector<TimeValue>>& get()
+    SourceMetric& operator[](const std::string& id)
     {
-        return data_;
-    };
-
-    /**
-     * warning this (re)moves the vector
-     */
-    std::vector<TimeValue>& at(const std::string& metric)
-    {
-        return data_.at(metric);
+        auto ret = metrics_.try_emplace(id, id, *this);
+        return ret.first->second;
     }
 
 protected:
-    void setup_complete() override
-    {
-        Drain::setup_complete();
-        for (const auto& metric : metrics_)
-        {
-            data_[metric];
-        }
-    }
+    void setup_complete() override;
+    void send_metrics_list();
+    virtual void source_config_callback(const nlohmann::json& config) = 0;
+    virtual void ready_callback() = 0;
+    void close() override;
 
 private:
-    std::unordered_map<std::string, std::vector<TimeValue>> data_;
+    void config_callback(const nlohmann::json& config);
+
+private:
+    AMQP::LibAsioHandler data_handler_;
+    std::unique_ptr<AMQP::TcpConnection> data_connection_;
+    std::unique_ptr<AMQP::TcpChannel> data_channel_;
+    std::string data_exchange_;
+    std::string data_server_address_;
+
+    std::unordered_map<std::string, SourceMetric> metrics_;
 };
-}
+} // namespace metricq

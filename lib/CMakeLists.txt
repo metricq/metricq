@@ -4,7 +4,7 @@ set(FMT_INSTALL ON)
 add_subdirectory(fmt)
 
 set_target_properties(fmt PROPERTIES
-    POSITION_INDEPENDENT_CODE ${DATAHEAP2_POSITION_INDEPENDENT_CODE}
+    POSITION_INDEPENDENT_CODE ${METRICQ_POSITION_INDEPENDENT_CODE}
 )
 
 find_package(OpenSSL REQUIRED)
@@ -46,7 +46,7 @@ target_link_libraries(amqpcpp
 )
 target_compile_features(amqpcpp PUBLIC cxx_std_14)
 set_target_properties(amqpcpp PROPERTIES
-    POSITION_INDEPENDENT_CODE ${DATAHEAP2_POSITION_INDEPENDENT_CODE}
+    POSITION_INDEPENDENT_CODE ${METRICQ_POSITION_INDEPENDENT_CODE}
 )
 
 add_library(amqpcpp::amqpcpp ALIAS amqpcpp)

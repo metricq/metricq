@@ -27,9 +27,9 @@
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#include <dataheap2/datachunk.pb.h>
-#include <dataheap2/sink.hpp>
-#include <dataheap2/types.hpp>
+#include <metricq/datachunk.pb.h>
+#include <metricq/sink.hpp>
+#include <metricq/types.hpp>
 
 #include "log.hpp"
 #include "util.hpp"
@@ -38,7 +38,7 @@
 
 #include <iostream>
 
-namespace dataheap2
+namespace metricq
 {
 Sink::Sink(const std::string& token, bool add_uuid)
 : Connection(token, add_uuid), data_handler_(io_service)
@@ -162,4 +162,4 @@ void Sink::close()
     auto alive = data_connection_->close();
     log::info("closed sink data connection: {}", alive);
 }
-} // namespace dataheap2
+} // namespace metricq

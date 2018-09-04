@@ -41,7 +41,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace dataheap2
+namespace metricq
 {
 using json = nlohmann::json;
 
@@ -94,4 +94,4 @@ private:
     std::string management_exchange_ = "dh2.management";
     std::string management_broadcast_exchange_ = "dh2.broadcast";
 };
-} // namespace dataheap2
+} // namespace metricq

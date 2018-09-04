@@ -27,9 +27,9 @@
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#include <dataheap2/connection.hpp>
+#include <metricq/connection.hpp>
 
-#include <dataheap2/log.hpp>
+#include <metricq/log.hpp>
 
 #include "log.hpp"
 #include "util.hpp"
@@ -46,7 +46,7 @@ extern "C"
 #include <memory>
 #include <string>
 
-namespace dataheap2
+namespace metricq
 {
 static std::string make_token(const std::string& token, bool add_uuid)
 {
@@ -230,4 +230,4 @@ void Connection::stop()
     log::info("stopping io_service");
     // the io_service will stop itself once all connections are closed
 }
-} // namespace dataheap2
+} // namespace metricq

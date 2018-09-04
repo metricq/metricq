@@ -27,41 +27,58 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-import asyncio
-import logging
-from time import time
+import unittest
 
-import dataheap2
-from dataheap2.logging import get_logger
-
-logger = get_logger(__name__)
+from metricq.rpc import RPCBase, rpc
 
 
-class TestSource(dataheap2.Source):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.period = None
+class RPCSimple(RPCBase):
+    def __init__(self, number):
+        self.number = number
 
-    @dataheap2.rpc_handler('config')
-    async def handle_config(self, **config):
-        dataheap2.logger.info('test config {}', config)
-        self.period = 1 / config['frequency']
+    @rpc("test")
+    def handle_test(self):
+        return self.number
 
-    async def ready_callback(self):
-        logger.info('TestSource ready')
-
-    async def run_forever(self):
-        while True:
-            await self['dummyMetric'].send(time(), 42)
-            await asyncio.sleep(self.period)
+    @rpc("toast")
+    def handle_toast(self, name):
+        return self.number * name
 
 
-if __name__ == '__main__':
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
+class RPCSub(RPCSimple):
+    def __init__(self, number):
+        self.number = number
 
-    logger.setLevel(logging.DEBUG)
-    logger.addHandler(ch)
+    @rpc("sub")
+    def handle_sub(self):
+        return self.number * 2
 
-    src = TestSource('pyTestSource', 'amqp://localhost')
-    src.run()
+
+class RPCOther(RPCBase):
+    @rpc("foo")
+    def handle_foo(self):
+        return "foo"
+
+
+class TestRPC(unittest.TestCase):
+    def test_basic(self):
+        x = RPCSimple(1)
+        self.assertEqual(x.dispatch('test'), 1)
+        self.assertEqual(x.dispatch('toast', 'x'), 'x')
+
+    def test_separate(self):
+        xx = RPCSimple(2)
+        self.assertEqual(xx.dispatch('test'), 2)
+        self.assertEqual(xx.dispatch('toast', 'x'), 'xx')
+
+    def test_sub(self):
+        s = RPCSub(3)
+        self.assertEqual(s.dispatch('test'), 3)
+        self.assertEqual(s.dispatch('toast', 'x'), 'xxx')
+        self.assertEqual(s.dispatch('sub'), 6)
+
+    def test_other(self):
+        o = RPCOther()
+        self.assertEqual(o.dispatch('foo'), 'foo')
+        with self.assertRaises(KeyError):
+            o.dispatch('test')

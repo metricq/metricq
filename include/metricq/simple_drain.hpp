@@ -29,33 +29,59 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#include <dataheap2/history.pb.h>
-#include <dataheap2/sink.hpp>
+#include <metricq/drain.hpp>
+#include <metricq/ostream.hpp>
+#include <metricq/types.hpp>
 
-#include <nlohmann/json_fwd.hpp>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
-namespace dataheap2
+namespace metricq
 {
-using json = nlohmann::json;
-
-class Db : public Sink
+class SimpleDrain : public Drain
 {
 public:
-    Db(const std::string& token);
+    SimpleDrain(const std::string& token, const std::string& queue) : Drain(token, queue)
+    {
+    }
+
+    void data_callback(const std::string& id, const metricq::DataChunk& chunk) override
+    {
+        auto& d = data_.at(id);
+        for (const auto& tv : chunk)
+        {
+            d.emplace_back(tv);
+        }
+    }
+
+    /**
+     * warning this (re)move the entire map
+     */
+    std::unordered_map<std::string, std::vector<TimeValue>>& get()
+    {
+        return data_;
+    };
+
+    /**
+     * warning this (re)moves the vector
+     */
+    std::vector<TimeValue>& at(const std::string& metric)
+    {
+        return data_.at(metric);
+    }
 
 protected:
-    virtual HistoryResponse history_callback(const std::string& id, const HistoryRequest& content);
+    void setup_complete() override
+    {
+        Drain::setup_complete();
+        for (const auto& metric : metrics_)
+        {
+            data_[metric];
+        }
+    }
 
-protected:
-    void history_callback(const AMQP::Message&);
-    void setup_history_queue(const AMQP::QueueCallback& callback);
-    virtual void db_config_callback(const json& config);
-    void config_callback(const json& response);
-    void setup_complete() override;
-
-protected:
-    std::string history_queue_;
-    // Stored permanently to avoid expensive allocations
-    HistoryRequest history_request_;
+private:
+    std::unordered_map<std::string, std::vector<TimeValue>> data_;
 };
-} // namespace dataheap2
+}

@@ -29,47 +29,39 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#include <dataheap2/datachunk.pb.h>
-#include <dataheap2/types.hpp>
+#include <metricq/connection.hpp>
+#include <metricq/datachunk.pb.h>
+#include <metricq/types.hpp>
 
-#include <algorithm>
+#include <memory>
 #include <string>
 
-namespace dataheap2
+namespace metricq
 {
-class Source;
 
-class SourceMetric
+class Sink : public Connection
 {
 public:
-    SourceMetric(const std::string& id, Source& source) : id_(id), source_(source)
-    {
-    }
+    explicit Sink(const std::string& token, bool add_uuid=false);
+    virtual ~Sink() = 0;
 
-    void send(TimeValue tv);
+protected:
+    virtual void data_callback(const std::string& id, TimeValue tv);
+    virtual void data_callback(const std::string& id, const DataChunk& chunk);
 
-    const std::string& id() const
-    {
-        return id_;
-    }
+    void close() override;
 
-    /**
-     * @param n size of the chunk for automatic flushing
-     * set to 0 to do only manual flushes - use at your own risk!
-     * set to 1 to flush on every new value
-     */
-    void set_chunksize(size_t n)
-    {
-        chunk_size_ = n;
-    }
-    void flush();
+protected:
+    void data_callback(const AMQP::Message&);
+    void setup_data_queue(const AMQP::QueueCallback& callback);
 
-private:
-    std::string id_;
-    Source& source_;
-
-    int chunk_size_ = 1;
-    int64_t previous_timestamp_ = 0;
-    DataChunk chunk_;
+protected:
+    AMQP::LibAsioHandler data_handler_;
+    std::unique_ptr<AMQP::TcpConnection> data_connection_;
+    std::unique_ptr<AMQP::TcpChannel> data_channel_;
+    std::string data_server_address_;
+    std::string data_queue_;
+    // Stored permanently to avoid expensive allocations
+    DataChunk data_chunk_;
 };
-} // namespace dataheap2
+} // namespace metricq

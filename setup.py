@@ -24,14 +24,14 @@ def find_protoc():
 
 
 def make_proto(command):
-    proto_dir = command.get_package_dir('dataheap2_proto')
+    proto_dir = command.get_package_dir('metricq_proto')
     print('[protobuf] {}\n'.format(proto_dir))
     for proto_file in filter(lambda x: x.endswith('.proto'), os.listdir(proto_dir)):
         source = os.path.join(proto_dir, proto_file)
         out_file = source.replace('.proto', '_pb2.py')
 
         if not os.path.exists(out_file) or os.path.getmtime(source) > os.path.getmtime(out_file):
-            out_dir = command.get_package_dir('dataheap2')
+            out_dir = command.get_package_dir('metricq')
             sys.stderr.write('[protobuf] {} -> {}\n'.format(source, out_dir))
             subprocess.check_call([find_protoc(), '--proto_path=' + proto_dir,
                                    '--python_out=' + out_dir,
@@ -50,13 +50,13 @@ class ProtoDevelop(develop):
         super().run()
 
 
-setup(name='dataheap2',
+setup(name='metricq',
       version='0.0',
       author='TU Dresden',
       python_requires=">=3.5",
-      packages=['dataheap2', 'dataheap2_proto'],
+      packages=['metricq', 'metricq_proto'],
       scripts=[],
       install_requires=['aio-pika', 'protobuf'],
       cmdclass={'build_py': ProtoBuildPy, 'develop': ProtoDevelop},
-      package_dir={'': 'python', 'dataheap2_proto': 'src'},
+      package_dir={'': 'python', 'metricq_proto': 'src'},
       test_suite='tests',)

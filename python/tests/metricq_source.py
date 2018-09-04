@@ -1,4 +1,3 @@
-#!/bin/env python3
 # Copyright (c) 2018, ZIH,
 # Technische Universitaet Dresden,
 # Federal Republic of Germany
@@ -28,22 +27,41 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-know
 import asyncio
-
-import aiomonitor
-import dataheap2
 import logging
+from time import time
 
-if __name__ == "__main__":
+import metricq
+from metricq.logging import get_logger
+
+logger = get_logger(__name__)
+
+
+class TestSource(metricq.Source):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.period = None
+
+    @metricq.rpc_handler('config')
+    async def handle_config(self, **config):
+        metricq.logger.info('test config {}', config)
+        self.period = 1 / config['frequency']
+
+    async def ready_callback(self):
+        logger.info('TestSource ready')
+
+    async def run_forever(self):
+        while True:
+            await self['dummyMetric'].send(time(), 42)
+            await asyncio.sleep(self.period)
+
+
+if __name__ == '__main__':
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)
 
-    dataheap2.logger.setLevel(logging.DEBUG)
-    dataheap2.logger.addHandler(ch)
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(ch)
 
-    loop = asyncio.get_event_loop()
-    c = dataheap2.Client("pytest", "amqp://localhost")
-    loop.create_task(c.run(loop))
-    with aiomonitor.start_monitor(loop, locals={'connection': c}):
-        loop.run_forever()
+    src = TestSource('pyTestSource', 'amqp://localhost')
+    src.run()

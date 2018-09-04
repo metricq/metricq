@@ -1,16 +1,16 @@
 #pragma once
 
-#include <dataheap2/datachunk.pb.h>
+#include <metricq/datachunk.pb.h>
 
-#include <dataheap2/types.hpp>
+#include <metricq/types.hpp>
 
 double consume_sum = 0;
-void consume(dataheap2::TimeValue tv)
+void consume(metricq::TimeValue tv)
 {
     consume_sum += tv.value;
 }
 
-void consume_for(const dataheap2::DataChunk& data_chunk)
+void consume_for(const metricq::DataChunk& data_chunk)
 {
     for (const auto& elem : data_chunk)
     {
@@ -18,7 +18,7 @@ void consume_for(const dataheap2::DataChunk& data_chunk)
     }
 }
 
-void consume_foreach(const dataheap2::DataChunk& data_chunk)
+void consume_foreach(const metricq::DataChunk& data_chunk)
 {
-    data_chunk_foreach(data_chunk, [](dataheap2::TimeValue tv) { consume(tv); });
+    data_chunk_foreach(data_chunk, [](metricq::TimeValue tv) { consume(tv); });
 }

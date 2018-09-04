@@ -28,47 +28,34 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
-#include <dataheap2/sink.hpp>
+
+#include <metricq/history.pb.h>
+#include <metricq/sink.hpp>
 
 #include <nlohmann/json_fwd.hpp>
 
-#include <string>
-#include <vector>
-
-namespace dataheap2
+namespace metricq
 {
 using json = nlohmann::json;
 
-class Drain : public Sink
+class Db : public Sink
 {
 public:
-    Drain(const std::string& token, const std::string& queue) : Sink(token, true)
-    {
-        data_queue_ = queue;
-    }
-    virtual ~Drain() = 0;
-
-    void add(const std::string &metric)
-    {
-        metrics_.emplace_back(metric);
-    }
-    template <typename T>
-    void add(const T& metrics)
-    {
-        for (const auto& metric : metrics)
-        {
-            add(metric);
-        }
-    }
+    Db(const std::string& token);
 
 protected:
+    virtual HistoryResponse history_callback(const std::string& id, const HistoryRequest& content);
+
+protected:
+    void history_callback(const AMQP::Message&);
+    void setup_history_queue(const AMQP::QueueCallback& callback);
+    virtual void db_config_callback(const json& config);
+    void config_callback(const json& response);
     void setup_complete() override;
 
-private:
-    void end();
-    void unsubscribe_complete(const json& response);
-
 protected:
-    std::vector<std::string> metrics_;
+    std::string history_queue_;
+    // Stored permanently to avoid expensive allocations
+    HistoryRequest history_request_;
 };
-}
+} // namespace metricq

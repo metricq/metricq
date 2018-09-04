@@ -1,6 +1,6 @@
-#include <dataheap2/datachunk.pb.h>
+#include <metricq/datachunk.pb.h>
 
-#include <dataheap2/types.hpp>
+#include <metricq/types.hpp>
 
 #include <iostream>
 
@@ -13,7 +13,7 @@ int main()
         std::cout << "For timestamp distance " << distance << "\n";
         for (int count = 1; count <= 1 << 20; count *= 8)
         {
-            dataheap2::DataChunk data_chunk;
+            metricq::DataChunk data_chunk;
             for (int i = 0; i < count; i++)
             {
                 if (i == 0)

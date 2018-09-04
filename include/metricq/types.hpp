@@ -29,10 +29,10 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#include <dataheap2/chrono.hpp>
-#include <dataheap2/datachunk.pb.h>
+#include <metricq/chrono.hpp>
+#include <metricq/datachunk.pb.h>
 
-namespace dataheap2
+namespace metricq
 {
 using Value = double;
 
@@ -61,7 +61,7 @@ void data_chunk_foreach(const DataChunk& dc, T cb)
     for (const auto& time_delta : dc.time_delta())
     {
         timestamp += time_delta;
-        cb(dataheap2::TimeValue(dataheap2::TimePoint(dataheap2::Duration(timestamp)), *value_iter));
+        cb(metricq::TimeValue(metricq::TimePoint(metricq::Duration(timestamp)), *value_iter));
         value_iter++;
     }
 }
@@ -76,9 +76,9 @@ public:
     {
     }
 
-    dataheap2::TimeValue operator*() const
+    metricq::TimeValue operator*() const
     {
-        return { dataheap2::TimePoint(dataheap2::Duration(timestamp + *iter_time)), *iter_value };
+        return { metricq::TimePoint(metricq::Duration(timestamp + *iter_time)), *iter_value };
     }
 
     DataChunkIter& operator++()
@@ -109,4 +109,4 @@ inline DataChunkIter end(const DataChunk& dc)
 {
     return { dc.time_delta().end(), dc.value().end() };
 }
-} // namespace dataheap2
+} // namespace metricq

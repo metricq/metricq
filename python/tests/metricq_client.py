@@ -1,3 +1,4 @@
+#!/bin/env python3
 # Copyright (c) 2018, ZIH,
 # Technische Universitaet Dresden,
 # Federal Republic of Germany
@@ -27,58 +28,22 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-import unittest
+know
+import asyncio
 
-from dataheap2.rpc import RPCBase, rpc
+import aiomonitor
+import metricq
+import logging
 
+if __name__ == "__main__":
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
 
-class RPCSimple(RPCBase):
-    def __init__(self, number):
-        self.number = number
+    metricq.logger.setLevel(logging.DEBUG)
+    metricq.logger.addHandler(ch)
 
-    @rpc("test")
-    def handle_test(self):
-        return self.number
-
-    @rpc("toast")
-    def handle_toast(self, name):
-        return self.number * name
-
-
-class RPCSub(RPCSimple):
-    def __init__(self, number):
-        self.number = number
-
-    @rpc("sub")
-    def handle_sub(self):
-        return self.number * 2
-
-
-class RPCOther(RPCBase):
-    @rpc("foo")
-    def handle_foo(self):
-        return "foo"
-
-
-class TestRPC(unittest.TestCase):
-    def test_basic(self):
-        x = RPCSimple(1)
-        self.assertEqual(x.dispatch('test'), 1)
-        self.assertEqual(x.dispatch('toast', 'x'), 'x')
-
-    def test_separate(self):
-        xx = RPCSimple(2)
-        self.assertEqual(xx.dispatch('test'), 2)
-        self.assertEqual(xx.dispatch('toast', 'x'), 'xx')
-
-    def test_sub(self):
-        s = RPCSub(3)
-        self.assertEqual(s.dispatch('test'), 3)
-        self.assertEqual(s.dispatch('toast', 'x'), 'xxx')
-        self.assertEqual(s.dispatch('sub'), 6)
-
-    def test_other(self):
-        o = RPCOther()
-        self.assertEqual(o.dispatch('foo'), 'foo')
-        with self.assertRaises(KeyError):
-            o.dispatch('test')
+    loop = asyncio.get_event_loop()
+    c = metricq.Client("pytest", "amqp://localhost")
+    loop.create_task(c.run(loop))
+    with aiomonitor.start_monitor(loop, locals={'connection': c}):
+        loop.run_forever()
