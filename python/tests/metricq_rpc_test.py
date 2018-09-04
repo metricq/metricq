@@ -29,18 +29,18 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import unittest
 
-from metricq.rpc import RPCBase, rpc
+from metricq.rpc import RPCBase, rpc_handler
 
 
 class RPCSimple(RPCBase):
     def __init__(self, number):
         self.number = number
 
-    @rpc("test")
+    @rpc_handler("test")
     def handle_test(self):
         return self.number
 
-    @rpc("toast")
+    @rpc_handler("toast")
     def handle_toast(self, name):
         return self.number * name
 
@@ -49,13 +49,13 @@ class RPCSub(RPCSimple):
     def __init__(self, number):
         self.number = number
 
-    @rpc("sub")
+    @rpc_handler("sub")
     def handle_sub(self):
         return self.number * 2
 
 
 class RPCOther(RPCBase):
-    @rpc("foo")
+    @rpc_handler("foo")
     def handle_foo(self):
         return "foo"
 
