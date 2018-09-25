@@ -116,6 +116,9 @@ add_library(metricq::db ALIAS metricq-db)
 add_library(metricq::messages ALIAS metricq-messages)
 
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+    add_subdirectory(lib/nitro)
+    add_subdirectory(examples/metricq-source-dummy)
+
     target_compile_options(metricq-core
         INTERFACE
             -Wall -Wextra -pedantic
