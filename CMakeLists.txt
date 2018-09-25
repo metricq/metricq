@@ -131,6 +131,14 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
         ${CMAKE_CURRENT_SOURCE_DIR}/include/metricq
         DESTINATION include
     )
+
+    set_target_properties(metricq-core PROPERTIES EXPORT_NAME core)
+    set_target_properties(metricq-all PROPERTIES EXPORT_NAME all)
+    set_target_properties(metricq-source PROPERTIES EXPORT_NAME source)
+    set_target_properties(metricq-sink PROPERTIES EXPORT_NAME sink)
+    set_target_properties(metricq-db PROPERTIES EXPORT_NAME db)
+    set_target_properties(metricq-messages PROPERTIES EXPORT_NAME messages)
+
     install(
         TARGETS
             metricq-core
