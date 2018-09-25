@@ -1,6 +1,6 @@
-project(metricq)
-
 cmake_minimum_required(VERSION 3.8)
+
+project(metricq)
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
 
@@ -36,6 +36,7 @@ target_link_libraries(metricq-messages PUBLIC protobuf::libprotobuf)
 set_target_properties(metricq-messages PROPERTIES
     POSITION_INDEPENDENT_CODE ${METRICQ_POSITION_INDEPENDENT_CODE}
 )
+target_compile_features(metricq-messages PRIVATE cxx_std_14)
 
 set(CORE_SRCS src/chrono.cpp src/connection.cpp src/log.cpp)
 set(SOURCE_SRCS src/source.cpp)
