@@ -18,4 +18,8 @@ if(NOT TARGET json::json)
             NAMESPACE json::
             DESTINATION lib/cmake/json
     )
+
+    install(FILES "jsonConfig.cmake"
+        DESTINATION lib/cmake/json
+    )
 endif()

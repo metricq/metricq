@@ -1,5 +1,7 @@
 add_subdirectory(json)
 
+# BEGIN fmt
+
 # TODO Maybe revert this with CMP0077 some time in the future
 set(FMT_INSTALL ON CACHE BOOL "If you can read this, something is wrong with CMake.")
 add_subdirectory(fmt)
@@ -7,6 +9,9 @@ add_subdirectory(fmt)
 set_target_properties(fmt PROPERTIES
     POSITION_INDEPENDENT_CODE ${METRICQ_POSITION_INDEPENDENT_CODE}
 )
+
+# END fmt
+# BEGIN amqpcpp
 
 find_package(OpenSSL REQUIRED)
 
@@ -64,8 +69,15 @@ install(EXPORT amqpcppTargets
     NAMESPACE amqpcpp::
 )
 
+install(FILES "cmake/asioConfig.cmake"
+    DESTINATION lib/cmake/asio
+)
+
 install(DIRECTORY amqpcpp/include/ DESTINATION include
         FILES_MATCHING PATTERN "*.h")
+
+# END amqpcpp
+# BEGIN asio
 
 add_library(asio INTERFACE)
 target_include_directories(asio
@@ -89,5 +101,11 @@ install(EXPORT asioTargets
     NAMESPACE asio::
 )
 
+install(FILES "cmake/asioConfig.cmake"
+    DESTINATION lib/cmake/asio
+)
+
 install(DIRECTORY asio/asio/include/ DESTINATION include
 FILES_MATCHING PATTERN "*.hpp")
+
+# END asio

@@ -154,7 +154,10 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
         VERSION ${metricq_VERSION}
         COMPATIBILITY SameMajorVersion
     )
-    install(FILES "metricqConfig.cmake" "${CMAKE_CURRENT_BINARY_DIR}/metricqConfigVersion.cmake"
+    install(
+        FILES
+            "cmake/metricqConfig.cmake"
+            "${CMAKE_CURRENT_BINARY_DIR}/metricqConfigVersion.cmake"
         DESTINATION lib/cmake/metricq
     )
 
