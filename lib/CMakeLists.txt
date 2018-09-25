@@ -1,6 +1,7 @@
 add_subdirectory(json)
 
-set(FMT_INSTALL ON)
+# TODO Maybe revert this with CMP0077 some time in the future
+set(FMT_INSTALL ON CACHE BOOL "If you can read this, something is wrong with CMake.")
 add_subdirectory(fmt)
 
 set_target_properties(fmt PROPERTIES
