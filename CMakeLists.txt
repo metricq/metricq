@@ -117,6 +117,8 @@ add_library(metricq::db ALIAS metricq-db)
 add_library(metricq::messages ALIAS metricq-messages)
 
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+    include(GNUInstallDirs)
+
     add_subdirectory(lib/nitro)
     add_subdirectory(examples/metricq-source-dummy)
 
@@ -138,15 +140,19 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
             metricq-db
             metricq-messages
         EXPORT metricqTargets
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-        RUNTIME DESTINATION bin
-        INCLUDES DESTINATION include
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
+    set(METRICQ_CMAKE_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/metricq CACHE STRING
+        "Installation directory for MetricQ cmake files, relative to ${CMAKE_INSTALL_PREFIX}."
+    )
+
     install(EXPORT metricqTargets
         FILE metricqTargets.cmake
         NAMESPACE metricq::
-        DESTINATION lib/cmake/metricq
+        DESTINATION ${METRICQ_CMAKE_DIR}
     )
 
     include(CMakePackageConfigHelpers)
@@ -158,7 +164,7 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
         FILES
             "cmake/metricqConfig.cmake"
             "${CMAKE_CURRENT_BINARY_DIR}/metricqConfigVersion.cmake"
-        DESTINATION lib/cmake/metricq
+        DESTINATION ${METRICQ_CMAKE_DIR}
     )
 
     include(CTest)
