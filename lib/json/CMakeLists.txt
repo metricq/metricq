@@ -15,6 +15,8 @@ if(NOT TARGET json::json)
             INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
 
+    install(DIRECTORY include/nlohmann DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
     install(EXPORT jsonTargets
             FILE jsonTargets.cmake
             NAMESPACE json::

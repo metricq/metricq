@@ -128,6 +128,7 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     )
 
     install(DIRECTORY
+        ${CMAKE_CURRENT_BINARY_DIR}/include/metricq
         ${CMAKE_CURRENT_SOURCE_DIR}/include/metricq
         DESTINATION include
     )
