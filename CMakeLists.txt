@@ -117,6 +117,8 @@ add_library(metricq::db ALIAS metricq-db)
 add_library(metricq::messages ALIAS metricq-messages)
 
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+    include(GNUInstallDirs)
+
     add_subdirectory(lib/nitro)
     add_subdirectory(examples/metricq-source-dummy)
 
@@ -126,9 +128,18 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     )
 
     install(DIRECTORY
+        ${CMAKE_CURRENT_BINARY_DIR}/include/metricq
         ${CMAKE_CURRENT_SOURCE_DIR}/include/metricq
         DESTINATION include
     )
+
+    set_target_properties(metricq-core PROPERTIES EXPORT_NAME core)
+    set_target_properties(metricq-all PROPERTIES EXPORT_NAME all)
+    set_target_properties(metricq-source PROPERTIES EXPORT_NAME source)
+    set_target_properties(metricq-sink PROPERTIES EXPORT_NAME sink)
+    set_target_properties(metricq-db PROPERTIES EXPORT_NAME db)
+    set_target_properties(metricq-messages PROPERTIES EXPORT_NAME messages)
+
     install(
         TARGETS
             metricq-core
@@ -138,15 +149,19 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
             metricq-db
             metricq-messages
         EXPORT metricqTargets
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-        RUNTIME DESTINATION bin
-        INCLUDES DESTINATION include
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
+    set(METRICQ_CMAKE_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/metricq CACHE STRING
+        "Installation directory for MetricQ cmake files, relative to ${CMAKE_INSTALL_PREFIX}."
+    )
+
     install(EXPORT metricqTargets
         FILE metricqTargets.cmake
         NAMESPACE metricq::
-        DESTINATION lib/cmake/metricq
+        DESTINATION ${METRICQ_CMAKE_DIR}
     )
 
     include(CMakePackageConfigHelpers)
@@ -154,8 +169,11 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
         VERSION ${metricq_VERSION}
         COMPATIBILITY SameMajorVersion
     )
-    install(FILES "metricqConfig.cmake" "${CMAKE_CURRENT_BINARY_DIR}/metricqConfigVersion.cmake"
-        DESTINATION lib/cmake/metricq
+    install(
+        FILES
+            "cmake/metricqConfig.cmake"
+            "${CMAKE_CURRENT_BINARY_DIR}/metricqConfigVersion.cmake"
+        DESTINATION ${METRICQ_CMAKE_DIR}
     )
 
     include(CTest)

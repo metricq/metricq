@@ -1,11 +1,19 @@
 add_subdirectory(json)
 
-set(FMT_INSTALL ON)
+include(GNUInstallDirs)
+
+# BEGIN fmt
+
+# TODO Maybe revert this with CMP0077 some time in the future
+set(FMT_INSTALL ON CACHE BOOL "If you can read this, something is wrong with CMake.")
 add_subdirectory(fmt)
 
 set_target_properties(fmt PROPERTIES
     POSITION_INDEPENDENT_CODE ${METRICQ_POSITION_INDEPENDENT_CODE}
 )
+
+# END fmt
+# BEGIN amqpcpp
 
 find_package(OpenSSL REQUIRED)
 
@@ -52,19 +60,28 @@ set_target_properties(amqpcpp PROPERTIES
 add_library(amqpcpp::amqpcpp ALIAS amqpcpp)
 
 install(TARGETS amqpcpp EXPORT amqpcppTargets
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-    RUNTIME DESTINATION bin
-    INCLUDES DESTINATION include
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
 install(EXPORT amqpcppTargets
-    DESTINATION lib/cmake/amqpcpp
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/amqpcpp
     NAMESPACE amqpcpp::
 )
 
-install(DIRECTORY amqpcpp/include/ DESTINATION include
-        FILES_MATCHING PATTERN "*.h")
+install(FILES "cmake/amqpcppConfig.cmake"
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/amqpcpp
+)
+
+install(DIRECTORY amqpcpp/include/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING PATTERN "*.h"
+)
+
+# END amqpcpp
+# BEGIN asio
 
 add_library(asio INTERFACE)
 target_include_directories(asio
@@ -77,16 +94,24 @@ target_compile_definitions(asio INTERFACE ASIO_STANDALONE)
 add_library(asio::asio ALIAS asio)
 
 install(TARGETS asio EXPORT asioTargets
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-    RUNTIME DESTINATION bin
-    INCLUDES DESTINATION include
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
 install(EXPORT asioTargets
-    DESTINATION lib/cmake/asio
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/asio
     NAMESPACE asio::
 )
 
-install(DIRECTORY asio/asio/include/ DESTINATION include
-FILES_MATCHING PATTERN "*.hpp")
+install(FILES "cmake/asioConfig.cmake"
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/asio
+)
+
+install(DIRECTORY asio/asio/include/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING PATTERN "*.hpp" PATTERN "*.ipp"
+)
+
+# END asio
