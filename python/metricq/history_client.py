@@ -29,6 +29,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import asyncio
 from time import time
+import uuid
 
 import aio_pika
 
@@ -107,11 +108,11 @@ class HistoryClient(Client):
         return []
 
     async def history_data_request(self, metric_name, start_time_ns, end_time_ns, interval_ns, timeout=60):
-        correlation_id = ""
         req = HistoryRequest()
         req.start_time = start_time_ns
         req.end_time = end_time_ns
         req.interval_ns = interval_ns
+        correlation_id = 'mq-history-py-{}-{}'.format(self.token, uuid.uuid4().hex)
         msg = aio_pika.Message(
             request.SerializeToString(),
             correlation_id=correlation_id,
