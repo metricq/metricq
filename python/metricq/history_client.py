@@ -1,6 +1,4 @@
-# Copyright (c) 2018, ZIH,
-# Technische Universitaet Dresden,
-# Federal Republic of Germany
+# Copyright (c) 2018, ZIH, Technische Universitaet Dresden, Federal Republic of Germany
 #
 # All rights reserved.
 #
@@ -37,6 +35,7 @@ from .logging import get_logger
 from .rpc import rpc_handler
 from .client import Client
 from .types import to_timestamp
+from .history_pb2 import HistoryRequest, HistoryResponse
 
 logger = get_logger(__name__)
 
@@ -82,7 +81,6 @@ class HistoryClient(Client):
             name=response['historyExchange'], passive=True)
         self.history_response_queue = await self.history_channel.declare_queue(
             name=response['historyQueue'], passive=True)
-        )
 
         if 'config' in response:
             await self.rpc_dispatch('config', **response['config'])
@@ -108,11 +106,11 @@ class HistoryClient(Client):
         return []
 
     async def history_data_request(self, metric_name, start_time_ns, end_time_ns, interval_ns, timeout=60):
-        req = HistoryRequest()
-        req.start_time = start_time_ns
-        req.end_time = end_time_ns
-        req.interval_ns = interval_ns
         correlation_id = 'mq-history-py-{}-{}'.format(self.token, uuid.uuid4().hex)
+        request = HistoryRequest()
+        request.start_time = start_time_ns
+        request.end_time = end_time_ns
+        request.interval_ns = interval_ns
         msg = aio_pika.Message(
             request.SerializeToString(),
             correlation_id=correlation_id,
