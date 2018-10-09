@@ -116,8 +116,8 @@ class HistoryClient(Client):
             correlation_id=correlation_id,
             reply_to=self.history_response_queue.name
         )
-        self.history_exchange.publish(
         self._request_futures[correlation_id] = asyncio.Future(loop=self.event_loop)
+        await self.history_exchange.publish(
             msg,
             metric_name
         )
