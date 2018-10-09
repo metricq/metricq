@@ -96,8 +96,8 @@ class HistoryClient(Client):
         logger.debug('{} ready', self.token)
 
     async def history_metric_list(self, timeout=60):
-        request_future = asyncio.Future()
-        await self.rpc('history.register', lambda **response:
+        request_future = asyncio.Future(loop=self.event_loop)
+        await self.rpc('history.get_metric_list', lambda **response:
             request_future.set_result(response)
         )
         result = await asyncio.wait_for(request_future, timeout=timeout)
@@ -116,8 +116,8 @@ class HistoryClient(Client):
             correlation_id=correlation_id,
             reply_to=self.history_response_queue.name
         )
-        self._request_futures[correlation_id] = asyncio.Future()
         self.history_exchange.publish(
+        self._request_futures[correlation_id] = asyncio.Future(loop=self.event_loop)
             msg,
             metric_name
         )
