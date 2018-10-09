@@ -55,7 +55,6 @@ class HistoryClient(Client):
     async def connect(self):
         await super().connect()
         await self.rpc('history.register', self.handle_register_response)
-        await self._history_consume()
 
     @rpc_handler('discover')
     async def handle_discover(self, **kwargs):
@@ -91,6 +90,8 @@ class HistoryClient(Client):
             asyncio.get_event_loop().create_task(self.run_forever())
 
         #TODO @bmario make a nice timer class
+
+        await self._history_consume()
 
     async def ready_callback(self):
         logger.debug('{} ready', self.token)
