@@ -35,14 +35,10 @@ import metricq
 import logging
 
 if __name__ == "__main__":
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-
-    metricq.logger.setLevel(logging.DEBUG)
-    metricq.logger.addHandler(ch)
+    logging.basicConfig(level=logging.DEBUG)
 
     loop = asyncio.get_event_loop()
-    c = metricq.Client("pytest", "amqp://localhost")
-    loop.create_task(c.run(loop))
+    c = metricq.Client("pytest", "amqps://localhost", event_loop=loop)
+    loop.create_task(c.run())
     with aiomonitor.start_monitor(loop, locals={'connection': c}):
         loop.run_forever()
