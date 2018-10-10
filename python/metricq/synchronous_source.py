@@ -82,7 +82,7 @@ class SynchronousSource:
             SynchronousSource._tid += 1
 
         # MetricQ Synchronous Source Event Loop Thread
-        self._thread.name = 'DH2SSELT#{}'.format(thread_id)
+        self._thread.name = 'MQSSELT#{}'.format(thread_id)
         self._thread.start()
         logger.debug('[SynchronousSource] spawning new thread {}', self._thread.name)
         try:

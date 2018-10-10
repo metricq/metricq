@@ -136,7 +136,7 @@ void Connection::rpc(const std::string& function, ManagementResponseCallback res
     std::string message = payload.dump();
     AMQP::Envelope envelope(message.data(), message.size());
 
-    auto correlation_id = uuid(std::string("dh2-rpc-") + connection_token_ + "-");
+    auto correlation_id = uuid(std::string("metricq-rpc-") + connection_token_ + "-");
     envelope.setCorrelationID(correlation_id);
     envelope.setAppID(connection_token_);
     assert(!management_client_queue_.empty());

@@ -91,7 +91,7 @@ private:
     std::unordered_map<std::string, ManagementResponseCallback> management_rpc_response_callbacks_;
     std::string management_client_queue_;
     std::string management_queue_ = "management";
-    std::string management_exchange_ = "dh2.management";
-    std::string management_broadcast_exchange_ = "dh2.broadcast";
+    std::string management_exchange_ = "metricq.management";
+    std::string management_broadcast_exchange_ = "metricq.broadcast";
 };
 } // namespace metricq

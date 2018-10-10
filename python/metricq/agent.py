@@ -67,8 +67,8 @@ class Agent(RPCBase):
         self._event_loop = event_loop
 
         self._management_url = management_url
-        self._management_broadcast_exchange_name = 'dh2.broadcast'
-        self._management_exchange_name = 'dh2.management'
+        self._management_broadcast_exchange_name = 'metricq.broadcast'
+        self._management_exchange_name = 'metricq.management'
 
         self._management_connection = None
         self._management_channel = None
@@ -82,7 +82,7 @@ class Agent(RPCBase):
         logger.debug('initialized')
 
     def make_correlation_id(self):
-        return 'dh2-rpc-py-{}-{}'.format(self.token, uuid.uuid4().hex)
+        return 'metricq-rpc-py-{}-{}'.format(self.token, uuid.uuid4().hex)
 
     @property
     def event_loop(self):
