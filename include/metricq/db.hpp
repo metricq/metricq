@@ -44,7 +44,8 @@ public:
     Db(const std::string& token);
 
 protected:
-    virtual HistoryResponse history_callback(const std::string& id, const HistoryRequest& content);
+    virtual HistoryResponse history_callback(const std::string& id,
+                                             const HistoryRequest& content) = 0;
 
 protected:
     void history_callback(const AMQP::Message&);

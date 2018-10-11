@@ -75,16 +75,9 @@ void Db::history_callback(const AMQP::Message& incoming_message)
     data_channel_->publish("", incoming_message.replyTo(), envelope);
 }
 
-HistoryResponse Db::history_callback(const std::string& id, const HistoryRequest& content)
+void Db::db_config_callback(const json&)
 {
-    HistoryResponse response;
-    response.set_metric(id);
-
-    return response;
-}
-
-void Db::db_config_callback(const json& config)
-{
+    log::debug("ignoring db config, not implemented by specific DB");
 }
 
 void Db::setup_complete()
