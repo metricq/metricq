@@ -39,6 +39,7 @@
 #include <nlohmann/json.hpp>
 
 #include <memory>
+#include <optional>
 #include <string>
 
 namespace ev
@@ -79,7 +80,7 @@ private:
     std::unique_ptr<AMQP::TcpConnection> data_connection_;
     std::unique_ptr<AMQP::TcpChannel> data_channel_;
     std::string data_exchange_;
-    std::string data_server_address_;
+    std::optional<AMQP::Address> data_server_address_;
 
     std::unordered_map<std::string, SourceMetric> metrics_;
 };

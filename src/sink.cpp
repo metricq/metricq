@@ -51,15 +51,15 @@ Sink::~Sink()
 
 void Sink::setup_data_queue(const AMQP::QueueCallback& callback)
 {
-    assert(!data_server_address_.empty());
+    if (data_connection_ || data_channel_)
+    {
+        log::fatal("reconfiguring sink data queue is currently not supported");
+        std::abort();
+    }
+
+    assert(data_server_address_);
     assert(!data_queue_.empty());
-    auto raw_data_server_address = AMQP::Address(data_server_address_);
-    auto management_address = AMQP::Address(management_address_);
-    data_connection_ = std::make_unique<AMQP::TcpConnection>(
-        &data_handler_,
-        AMQP::Address(raw_data_server_address.hostname(), raw_data_server_address.port(),
-                      management_address.login(), raw_data_server_address.vhost(),
-                      raw_data_server_address.secure()));
+    data_connection_ = std::make_unique<AMQP::TcpConnection>(&data_handler_, *data_server_address_);
     data_channel_ = std::make_unique<AMQP::TcpChannel>(data_connection_.get());
     data_channel_->onError(debug_error_cb("sink data channel error"));
 

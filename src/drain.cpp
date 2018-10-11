@@ -48,7 +48,8 @@ void Drain::setup_complete()
 void Drain::unsubscribe_complete(const json& response)
 {
     assert(!data_queue_.empty());
-    data_server_address_ = response["dataServerAddress"];
+    data_server_address_ = add_credentials(response["dataServerAddress"].get<std::string>());
+
     setup_data_queue([this](const std::string& name, int msgcount, int consumercount) {
         log::notice("setting up drain queue, msgcount: {}, consumercount: {}", msgcount,
                     consumercount);
@@ -83,4 +84,4 @@ void Drain::end()
     data_connection_->close();
     rpc("release", [this](const auto&) { close(); }, { { "dataQueue", data_queue_ } });
 }
-}
+} // namespace metricq

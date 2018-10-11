@@ -38,6 +38,7 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
 
@@ -71,6 +72,8 @@ protected:
     void stop();
     virtual void close();
 
+    AMQP::Address add_credentials(const AMQP::Address& address);
+
 private:
     void handle_management_message(const AMQP::Message& incoming_message, uint64_t deliveryTag,
                                    bool redelivered);
@@ -78,7 +81,7 @@ private:
 
 protected:
     asio::io_service io_service;
-    std::string management_address_;
+    std::optional<AMQP::Address> management_address_;
 
 private:
     std::string connection_token_;

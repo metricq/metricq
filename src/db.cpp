@@ -40,17 +40,13 @@ Db::Db(const std::string& token) : Sink(token)
 
 void Db::setup_history_queue(const AMQP::QueueCallback& callback)
 {
-    assert(!data_server_address_.empty());
+    // TODO confirm that this makes sense to call twice
+    assert(data_server_address_);
     assert(!history_queue_.empty());
     if (!data_connection_)
     {
-        auto raw_data_server_address = AMQP::Address(data_server_address_);
-        auto management_address = AMQP::Address(management_address_);
-        data_connection_ = std::make_unique<AMQP::TcpConnection>(
-            &data_handler_,
-            AMQP::Address(raw_data_server_address.hostname(), raw_data_server_address.port(),
-                          management_address.login(), raw_data_server_address.vhost(),
-                          raw_data_server_address.secure()));
+        data_connection_ =
+            std::make_unique<AMQP::TcpConnection>(&data_handler_, *data_server_address_);
     }
     if (!data_channel_)
     {
@@ -98,7 +94,9 @@ void Db::setup_complete()
 
 void Db::config_callback(const json& response)
 {
-    data_server_address_ = response["dataServerAddress"];
+    log::debug("start parsing config");
+
+    data_server_address_ = add_credentials(response["dataServerAddress"].get<std::string>());
     data_queue_ = response["dataQueue"];
     history_queue_ = response["historyQueue"];
 

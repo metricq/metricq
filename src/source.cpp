@@ -79,10 +79,12 @@ void Source::send(const std::string& id, TimeValue tv)
 
 void Source::config_callback(const nlohmann::json& config)
 {
-    log::debug("start parsing config");
+    AMQP::Address new_data_server_address =
+        add_credentials(config["dataServerAddress"].get<std::string>());
+    log::debug("start parsing source config");
     if (data_connection_)
     {
-        if (config["dataServerAddress"] != data_server_address_)
+        if (new_data_server_address != data_server_address_)
         {
             log::fatal("changing dataServerAddress on the fly is not currently supported");
             std::abort();
@@ -94,16 +96,11 @@ void Source::config_callback(const nlohmann::json& config)
         }
     }
 
-    data_server_address_ = config["dataServerAddress"];
+    data_server_address_ = new_data_server_address;
     data_exchange_ = config["dataExchange"];
 
-    auto raw_data_server_address = AMQP::Address(data_server_address_);
-    auto management_address = AMQP::Address(management_address_);
-    data_connection_ = std::make_unique<AMQP::TcpConnection>(
-        &data_handler_,
-        AMQP::Address(raw_data_server_address.hostname(), raw_data_server_address.port(),
-                      management_address.login(), raw_data_server_address.vhost(),
-                      raw_data_server_address.secure()));
+    data_connection_ =
+        std::make_unique<AMQP::TcpConnection>(&data_handler_, new_data_server_address);
     data_channel_ = std::make_unique<AMQP::TcpChannel>(data_connection_.get());
     data_channel_->onError([](const char* message) {
         // report error

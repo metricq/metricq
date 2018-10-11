@@ -34,6 +34,7 @@
 #include <metricq/types.hpp>
 
 #include <memory>
+#include <optional>
 #include <string>
 
 namespace metricq
@@ -42,7 +43,7 @@ namespace metricq
 class Sink : public Connection
 {
 public:
-    explicit Sink(const std::string& token, bool add_uuid=false);
+    explicit Sink(const std::string& token, bool add_uuid = false);
     virtual ~Sink() = 0;
 
 protected:
@@ -59,7 +60,7 @@ protected:
     AMQP::LibAsioHandler data_handler_;
     std::unique_ptr<AMQP::TcpConnection> data_connection_;
     std::unique_ptr<AMQP::TcpChannel> data_channel_;
-    std::string data_server_address_;
+    std::optional<AMQP::Address> data_server_address_;
     std::string data_queue_;
     // Stored permanently to avoid expensive allocations
     DataChunk data_chunk_;
