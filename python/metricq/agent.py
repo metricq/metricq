@@ -34,6 +34,7 @@ import traceback
 import uuid
 
 import aio_pika
+from yarl import URL
 
 from .logging import get_logger
 from .rpc import RPCBase
@@ -204,3 +205,7 @@ class Agent(RPCBase):
 
     def on_close(self, connection):
         logger.info('closing connection to {}', connection)
+
+    def add_credentials(self, address):
+        management_obj = URL(self.management_url)
+        return str(URL(address).with_user(management_obj.user).with_password(management_obj.password))

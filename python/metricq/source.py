@@ -78,7 +78,7 @@ class Source(Client):
     async def handle_register_response(self, **response):
         logger.info('register response: {}', response)
         assert not self.data_connection
-        self.data_server_address = response['dataServerAddress']
+        self.data_server_address = self.add_credentials(response['dataServerAddress'])
         self.data_connection = await self._connect(self.data_server_address)
         self.data_channel = await self.data_connection.channel()
         self.data_exchange = await self.data_channel.declare_exchange(

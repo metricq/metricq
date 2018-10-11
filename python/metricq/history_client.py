@@ -73,7 +73,7 @@ class HistoryClient(Client):
     async def handle_register_response(self, **response):
         logger.info('register response: {}', response)
         assert not self.history_connection
-        self.history_server_address = response['historyServerAddress']
+        self.history_server_address = self.add_credentials(response['historyServerAddress'])
         self.history_connection = await self._connect(self.history_server_address)
         self.history_channel = await self.history_connection.channel()
         self.history_exchange = await self.history_channel.declare_exchange(
