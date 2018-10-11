@@ -105,6 +105,7 @@ class Agent(RPCBase):
         logger.debug('run_forever completed')
 
     async def _connect(self, url):
+        # TODO remove that once aio_pika detects the protocol correctly
         ssl = url.startswith("amqps")
         connection = await aio_pika.connect_robust(url, loop=self.event_loop, reconnect_interval=5, ssl=ssl)
         # How stupid that we can't easily add the handlers *before* actually connecting.
