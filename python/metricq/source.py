@@ -102,6 +102,11 @@ class Source(Client):
             self.metrics[id] = SourceMetric(id, self)
         return self.metrics[id]
 
+    async def declare_metrics(self, metrics):
+        logger.debug('declare_metrics({})', metrics)
+        await self.rpc('source.declare_metrics', response_callback=None,
+                       arguments={'metrics': metrics})
+
     async def send(self, id, time, value):
         """
         Logical send.

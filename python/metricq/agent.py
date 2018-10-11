@@ -194,6 +194,9 @@ class Agent(RPCBase):
                 if cleanup:
                     del self._rpc_response_handlers[correlation_id]
 
+                if not handler:
+                    return
+
                 # Allow simple handlers that are not coroutines
                 # But only None to not get any confusion
                 r = handler(**arguments)
@@ -207,5 +210,5 @@ class Agent(RPCBase):
         logger.info('closing connection to {}', connection)
 
     def add_credentials(self, address):
-        management_obj = URL(self.management_url)
+        management_obj = URL(self._management_url)
         return str(URL(address).with_user(management_obj.user).with_password(management_obj.password))

@@ -106,6 +106,16 @@ class SynchronousSource:
                 # self.stop()
                 # raise exception
 
+    def declare_metrics(self, metrics, block=True, timeout=60):
+        f = asyncio.run_coroutine_threadsafe(
+            self._source.declare_metrics(metrics),
+            self._source.event_loop
+        )
+        if block:
+            exception = f.exception(timeout)
+            if exception:
+                logger.error('[SynchronousSource] failed to send data {}', exception)
+
     def stop(self):
         logger.info('[SynchronousSource] stopping')
         self._source.event_loop.stop()

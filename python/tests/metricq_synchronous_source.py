@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Copyright (c) 2018, ZIH,
 # Technische Universitaet Dresden,
 # Federal Republic of Germany
@@ -36,6 +37,12 @@ logger = get_logger(__name__)
 
 
 def run_source(ssource):
+    ssource.declare_metrics({
+        'foo': {
+            'unit': 'fu',
+            'location': 'localghost',
+        }
+    })
     for i in range(100):
         ssource.send('foo', time.time(), i)
         time.sleep(0.1)
