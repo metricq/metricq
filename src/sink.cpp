@@ -62,6 +62,9 @@ void Sink::setup_data_queue(const AMQP::QueueCallback& callback)
     data_connection_ = std::make_unique<AMQP::TcpConnection>(&data_handler_, *data_server_address_);
     data_channel_ = std::make_unique<AMQP::TcpChannel>(data_connection_.get());
     data_channel_->onError(debug_error_cb("sink data channel error"));
+    // Ensure that we are not flooded by requests and forget to send out heartbeat
+    // TODO configurable!
+    data_channel_->setQos(400);
 
     data_channel_->declareQueue(data_queue_, AMQP::passive).onSuccess(callback);
 }
