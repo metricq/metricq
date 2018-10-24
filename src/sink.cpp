@@ -139,7 +139,15 @@ void Sink::data_callback(const AMQP::Message& message)
     auto message_string = std::string(message.body(), message.bodySize());
     data_chunk_.Clear();
     data_chunk_.ParseFromString(message_string);
-    data_callback(metric_name, data_chunk_);
+    try
+    {
+        data_callback(metric_name, data_chunk_);
+    }
+    catch (std::exception& ex)
+    {
+        log::fatal("db data callback failed for metric {}: {}", metric_name, ex.what());
+        throw;
+    }
 }
 
 void Sink::data_callback(const std::string&, TimeValue)
