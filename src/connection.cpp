@@ -59,8 +59,8 @@ static std::string make_token(const std::string& token, bool add_uuid)
 
 Connection::Connection(const std::string& connection_token, bool add_uuid,
                        std::size_t concurrency_hint)
-: io_service(concurrency_hint), management_handler_(io_service),
-  connection_token_(make_token(connection_token, add_uuid))
+: io_service(concurrency_hint), connection_token_(make_token(connection_token, add_uuid)),
+  management_handler_(io_service)
 {
 }
 
@@ -106,7 +106,8 @@ void Connection::connect(const std::string& server_address)
     management_client_queue_ = std::string("client-") + connection_token_ + "-rpc";
 
     management_channel_->declareQueue(management_client_queue_, AMQP::exclusive)
-        .onSuccess([this](const std::string& name, int msgcount, int consumercount) {
+        .onSuccess([this](const std::string& name, [[maybe_unused]] int msgcount,
+                          [[maybe_unused]] int consumercount) {
             management_channel_
                 ->bindQueue(management_broadcast_exchange_, management_client_queue_, "#")
                 .onError(debug_error_cb("error binding management queue to broadcast exchange"))
@@ -150,7 +151,7 @@ void Connection::rpc(const std::string& function, ManagementResponseCallback res
 }
 
 void Connection::handle_management_message(const AMQP::Message& incoming_message,
-                                           uint64_t deliveryTag, bool redelivered)
+                                           uint64_t deliveryTag, [[maybe_unused]] bool redelivered)
 {
     const std::string content_str(incoming_message.body(),
                                   static_cast<size_t>(incoming_message.bodySize()));
