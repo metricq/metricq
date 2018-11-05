@@ -116,6 +116,12 @@ add_library(metricq::sink ALIAS metricq-sink)
 add_library(metricq::db ALIAS metricq-db)
 add_library(metricq::messages ALIAS metricq-messages)
 
+
+target_compile_options(metricq-core
+    PRIVATE
+        -Wall -Wextra -pedantic -Wsign-compare
+)
+
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     include(GNUInstallDirs)
 
@@ -123,8 +129,8 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     add_subdirectory(examples/metricq-source-dummy)
 
     target_compile_options(metricq-core
-        INTERFACE
-            -Wall -Wextra -pedantic
+        PUBLIC
+            -Wall -Wextra -pedantic -Wsign-compare -Werror
     )
 
     install(DIRECTORY
