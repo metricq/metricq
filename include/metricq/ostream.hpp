@@ -36,8 +36,8 @@
 // USE THIS HEADER WITH CARE
 // Don't use if you have other operator<< on std::chrono::duration defined
 
-// Unfortunately duration is actually a (using) std type, so we can't
-// define this in datheap2
+// Unfortunately duration anjd timepoint is actually a (using) std type, so we can't
+// define this in metricq
 namespace std
 {
 inline std::ostream& operator<<(std::ostream& os, metricq::Duration duration)
@@ -45,16 +45,15 @@ inline std::ostream& operator<<(std::ostream& os, metricq::Duration duration)
     os << duration.count();
     return os;
 }
-} // namespace std
-
-namespace metricq
-{
-inline std::ostream& operator<<(std::ostream& os, TimePoint tp)
+inline std::ostream& operator<<(std::ostream& os, metricq::TimePoint tp)
 {
     os << tp.time_since_epoch();
     return os;
 }
+} // namespace std
 
+namespace metricq
+{
 inline std::ostream& operator<<(std::ostream& os, TimeValue tv)
 {
     os << tv.time << " " << tv.value;
