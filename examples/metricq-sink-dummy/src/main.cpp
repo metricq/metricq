@@ -43,6 +43,7 @@ int main(int argc, char* argv[])
         .short_name("s");
     parser.option("token", "The token used for source authentication against the metricq manager.")
         .default_value("dummySource");
+    parser.multi_option("metrics", "MetricQ metrics!").short_name("m");
     parser.toggle("verbose").short_name("v");
     parser.toggle("trace").short_name("t");
     parser.toggle("quiet").short_name("q");
@@ -76,7 +77,12 @@ int main(int argc, char* argv[])
 
         initialize_logger();
 
-        DummySink sink(options.get("server"), options.get("token"));
+        std::vector<std::string> metrics;
+        for (size_t i = 0; i < options.count("metrics"); ++i)
+        {
+            metrics.push_back(options.get("metrics", i));
+        }
+        DummySink sink(options.get("server"), options.get("token"), metrics);
         Log::info() << "starting main loop.";
         sink.main_loop();
         Log::info() << "exiting main loop.";

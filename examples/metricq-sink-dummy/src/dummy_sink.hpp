@@ -37,13 +37,19 @@
 class DummySink : public metricq::Sink
 {
 public:
-    DummySink(const std::string& manager_host, const std::string& token);
+    DummySink(const std::string& manager_host, const std::string& token,
+              const std::vector<std::string>& metrics);
 
 private:
+    using metricq::Sink::data_callback;
+
+    void end();
     void setup_complete() override;
     void data_callback(const std::string& id, metricq::TimeValue tv) override;
 
     asio::signal_set signals_;
+
+    std::vector<std::string> metrics_;
 
     std::size_t message_count_ = 0;
     std::size_t message_count_last_step_ = 0;

@@ -31,11 +31,44 @@
 #include <metricq/ostream.hpp>
 #include <metricq/types.hpp>
 
+#include <nlohmann/json_fwd.hpp>
+
+using json = nlohmann::json;
+
 #include <cmath>
 
-DummySink::DummySink(const std::string& manager_host, const std::string& token)
-: metricq::Sink(token), signals_(io_service, SIGINT, SIGTERM)
+DummySink::DummySink(const std::string& manager_host, const std::string& token,
+                     const std::vector<std::string>& metrics)
+: metricq::Sink(token, true), signals_(io_service, SIGINT, SIGTERM), metrics_(metrics)
 {
+    rpc("subscribe",
+        [this](const json& response) {
+            data_queue_ = response["dataQueue"];
+            data_server_address_ =
+                add_credentials(response["dataServerAddress"].get<std::string>());
+
+            setup_data_queue([this](const std::string& name, int, int consumercount) {
+                // we do not tolerate other consumers
+                assert(consumercount == 0);
+
+                auto message_cb = [this](const AMQP::Message& message, uint64_t deliveryTag,
+                                         bool redelivered) {
+                    (void)redelivered;
+                    if (message.typeName() == "end")
+                    {
+                        data_channel_->ack(deliveryTag);
+                        end();
+                        return;
+                    }
+                    data_callback(message);
+                    data_channel_->ack(deliveryTag);
+                };
+
+                data_channel_->consume(name).onReceived(message_cb);
+            });
+        },
+        { { "metrics", metrics_ }, { "expires", 0 } });
+
     // Register signal handlers so that the daemon may be shut down.
     signals_.async_wait([this](auto, auto signal) {
         if (!signal)
@@ -43,10 +76,20 @@ DummySink::DummySink(const std::string& manager_host, const std::string& token)
             return;
         }
         Log::info() << "Caught signal " << signal << ". Shutdown.";
-        stop_requested_ = true;
+        rpc("unsubscribe", [this](const auto&) { (void)this; },
+            { { "dataQueue", data_queue_ }, { "metrics", metrics_ } });
     });
 
     connect(manager_host);
+}
+
+void DummySink::end()
+{
+    Log::debug() << "received end message";
+    // to avoid any stupidity, close our data connection now
+    // it will be closed once more, so what
+    data_connection_->close();
+    rpc("release", [this](const auto&) { close(); }, { { "dataQueue", data_queue_ } });
 }
 
 void DummySink::setup_complete()
