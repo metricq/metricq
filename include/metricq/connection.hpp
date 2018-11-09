@@ -63,7 +63,7 @@ public:
     void connect(const std::string& server_address);
 
 protected:
-    virtual void setup_complete() = 0;
+    virtual void on_connected() = 0;
 
     void rpc(const std::string& function, ManagementResponseCallback callback,
              json payload = json({}));
@@ -81,9 +81,9 @@ private:
 
 protected:
     asio::io_service io_service;
-    std::optional<AMQP::Address> management_address_;
 
 private:
+    std::optional<AMQP::Address> management_address_;
     std::string connection_token_;
 
     // TODO combine & abstract to extra class

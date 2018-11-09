@@ -1,6 +1,4 @@
-// Copyright (c) 2018, ZIH,
-// Technische Universitaet Dresden,
-// Federal Republic of Germany
+// Copyright (c) 2018, ZIH, Technische Universitaet Dresden, Federal Republic of Germany
 //
 // All rights reserved.
 //
@@ -27,61 +25,65 @@
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#pragma once
 
-#include <metricq/drain.hpp>
-#include <metricq/ostream.hpp>
-#include <metricq/types.hpp>
+#include "log.hpp"
 
-#include <string>
-#include <unordered_map>
-#include <vector>
+#include <metricq/transformer.hpp>
 
 namespace metricq
 {
-class SimpleDrain : public Drain
+Transformer::Transformer(const std::string& token) : Sink(token)
 {
-public:
-    SimpleDrain(const std::string& token, const std::string& queue) : Drain(token, queue)
+}
+
+void Transformer::on_connected()
+{
+    rpc("transformer.register", [this](const auto& response) { config(response); });
+}
+
+void Transformer::send(const std::string& id, const DataChunk& dc)
+{
+    data_channel_->publish(data_exchange_, id, dc.SerializeAsString());
+}
+
+void Transformer::send(const std::string& id, TimeValue tv)
+{
+    // TODO evaluate optimization of string construction
+    data_channel_->publish(data_exchange_, id, DataChunk(tv).SerializeAsString());
+}
+
+void Transformer::config(const json& config)
+{
+    sink_config(config);
+
+    if (!data_exchange_.empty() && config["dataExchange"] != data_exchange_)
     {
+        log::fatal("changing dataExchange on the fly is not currently supported");
+        std::abort();
     }
 
-    void on_data(const std::string& id, const metricq::DataChunk& chunk) override
+    data_exchange_ = config["dataExchange"];
+
+    if (config.find("config") != config.end())
     {
-        auto& d = data_.at(id);
-        for (const auto& tv : chunk)
-        {
-            d.emplace_back(tv);
-        }
+        on_transformer_config(config["config"]);
+    }
+    send_metrics_list();
+    on_transformer_ready();
+}
+
+void Transformer::send_metrics_list()
+{
+    if (metrics_.empty())
+    {
+        return;
     }
 
-    /**
-     * warning this (re)move the entire map
-     */
-    std::unordered_map<std::string, std::vector<TimeValue>>& get()
+    json payload;
+    for (auto& metric : metrics_)
     {
-        return data_;
-    };
-
-    /**
-     * warning this (re)moves the vector
-     */
-    std::vector<TimeValue>& at(const std::string& metric)
-    {
-        return data_.at(metric);
+        payload["metrics"].push_back(metric.second.id());
     }
-
-protected:
-    void on_connected() override
-    {
-        Drain::on_connected();
-        for (const auto& metric : metrics_)
-        {
-            data_[metric];
-        }
-    }
-
-private:
-    std::unordered_map<std::string, std::vector<TimeValue>> data_;
-};
+    rpc("transformer.metrics_list", [this](const auto&) { /* nothing to do */ (void)this; }, payload);
+}
 } // namespace metricq

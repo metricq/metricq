@@ -27,7 +27,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "log.hpp"
 
-#include <metricq/log.hpp>
+#include <metricq/logger.hpp>
 
 class Logger : public metricq::Logger
 {

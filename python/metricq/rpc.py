@@ -42,7 +42,9 @@ class RPCMeta(ABCMeta):
 
         for fun in attrs.values():
             try:
-                rpc_handlers[getattr(fun, '__rpc_tag')] = fun
+                tags = getattr(fun, '__rpc_tags')
+                for tag in tags:
+                    rpc_handlers[tag] = fun
             except AttributeError:
                 pass
 
@@ -60,8 +62,8 @@ class RPCBase(metaclass=RPCMeta):
         return await task
 
 
-def rpc_handler(tag):
+def rpc_handler(*tags):
     def decorator(fun):
-        fun.__rpc_tag = tag
+        fun.__rpc_tags = tags
         return fun
     return decorator

@@ -1,6 +1,4 @@
-// Copyright (c) 2018, ZIH,
-// Technische Universitaet Dresden,
-// Federal Republic of Germany
+// Copyright (c) 2018, ZIH, Technische Universitaet Dresden, Federal Republic of Germany
 //
 // All rights reserved.
 //
@@ -27,49 +25,40 @@
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #pragma once
 
-#include <metricq/datachunk.pb.h>
-#include <metricq/types.hpp>
-
-#include <algorithm>
-#include <string>
+#include <metricq/sink.hpp>
+#include <metricq/metric.hpp>
 
 namespace metricq
 {
-class Source;
-
-class SourceMetric
+class Transformer : public Sink
 {
 public:
-    SourceMetric(const std::string& id, Source& source) : id_(id), source_(source)
+    Transformer(const std::string& token);
+
+    void send(const std::string& id, TimeValue tv);
+    void send(const std::string& id, const DataChunk& dc);
+
+    Metric<Transformer>& operator[](const std::string& id)
     {
+        auto ret = metrics_.try_emplace(id, id, *this);
+        return ret.first->second;
     }
 
-    void send(TimeValue tv);
+protected:
+    void on_connected() override;
+    virtual void on_transformer_config(const nlohmann::json& config) = 0;
+    virtual void on_transformer_ready() = 0;
 
-    const std::string& id() const
-    {
-        return id_;
-    }
-
-    /**
-     * @param n size of the chunk for automatic flushing
-     * set to 0 to do only manual flushes - use at your own risk!
-     * set to 1 to flush on every new value
-     */
-    void set_chunksize(size_t n)
-    {
-        chunk_size_ = n;
-    }
-    void flush();
+    void send_metrics_list();
 
 private:
-    std::string id_;
-    Source& source_;
+    void config(const nlohmann::json& config);
 
-    int chunk_size_ = 1;
-    int64_t previous_timestamp_ = 0;
-    DataChunk chunk_;
+private:
+    std::string data_exchange_;
+    std::unordered_map<std::string, Metric<Transformer>> metrics_;
 };
 } // namespace metricq

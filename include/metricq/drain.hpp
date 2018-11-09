@@ -30,14 +30,11 @@
 #pragma once
 #include <metricq/sink.hpp>
 
-#include <nlohmann/json_fwd.hpp>
-
 #include <string>
 #include <vector>
 
 namespace metricq
 {
-using json = nlohmann::json;
 
 class Drain : public Sink
 {
@@ -48,10 +45,11 @@ public:
     }
     virtual ~Drain() = 0;
 
-    void add(const std::string &metric)
+    void add(const std::string& metric)
     {
         metrics_.emplace_back(metric);
     }
+
     template <typename T>
     void add(const T& metrics)
     {
@@ -62,13 +60,14 @@ public:
     }
 
 protected:
-    void setup_complete() override;
+    void on_connected() override;
+
+    void on_data(const AMQP::Message& message, uint64_t delivery_tag, bool redelivered) override;
 
 private:
-    void end();
     void unsubscribe_complete(const json& response);
 
 protected:
     std::vector<std::string> metrics_;
 };
-}
+} // namespace metricq

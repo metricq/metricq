@@ -29,59 +29,71 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#include <metricq/drain.hpp>
-#include <metricq/ostream.hpp>
+#include <metricq/datachunk.pb.h>
 #include <metricq/types.hpp>
 
+#include <algorithm>
 #include <string>
-#include <unordered_map>
-#include <vector>
 
 namespace metricq
 {
-class SimpleDrain : public Drain
+
+template<class Writer>
+class Metric
 {
 public:
-    SimpleDrain(const std::string& token, const std::string& queue) : Drain(token, queue)
+    Metric(const std::string& id, Writer& writer) : id_(id), writer_(writer)
     {
     }
 
-    void on_data(const std::string& id, const metricq::DataChunk& chunk) override
+    void send(TimeValue tv);
+
+    const std::string& id() const
     {
-        auto& d = data_.at(id);
-        for (const auto& tv : chunk)
-        {
-            d.emplace_back(tv);
-        }
+        return id_;
     }
 
     /**
-     * warning this (re)move the entire map
+     * @param n size of the chunk for automatic flushing
+     * set to 0 to do only manual flushes - use at your own risk!
+     * set to 1 to flush on every new value
      */
-    std::unordered_map<std::string, std::vector<TimeValue>>& get()
+    void set_chunksize(size_t n)
     {
-        return data_;
-    };
-
-    /**
-     * warning this (re)moves the vector
-     */
-    std::vector<TimeValue>& at(const std::string& metric)
-    {
-        return data_.at(metric);
+        chunk_size_ = n;
     }
-
-protected:
-    void on_connected() override
-    {
-        Drain::on_connected();
-        for (const auto& metric : metrics_)
-        {
-            data_[metric];
-        }
-    }
+    void flush();
 
 private:
-    std::unordered_map<std::string, std::vector<TimeValue>> data_;
+    std::string id_;
+    Writer& writer_;
+
+    int chunk_size_ = 1;
+    int64_t previous_timestamp_ = 0;
+    DataChunk chunk_;
 };
+
+template<class Writer>
+inline void Metric<Writer>::flush()
+{
+    writer_.send(id_, chunk_);
+    chunk_.clear_time_delta();
+    chunk_.clear_value();
+    previous_timestamp_ = 0;
+}
+
+template<class Writer>
+inline void Metric<Writer>::send(TimeValue tv)
+{
+    chunk_.add_time_delta(tv.time.time_since_epoch().count() - previous_timestamp_);
+    previous_timestamp_ = tv.time.time_since_epoch().count();
+    chunk_.add_value(tv.value);
+
+    assert(chunk_.time_delta_size() == chunk_.value_size());
+    if (chunk_size_ && chunk_.time_delta_size() == chunk_size_)
+    {
+        flush();
+    }
+}
+
 } // namespace metricq

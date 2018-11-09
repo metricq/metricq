@@ -27,9 +27,10 @@
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #pragma once
 
-#include <metricq/connection.hpp>
+#include <metricq/data_client.hpp>
 #include <metricq/datachunk.pb.h>
 #include <metricq/types.hpp>
 
@@ -40,27 +41,36 @@
 namespace metricq
 {
 
-class Sink : public Connection
+class Sink : public DataClient
 {
 public:
     explicit Sink(const std::string& token, bool add_uuid = false);
     virtual ~Sink() = 0;
 
 protected:
-    virtual void data_callback(const std::string& id, TimeValue tv);
-    virtual void data_callback(const std::string& id, const DataChunk& chunk);
+    /**
+     * override this only in special cases where you manually handle acknowledgements
+     * or do something after acks
+     */
+    virtual void on_data(const AMQP::Message& message, uint64_t delivery_tag, bool redelivered);
+    /**
+     * override this to handle chunks efficiently
+     * if you do, you don't need to override data_callback(std::string, TimeValue)
+     */
+    virtual void on_data(const std::string& id, const DataChunk& chunk);
+    /**
+     * override this to handle individual values
+     */
+    virtual void on_data(const std::string& id, TimeValue tv);
 
-    void close() override;
+    void sink_config(const json& config);
 
-protected:
-    void data_callback(const AMQP::Message&);
+private:
+    // let's hope the child classes never need to deal with this and the generic callback is
+    // sufficient
     void setup_data_queue(const AMQP::QueueCallback& callback);
 
 protected:
-    AMQP::LibAsioHandler data_handler_;
-    std::unique_ptr<AMQP::TcpConnection> data_connection_;
-    std::unique_ptr<AMQP::TcpChannel> data_channel_;
-    std::optional<AMQP::Address> data_server_address_;
     std::string data_queue_;
     // Stored permanently to avoid expensive allocations
     DataChunk data_chunk_;

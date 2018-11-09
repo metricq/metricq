@@ -27,54 +27,63 @@
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#pragma once
+
 #include <metricq/chrono.hpp>
 #include <metricq/data_client.hpp>
-#include <metricq/datachunk.pb.h>
-#include <metricq/metric.hpp>
-#include <metricq/types.hpp>
 
-#include <amqpcpp.h>
-
-#include <memory>
-#include <optional>
-#include <string>
-#include <unordered_map>
-
-namespace ev
-{
-class timer;
-}
+#include "log.hpp"
 
 namespace metricq
 {
-
-class Source : public DataClient
+DataClient::DataClient(const std::string& token, bool add_uuid)
+: Connection(token, add_uuid), data_handler_(io_service)
 {
-public:
-    Source(const std::string& token);
+    TimePoint starting_time = Clock::now();
+    register_management_callback("discover", [token, starting_time](const json&) {
+        json response;
+        response["alive"] = true;
+        response["currentTime"] = Clock::format_iso(Clock::now());
+        response["startingTime"] = Clock::format_iso(starting_time);
+        return response;
+    });
+}
 
-    void send(const std::string& id, TimeValue tv);
-    void send(const std::string& id, const DataChunk& dc);
-
-    Metric<Source>& operator[](const std::string& id)
+void DataClient::data_config(const metricq::json& config)
+{
+    AMQP::Address new_data_server_address =
+        add_credentials(config["dataServerAddress"].get<std::string>());
+    log::debug("start parsing source config");
+    if (data_connection_)
     {
-        auto ret = metrics_.try_emplace(id, id, *this);
-        return ret.first->second;
+        if (new_data_server_address != data_server_address_)
+        {
+            log::fatal("changing dataServerAddress on the fly is not currently supported");
+            std::abort();
+        }
+        // We should be fine, connection and channel is already setup and the same
+        return;
     }
 
-protected:
-    void on_connected() override;
-    virtual void on_source_config(const nlohmann::json& config) = 0;
-    virtual void on_source_ready() = 0;
+    data_server_address_ = new_data_server_address;
 
-    void send_metrics_list();
+    data_connection_ =
+        std::make_unique<AMQP::TcpConnection>(&data_handler_, new_data_server_address);
+    data_channel_ = std::make_unique<AMQP::TcpChannel>(data_connection_.get());
+    data_channel_->onError([](const char* message) {
+        // report error
+        log::error("data channel error: {}", message);
+    });
+}
 
-private:
-    void config(const nlohmann::json& config);
-
-private:
-    std::string data_exchange_;
-    std::unordered_map<std::string, Metric<Source>> metrics_;
-};
+void DataClient::close()
+{
+    Connection::close();
+    if (!data_connection_)
+    {
+        log::debug("closing DataClient, no data_connection up yet");
+        return;
+    }
+    auto alive = data_connection_->close();
+    log::info("closed data_connection: {}", alive);
+}
 } // namespace metricq

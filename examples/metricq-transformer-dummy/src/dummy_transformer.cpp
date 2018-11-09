@@ -25,50 +25,67 @@
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#pragma once
 
-#include <nitro/log/attribute/jiffy.hpp>
-#include <nitro/log/attribute/severity.hpp>
-#include <nitro/log/filter/severity_filter.hpp>
-#include <nitro/log/log.hpp>
-#include <nitro/log/sink/stdout.hpp>
+#include "dummy_transformer.hpp"
+#include "log.hpp"
 
-namespace detail
-{
-using record = nitro::log::record<nitro::log::tag_attribute, nitro::log::message_attribute,
-                                  nitro::log::severity_attribute, nitro::log::jiffy_attribute>;
+#include <metricq/types.hpp>
 
-template <typename Record>
-class log_formater
-{
-public:
-    std::string format(Record& r)
-    {
-        std::stringstream s;
+#include <chrono>
 
-        s << "[" << r.jiffy() << "][";
+#include <cmath>
 
-        if (!r.tag().empty())
+DummyTransformer::DummyTransformer(const std::string& manager_host, const std::string& token)
+: metricq::Transformer(token), signals_(io_service, SIGINT, SIGTERM)
+{ // Register signal handlers so that the daemon may be shut down.
+    signals_.async_wait([this](auto, auto signal) {
+        if (!signal)
         {
-            s << r.tag() << "][";
+            return;
         }
+        Log::info() << "Caught signal " << signal << ". Shutdown.";
+        close();
+    });
 
-        s << r.severity() << "]: " << r.message() << '\n';
-
-        return s.str();
-    }
-};
-
-template <typename Record>
-using log_filter = nitro::log::filter::severity_filter<Record>;
-} // namespace detail
-
-using Log = nitro::log::logger<detail::record, detail::log_formater, nitro::log::sink::StdOut,
-                               detail::log_filter>;
-
-inline void set_severity(nitro::log::severity_level level)
-{
-    nitro::log::filter::severity_filter<detail::record>::set_severity(level);
+    connect(manager_host);
 }
 
-void initialize_logger();
+DummyTransformer::~DummyTransformer()
+{
+}
+
+void DummyTransformer::on_transformer_config(const metricq::json& config)
+{
+    for (const auto& metric : config["metrics"])
+    {
+        const auto& out_id = metric["out_id"].get<std::string>();
+        const auto& in_id = metric["in_id"].get<std::string>();
+        const auto& factor = metric["factor"].get<double>();
+
+        Log::info() << "Transforming " << in_id << " to " << out_id << " with factor " << factor;
+
+        metric_info[in_id] = { out_id, factor };
+        (*this)[out_id];
+    }
+}
+
+void DummyTransformer::on_transformer_ready()
+{
+    Log::info() << "DummyTransformer ready";
+}
+
+void DummyTransformer::on_data(const std::string& id, metricq::TimeValue tv)
+{
+    try
+    {
+        Log::trace() << "DummyTransformer::on_data(" << id << ")";
+        const auto& info = metric_info.at(id);
+        tv.value *= info.factor;
+        send(info.out_id, tv);
+    }
+    catch (const std::out_of_range&)
+    {
+        Log::error() << "received unexpected metric id: " << id;
+        throw;
+    }
+}

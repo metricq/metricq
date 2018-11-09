@@ -25,7 +25,8 @@
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#include "dummy_source.hpp"
+
+#include "dummy_transformer.hpp"
 #include "log.hpp"
 
 #include <nitro/broken_options/parser.hpp>
@@ -41,15 +42,12 @@ int main(int argc, char* argv[])
     parser.option("server", "The metricq management server to connect to.")
         .default_value("amqp://localhost")
         .short_name("s");
-    parser.option("token", "The token used for source authentication against the metricq manager.")
-        .default_value("source-dummy");
+    parser.option("token", "The token used for transformer authentication against the metricq manager.")
+        .default_value("transformer-dummy");
     parser.toggle("verbose").short_name("v");
     parser.toggle("trace").short_name("t");
     parser.toggle("quiet").short_name("q");
     parser.toggle("help").short_name("h");
-    parser.option("interval", "Interval to generate data in milliseconds.")
-        .short_name("i")
-        .default_value("100");
 
     try
     {
@@ -76,10 +74,9 @@ int main(int argc, char* argv[])
 
         initialize_logger();
 
-        DummySource source(options.get("server"), options.get("token"),
-                           options.as<int>("interval"));
+        DummyTransformer transformer(options.get("server"), options.get("token"));
         Log::info() << "starting main loop.";
-        source.main_loop();
+        transformer.main_loop();
         Log::info() << "exiting main loop.";
     }
     catch (nitro::broken_options::parser_error& e)

@@ -40,24 +40,11 @@ Db::Db(const std::string& token) : Sink(token)
 
 void Db::setup_history_queue(const AMQP::QueueCallback& callback)
 {
-    // TODO confirm that this makes sense to call twice
-    assert(data_server_address_);
-    assert(!history_queue_.empty());
-    if (!data_connection_)
-    {
-        data_connection_ =
-            std::make_unique<AMQP::TcpConnection>(&data_handler_, *data_server_address_);
-    }
-    if (!data_channel_)
-    {
-        data_channel_ = std::make_unique<AMQP::TcpChannel>(data_connection_.get());
-        data_channel_->onError(debug_error_cb("db data channel error"));
-    }
-
+    assert(data_channel_);
     data_channel_->declareQueue(history_queue_, AMQP::passive).onSuccess(callback);
 }
 
-void Db::history_callback(const AMQP::Message& incoming_message)
+void Db::on_history(const AMQP::Message &incoming_message)
 {
     const auto& metric_name = incoming_message.routingkey();
     auto message_string = std::string(incoming_message.body(), incoming_message.bodySize());
@@ -65,7 +52,7 @@ void Db::history_callback(const AMQP::Message& incoming_message)
     history_request_.Clear();
     history_request_.ParseFromString(message_string);
 
-    auto response = history_callback(metric_name, history_request_);
+    auto response = on_history(metric_name, history_request_);
 
     std::string reply_message = response.SerializeAsString();
     AMQP::Envelope envelope(reply_message.data(), reply_message.size());
@@ -75,58 +62,37 @@ void Db::history_callback(const AMQP::Message& incoming_message)
     data_channel_->publish("", incoming_message.replyTo(), envelope);
 }
 
-void Db::db_config_callback(const json&)
+void Db::on_connected()
 {
-    log::debug("ignoring db config, not implemented by specific DB");
+    rpc("db.register", [this](const auto& response) { config(response); });
 }
 
-void Db::setup_complete()
-{
-    rpc("db.register", [this](const auto& config) { config_callback(config); });
-}
-
-void Db::config_callback(const json& response)
+void Db::config(const json& config)
 {
     log::debug("start parsing config");
 
-    data_server_address_ = add_credentials(response["dataServerAddress"].get<std::string>());
-    data_queue_ = response["dataQueue"];
-    history_queue_ = response["historyQueue"];
+    data_config(config);
 
-    db_config_callback(response["config"]);
+    history_queue_ = config["historyQueue"];
 
-    setup_data_queue([this](const std::string& name, int msgcount, int consumercount) {
-        log::notice("setting up data queue, msgcount: {}, consumercount: {}", msgcount,
-                    consumercount);
+    db_config(config["config"]);
+
+    setup_history_queue([this](const std::string& name, int message_count, int consumer_count) {
+        log::notice("setting up history queue, messages {}, consumers {}", message_count,
+                    consumer_count);
+
         // we do not tolerate other consumers
-        assert(consumercount == 0);
+        if (consumer_count != 0)
+        {
+            log::fatal("unexpected consumer count {} - are we not alone in the queue?",
+                       consumer_count);
+        }
 
         auto message_cb = [this](const AMQP::Message& message, uint64_t deliveryTag,
                                  bool redelivered) {
             (void)redelivered;
 
-            data_callback(message);
-            data_channel_->ack(deliveryTag);
-        };
-
-        data_channel_->consume(name)
-            .onReceived(message_cb)
-            .onSuccess(debug_success_cb("sink data queue consume success"))
-            .onError(debug_error_cb("sink data queue consume error"))
-            .onFinalize([]() { log::info("sink data queue consume finalize"); });
-    });
-
-    setup_history_queue([this](const std::string& name, int msgcount, int consumercount) {
-        log::notice("setting up history queue, msgcount: {}, consumercount: {}", msgcount,
-                    consumercount);
-        // we do not tolerate other consumers
-        assert(consumercount == 0);
-
-        auto message_cb = [this](const AMQP::Message& message, uint64_t deliveryTag,
-                                 bool redelivered) {
-            (void)redelivered;
-
-            history_callback(message);
+            on_history(message);
             data_channel_->ack(deliveryTag);
         };
 

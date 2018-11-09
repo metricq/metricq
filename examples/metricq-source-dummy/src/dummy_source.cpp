@@ -47,15 +47,19 @@ DummySource::DummySource(const std::string& manager_host, const std::string& tok
         stop_requested_ = true;
     });
 
-    (*this)["dummy_sin"];
     connect(manager_host);
 }
 
-void DummySource::source_config_callback(const nlohmann::json&)
+DummySource::~DummySource()
 {
 }
 
-void DummySource::ready_callback()
+void DummySource::on_source_config(const nlohmann::json&)
+{
+    (*this)["dummy.sin"];
+}
+
+void DummySource::on_source_ready()
 {
     timer_.start([this](auto err) { return this->timeout_cb(err); },
                  std::chrono::milliseconds(interval_ms));
@@ -72,7 +76,7 @@ metricq::Timer::TimerResult DummySource::timeout_cb(std::error_code)
     Log::debug() << "sending metrics...";
     auto current_time = metricq::Clock::now();
     const auto r = 10;
-    auto& metric = (*this)["dummy_sin"];
+    auto& metric = (*this)["dummy.sin"];
     metric.set_chunksize(0);
     for (int i = 0; i < r; i++)
     {

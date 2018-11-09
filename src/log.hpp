@@ -29,7 +29,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#include <metricq/log.hpp>
+#include <metricq/logger.hpp>
 
 #include <fmt/format.h>
 #include <fmt/ostream.h>

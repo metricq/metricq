@@ -1,6 +1,4 @@
-// Copyright (c) 2018, ZIH,
-// Technische Universitaet Dresden,
-// Federal Republic of Germany
+// Copyright (c) 2018, ZIH, Technische Universitaet Dresden, Federal Republic of Germany
 //
 // All rights reserved.
 //
@@ -27,61 +25,35 @@
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #pragma once
 
-#include <metricq/drain.hpp>
-#include <metricq/ostream.hpp>
-#include <metricq/types.hpp>
+#include <metricq/transformer.hpp>
 
-#include <string>
-#include <unordered_map>
-#include <vector>
+#include <asio/signal_set.hpp>
 
-namespace metricq
+#include <atomic>
+#include <map>
+#include <system_error>
+
+struct MetricInfo
 {
-class SimpleDrain : public Drain
+    std::string out_id;
+    double factor;
+};
+
+class DummyTransformer : public metricq::Transformer
 {
 public:
-    SimpleDrain(const std::string& token, const std::string& queue) : Drain(token, queue)
-    {
-    }
-
-    void on_data(const std::string& id, const metricq::DataChunk& chunk) override
-    {
-        auto& d = data_.at(id);
-        for (const auto& tv : chunk)
-        {
-            d.emplace_back(tv);
-        }
-    }
-
-    /**
-     * warning this (re)move the entire map
-     */
-    std::unordered_map<std::string, std::vector<TimeValue>>& get()
-    {
-        return data_;
-    };
-
-    /**
-     * warning this (re)moves the vector
-     */
-    std::vector<TimeValue>& at(const std::string& metric)
-    {
-        return data_.at(metric);
-    }
-
-protected:
-    void on_connected() override
-    {
-        Drain::on_connected();
-        for (const auto& metric : metrics_)
-        {
-            data_[metric];
-        }
-    }
+    DummyTransformer(const std::string& manager_host, const std::string& token);
+    ~DummyTransformer();
 
 private:
-    std::unordered_map<std::string, std::vector<TimeValue>> data_;
+    void on_transformer_config(const metricq::json& config) override;
+    void on_transformer_ready() override;
+    void on_data(const std::string& id, metricq::TimeValue tv) override;
+
+private:
+    asio::signal_set signals_;
+    std::map<std::string, MetricInfo> metric_info;
 };
-} // namespace metricq

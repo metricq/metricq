@@ -29,59 +29,28 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#include <metricq/drain.hpp>
-#include <metricq/ostream.hpp>
-#include <metricq/types.hpp>
+#include <metricq/connection.hpp>
 
-#include <string>
-#include <unordered_map>
-#include <vector>
+#include <amqpcpp.h>
 
 namespace metricq
 {
-class SimpleDrain : public Drain
+
+class DataClient : public Connection
 {
 public:
-    SimpleDrain(const std::string& token, const std::string& queue) : Drain(token, queue)
-    {
-    }
-
-    void on_data(const std::string& id, const metricq::DataChunk& chunk) override
-    {
-        auto& d = data_.at(id);
-        for (const auto& tv : chunk)
-        {
-            d.emplace_back(tv);
-        }
-    }
-
-    /**
-     * warning this (re)move the entire map
-     */
-    std::unordered_map<std::string, std::vector<TimeValue>>& get()
-    {
-        return data_;
-    };
-
-    /**
-     * warning this (re)moves the vector
-     */
-    std::vector<TimeValue>& at(const std::string& metric)
-    {
-        return data_.at(metric);
-    }
+    DataClient(const std::string& token, bool add_uuid = false);
 
 protected:
-    void on_connected() override
-    {
-        Drain::on_connected();
-        for (const auto& metric : metrics_)
-        {
-            data_[metric];
-        }
-    }
+    void data_config(const json& config);
+    void close() override;
 
 private:
-    std::unordered_map<std::string, std::vector<TimeValue>> data_;
+    AMQP::LibAsioHandler data_handler_;
+    std::optional<AMQP::Address> data_server_address_;
+    std::unique_ptr<AMQP::TcpConnection> data_connection_;
+
+protected:
+    std::unique_ptr<AMQP::TcpChannel> data_channel_;
 };
 } // namespace metricq

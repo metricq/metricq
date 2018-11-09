@@ -39,10 +39,11 @@ class DummySource : public metricq::Source
 {
 public:
     DummySource(const std::string& manager_host, const std::string& token, int interval_ms);
+    ~DummySource();
 
 private:
-    void source_config_callback(const nlohmann::json& config) override;
-    void ready_callback() override;
+    void on_source_config(const nlohmann::json& config) override;
+    void on_source_ready() override;
 
     asio::signal_set signals_;
 

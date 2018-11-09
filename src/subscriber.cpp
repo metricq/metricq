@@ -45,7 +45,7 @@ void Subscriber::add(const std::string& metric)
     metrics_.emplace_back(metric);
 }
 
-void Subscriber::setup_complete()
+void Subscriber::on_connected()
 {
     rpc("subscribe",
         [this](const json& response) {

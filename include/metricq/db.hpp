@@ -44,15 +44,16 @@ public:
     Db(const std::string& token);
 
 protected:
-    virtual HistoryResponse history_callback(const std::string& id,
-                                             const HistoryRequest& content) = 0;
+    virtual HistoryResponse on_history(const std::string& id, const HistoryRequest& content) = 0;
+    virtual void db_config(const json& config) = 0;
+
+private:
+    void on_history(const AMQP::Message&);
 
 protected:
-    void history_callback(const AMQP::Message&);
     void setup_history_queue(const AMQP::QueueCallback& callback);
-    virtual void db_config_callback(const json& config);
-    void config_callback(const json& response);
-    void setup_complete() override;
+    void config(const json& config);
+    void on_connected() override;
 
 protected:
     std::string history_queue_;

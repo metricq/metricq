@@ -38,9 +38,10 @@ set_target_properties(metricq-messages PROPERTIES
 )
 target_compile_features(metricq-messages PRIVATE cxx_std_14)
 
-set(CORE_SRCS src/chrono.cpp src/connection.cpp src/log.cpp)
+set(CORE_SRCS src/chrono.cpp src/connection.cpp src/log.cpp src/data_client.cpp)
 set(SOURCE_SRCS src/source.cpp)
 set(SINK_SRCS src/sink.cpp src/drain.cpp src/subscriber.cpp src/simple.cpp)
+set(TRANSFORMER_SRCS src/transformer.cpp)
 set(DB_SRCS src/db.cpp)
 
 add_library(metricq-core ${CORE_SRCS})
@@ -88,6 +89,18 @@ set_target_properties(metricq-sink PROPERTIES
     POSITION_INDEPENDENT_CODE ${METRICQ_POSITION_INDEPENDENT_CODE}
 )
 
+add_library(metricq-transformer ${TRANSFORMER_SRCS})
+target_link_libraries(metricq-transformer
+    PUBLIC
+        metricq-core
+        metricq-sink
+    PRIVATE
+        fmt::fmt
+)
+set_target_properties(metricq-transformer PROPERTIES
+        POSITION_INDEPENDENT_CODE ${METRICQ_POSITION_INDEPENDENT_CODE}
+)
+
 add_library(metricq-db ${DB_SRCS})
 target_link_libraries(metricq-db
     PUBLIC
@@ -106,6 +119,7 @@ target_link_libraries(metricq-all
         metricq::core
         metricq::source
         metricq::sink
+        metricq::transformer
         metricq::db
 )
 
@@ -113,6 +127,7 @@ add_library(metricq::metricq ALIAS metricq-all)
 add_library(metricq::core ALIAS metricq-core)
 add_library(metricq::source ALIAS metricq-source)
 add_library(metricq::sink ALIAS metricq-sink)
+add_library(metricq::transformer ALIAS metricq-transformer)
 add_library(metricq::db ALIAS metricq-db)
 add_library(metricq::messages ALIAS metricq-messages)
 
@@ -128,6 +143,7 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     add_subdirectory(lib/nitro)
     add_subdirectory(examples/metricq-source-dummy)
     add_subdirectory(examples/metricq-sink-dummy)
+    add_subdirectory(examples/metricq-transformer-dummy)
 
     target_compile_options(metricq-core
         PUBLIC
@@ -144,6 +160,7 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     set_target_properties(metricq-all PROPERTIES EXPORT_NAME all)
     set_target_properties(metricq-source PROPERTIES EXPORT_NAME source)
     set_target_properties(metricq-sink PROPERTIES EXPORT_NAME sink)
+    set_target_properties(metricq-transformer PROPERTIES EXPORT_NAME transformer)
     set_target_properties(metricq-db PROPERTIES EXPORT_NAME db)
     set_target_properties(metricq-messages PROPERTIES EXPORT_NAME messages)
 
@@ -153,6 +170,7 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
             metricq-all
             metricq-source
             metricq-sink
+            metricq-transformer
             metricq-db
             metricq-messages
         EXPORT metricqTargets
@@ -189,5 +207,6 @@ else()
     set_target_properties(metricq-core PROPERTIES EXCLUDE_FROM_ALL TRUE)
     set_target_properties(metricq-source PROPERTIES EXCLUDE_FROM_ALL TRUE)
     set_target_properties(metricq-sink PROPERTIES EXCLUDE_FROM_ALL TRUE)
+    set_target_properties(metricq-transformer PROPERTIES EXCLUDE_FROM_ALL TRUE)
     set_target_properties(metricq-db PROPERTIES EXCLUDE_FROM_ALL TRUE)
 endif()

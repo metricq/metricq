@@ -58,7 +58,7 @@ public:
     }
 
 protected:
-    void setup_complete() override;
+    void on_connected() override;
 
 protected:
     std::vector<std::string> metrics_;

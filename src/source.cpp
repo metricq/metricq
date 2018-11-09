@@ -27,11 +27,11 @@
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#include <metricq/source.hpp>
 
 #include "log.hpp"
 
 #include <metricq/datachunk.pb.h>
+#include <metricq/source.hpp>
 
 #include <amqpcpp.h>
 
@@ -45,25 +45,13 @@
 namespace metricq
 {
 
-Source::Source(const std::string& token) : Connection(token), data_handler_(io_service)
-{
-    TimePoint starting_time = Clock::now();
-    register_management_callback("discover", [token, starting_time](const json&) {
-        json response;
-        response["alive"] = true;
-        response["currentTime"] = Clock::format_iso(Clock::now());
-        response["startingTime"] = Clock::format_iso(starting_time);
-        return response;
-    });
-}
-
-Source::~Source()
+Source::Source(const std::string& token) : DataClient(token)
 {
 }
 
-void Source::setup_complete()
+void Source::on_connected()
 {
-    rpc("source.register", [this](const auto& config) { config_callback(config); });
+    rpc("source.register", [this](const auto& response) { config(response); });
 }
 
 void Source::send(const std::string& id, const DataChunk& dc)
@@ -77,46 +65,33 @@ void Source::send(const std::string& id, TimeValue tv)
     data_channel_->publish(data_exchange_, id, DataChunk(tv).SerializeAsString());
 }
 
-void Source::config_callback(const nlohmann::json& config)
+void Source::config(const json& config)
 {
-    AMQP::Address new_data_server_address =
-        add_credentials(config["dataServerAddress"].get<std::string>());
-    log::debug("start parsing source config");
-    if (data_connection_)
+    data_config(config);
+
+    if (!data_exchange_.empty() && config["dataExchange"] != data_exchange_)
     {
-        if (new_data_server_address != data_server_address_)
-        {
-            log::fatal("changing dataServerAddress on the fly is not currently supported");
-            std::abort();
-        }
-        if (config["dataExchange"] != data_exchange_)
-        {
-            log::fatal("changing dataQueue on the fly is not currently supported");
-            std::abort();
-        }
+        log::fatal("changing dataExchange on the fly is not currently supported");
+        std::abort();
     }
 
-    data_server_address_ = new_data_server_address;
     data_exchange_ = config["dataExchange"];
-
-    data_connection_ =
-        std::make_unique<AMQP::TcpConnection>(&data_handler_, new_data_server_address);
-    data_channel_ = std::make_unique<AMQP::TcpChannel>(data_connection_.get());
-    data_channel_->onError([](const char* message) {
-        // report error
-        log::error("data channel error: {}", message);
-    });
 
     if (config.find("config") != config.end())
     {
-        source_config_callback(config["config"]);
+        on_source_config(config["config"]);
     }
     send_metrics_list();
-    ready_callback();
+    on_source_ready();
 }
 
 void Source::send_metrics_list()
 {
+    if (metrics_.empty())
+    {
+        return;
+    }
+
     json payload;
     for (auto& metric : metrics_)
     {
@@ -124,38 +99,4 @@ void Source::send_metrics_list()
     }
     rpc("source.metrics_list", [this](const auto&) { /* nothing to do */ (void)this; }, payload);
 }
-
-void Source::close()
-{
-    Connection::close();
-    if (!data_connection_)
-    {
-        log::debug("closing source, no data_connection up yet");
-        return;
-    }
-    auto alive = data_connection_->close();
-    log::info("closed source data connection: {}", alive);
-}
-
-void SourceMetric::flush()
-{
-    source_.send(id_, chunk_);
-    chunk_.clear_time_delta();
-    chunk_.clear_value();
-    previous_timestamp_ = 0;
-}
-
-void SourceMetric::send(TimeValue tv)
-{
-    chunk_.add_time_delta(tv.time.time_since_epoch().count() - previous_timestamp_);
-    previous_timestamp_ = tv.time.time_since_epoch().count();
-    chunk_.add_value(tv.value);
-
-    assert(chunk_.time_delta_size() == chunk_.value_size());
-    if (chunk_size_ && chunk_.time_delta_size() == chunk_size_)
-    {
-        flush();
-    }
-}
-
 } // namespace metricq

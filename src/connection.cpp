@@ -29,7 +29,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <metricq/connection.hpp>
 
-#include <metricq/log.hpp>
+#include <metricq/logger.hpp>
 
 #include "log.hpp"
 #include "util.hpp"
@@ -117,7 +117,7 @@ void Connection::connect(const std::string& server_address)
                                            bool redelivered) {
                             handle_management_message(message, delivery_tag, redelivered);
                         })
-                        .onSuccess([this]() { setup_complete(); })
+                        .onSuccess([this]() { on_connected(); })
                         .onError(debug_error_cb("management consume error"));
                 });
         });
