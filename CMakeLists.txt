@@ -127,6 +127,7 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 
     add_subdirectory(lib/nitro)
     add_subdirectory(examples/metricq-source-dummy)
+    add_subdirectory(examples/metricq-sink-dummy)
 
     target_compile_options(metricq-core
         PUBLIC
