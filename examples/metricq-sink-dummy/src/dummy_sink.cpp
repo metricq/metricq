@@ -41,6 +41,8 @@ DummySink::DummySink(const std::string& manager_host, const std::string& token,
                      const std::vector<std::string>& metrics)
 : metricq::Sink(token, true), signals_(io_service, SIGINT, SIGTERM), metrics_(metrics)
 {
+    connect(manager_host);
+
     rpc("subscribe",
         [this](const json& response) {
             data_queue_ = response["dataQueue"];
@@ -79,8 +81,6 @@ DummySink::DummySink(const std::string& manager_host, const std::string& token,
         rpc("unsubscribe", [this](const auto&) { (void)this; },
             { { "dataQueue", data_queue_ }, { "metrics", metrics_ } });
     });
-
-    connect(manager_host);
 }
 
 void DummySink::end()
