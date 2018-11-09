@@ -122,7 +122,7 @@ void Source::send_metrics_list()
     {
         payload["metrics"].push_back(metric.second.id());
     }
-    rpc("source.metrics_list", [this](const auto&) { /* nothing to do */ }, payload);
+    rpc("source.metrics_list", [this](const auto&) { /* nothing to do */ (void)this; }, payload);
 }
 
 void Source::close()
