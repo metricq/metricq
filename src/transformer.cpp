@@ -84,6 +84,6 @@ void Transformer::send_metrics_list()
     {
         payload["metrics"].push_back(metric.second.id());
     }
-    rpc("transformer.metrics_list", [this](const auto&) { /* nothing to do */ (void)this; }, payload);
+    rpc("transformer.declare_metrics", [this](const auto&) { /* nothing to do */ (void)this; }, payload);
 }
 } // namespace metricq

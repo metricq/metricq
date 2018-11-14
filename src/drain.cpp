@@ -41,7 +41,7 @@ Drain::~Drain()
 void Drain::on_connected()
 {
     assert(!metrics_.empty());
-    rpc("unsubscribe", [this](const auto& response) { unsubscribe_complete(response); },
+    rpc("sink.unsubscribe", [this](const auto& response) { unsubscribe_complete(response); },
         { { "dataQueue", data_queue_ }, { "metrics", metrics_ } });
 }
 
@@ -60,7 +60,7 @@ void Drain::on_data(const AMQP::Message &message, uint64_t delivery_tag, bool re
         log::debug("received end message");
         // We used to close the data connection here, but this should not be necessary.
         // It will be closed implicitly from the response callback.
-        rpc("release", [this](const auto&) { close(); }, { { "dataQueue", data_queue_ } });
+        rpc("sink.release", [this](const auto&) { close(); }, { { "dataQueue", data_queue_ } });
         return;
     }
 

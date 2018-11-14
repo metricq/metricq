@@ -98,12 +98,12 @@ class HistoryClient(Client):
 
     async def history_metric_list(self, timeout=60):
         request_future = asyncio.Future(loop=self.event_loop)
-        await self.rpc('history.get_metric_list', lambda **response:
-            request_future.set_result(response)
-        )
+        await self.rpc('history.get_metrics',
+                       lambda **response: request_future.set_result(response),
+                       arguments={'format': 'array'})
         result = await asyncio.wait_for(request_future, timeout=timeout)
-        if "metric_list" in result:
-            return result["metric_list"]
+        if "metrics" in result:
+            return result["metrics"]
         return []
 
     async def history_data_request(self, metric_name, start_time_ns, end_time_ns, interval_ns, timeout=60):
