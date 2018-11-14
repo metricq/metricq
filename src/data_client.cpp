@@ -52,7 +52,7 @@ void DataClient::data_config(const metricq::json& config)
 {
     AMQP::Address new_data_server_address =
         add_credentials(config["dataServerAddress"].get<std::string>());
-    log::debug("start parsing source config");
+    log::debug("start parsing data config");
     if (data_connection_)
     {
         if (new_data_server_address != data_server_address_)
