@@ -68,7 +68,7 @@ protected:
     virtual void on_source_config(const nlohmann::json& config) = 0;
     virtual void on_source_ready() = 0;
 
-    void send_metrics_list();
+    void declare_metrics();
 
 private:
     void config(const nlohmann::json& config);
