@@ -75,7 +75,7 @@ void Db::config(const json& config)
 
     history_queue_ = config["historyQueue"];
 
-    db_config(config["config"]);
+    on_db_config(config["config"]);
 
     setup_history_queue([this](const std::string& name, int message_count, int consumer_count) {
         log::notice("setting up history queue, messages {}, consumers {}", message_count,
@@ -102,5 +102,7 @@ void Db::config(const json& config)
             .onError(debug_error_cb("sink history queue consume error"))
             .onFinalize([]() { log::info("sink history queue consume finalize"); });
     });
+
+    on_db_ready();
 }
 } // namespace metricq

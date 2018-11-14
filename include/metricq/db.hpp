@@ -45,7 +45,8 @@ public:
 
 protected:
     virtual HistoryResponse on_history(const std::string& id, const HistoryRequest& content) = 0;
-    virtual void db_config(const json& config) = 0;
+    virtual void on_db_config(const json& config) = 0;
+    virtual void on_db_ready() = 0;
 
 private:
     void on_history(const AMQP::Message&);
