@@ -56,6 +56,7 @@ void DataClient::data_config(const metricq::json& config)
     log::debug("start parsing data config");
     if (data_connection_)
     {
+        log::debug("data connection already exists");
         if (new_data_server_address != data_server_address_)
         {
             log::fatal("changing dataServerAddress on the fly is not currently supported");
@@ -67,6 +68,7 @@ void DataClient::data_config(const metricq::json& config)
 
     data_server_address_ = new_data_server_address;
 
+    log::debug("opening data connection to {}", new_data_server_address);
     data_connection_ =
         std::make_unique<AMQP::TcpConnection>(&data_handler_, new_data_server_address);
     data_channel_ = std::make_unique<AMQP::TcpChannel>(data_connection_.get());
