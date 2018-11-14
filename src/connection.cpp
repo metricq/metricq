@@ -96,8 +96,10 @@ void Connection::connect(const std::string& server_address)
         init_ssl();
     }
 
-    log::info("connecting to management server: {}", server_address);
     management_address_ = server_address;
+
+    log::info("connecting to management server: {}", *management_address_);
+
     management_connection_ =
         std::make_unique<AMQP::TcpConnection>(&management_handler_, *management_address_);
     management_channel_ = std::make_unique<AMQP::TcpChannel>(management_connection_.get());

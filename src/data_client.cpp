@@ -68,9 +68,9 @@ void DataClient::data_config(const metricq::json& config)
 
     data_server_address_ = new_data_server_address;
 
-    log::debug("opening data connection to {}", new_data_server_address);
+    log::debug("opening data connection to {}", data_server_address_);
     data_connection_ =
-        std::make_unique<AMQP::TcpConnection>(&data_handler_, new_data_server_address);
+        std::make_unique<AMQP::TcpConnection>(&data_handler_, data_server_address_);
     data_channel_ = std::make_unique<AMQP::TcpChannel>(data_connection_.get());
     data_channel_->onReady(debug_success_cb("data channel ready"));
     data_channel_->onError(debug_error_cb("data channel error"));
