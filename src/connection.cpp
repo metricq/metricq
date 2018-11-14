@@ -101,6 +101,7 @@ void Connection::connect(const std::string& server_address)
     management_connection_ =
         std::make_unique<AMQP::TcpConnection>(&management_handler_, *management_address_);
     management_channel_ = std::make_unique<AMQP::TcpChannel>(management_connection_.get());
+    management_channel_->onReady(debug_success_cb("management channel ready"));
     management_channel_->onError(debug_error_cb("management channel error"));
 
     management_client_queue_ = std::string("client-") + connection_token_ + "-rpc";

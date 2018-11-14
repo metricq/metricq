@@ -82,6 +82,7 @@ void Source::config(const json& config)
         on_source_config(config["config"]);
     }
     declare_metrics();
+
     on_source_ready();
 }
 

@@ -32,6 +32,7 @@
 #include <metricq/data_client.hpp>
 
 #include "log.hpp"
+#include "util.hpp"
 
 namespace metricq
 {
@@ -69,10 +70,8 @@ void DataClient::data_config(const metricq::json& config)
     data_connection_ =
         std::make_unique<AMQP::TcpConnection>(&data_handler_, new_data_server_address);
     data_channel_ = std::make_unique<AMQP::TcpChannel>(data_connection_.get());
-    data_channel_->onError([](const char* message) {
-        // report error
-        log::error("data channel error: {}", message);
-    });
+    data_channel_->onReady(debug_success_cb("data channel ready"));
+    data_channel_->onError(debug_error_cb("data channel error"));
 }
 
 void DataClient::close()
