@@ -71,7 +71,7 @@ void Db::config(const json& config)
 {
     log::debug("start parsing config");
 
-    data_config(config);
+    sink_config(config);
 
     history_queue_ = config["historyQueue"];
 
