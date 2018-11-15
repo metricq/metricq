@@ -72,7 +72,10 @@ void DataClient::data_config(const metricq::json& config)
     data_connection_ =
         std::make_unique<AMQP::TcpConnection>(&data_handler_, *data_server_address_);
     data_channel_ = std::make_unique<AMQP::TcpChannel>(data_connection_.get());
-    data_channel_->onReady(debug_success_cb("data channel ready"));
+    data_channel_->onReady([this](){
+        log::debug("data_channel ready");
+        this->on_data_channel_ready();
+    });
     data_channel_->onError(debug_error_cb("data channel error"));
 }
 
@@ -86,5 +89,8 @@ void DataClient::close()
     }
     auto alive = data_connection_->close();
     log::info("closed data_connection: {}", alive);
+}
+
+void DataClient::on_data_channel_ready() {
 }
 } // namespace metricq

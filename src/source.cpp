@@ -81,9 +81,12 @@ void Source::config(const json& config)
     {
         on_source_config(config["config"]);
     }
-    declare_metrics();
+}
 
+void Source::on_data_channel_ready()
+{
     on_source_ready();
+    declare_metrics();
 }
 
 void Source::declare_metrics()

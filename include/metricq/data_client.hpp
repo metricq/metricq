@@ -42,6 +42,7 @@ public:
     DataClient(const std::string& token, bool add_uuid = false);
 
 protected:
+    virtual void on_data_channel_ready();
     void data_config(const json& config);
     void close() override;
 

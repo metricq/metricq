@@ -65,6 +65,9 @@ public:
 
 protected:
     void on_connected() override;
+    void on_data_channel_ready() override;
+
+protected:
     virtual void on_source_config(const nlohmann::json& config) = 0;
     virtual void on_source_ready() = 0;
 
