@@ -52,12 +52,14 @@ namespace metricq
 class Source : public DataClient
 {
 public:
+    using Metric = metricq::Metric<Source>;
+
     Source(const std::string& token);
 
     void send(const std::string& id, TimeValue tv);
     void send(const std::string& id, const DataChunk& dc);
 
-    Metric<Source>& operator[](const std::string& id)
+    Metric& operator[](const std::string& id)
     {
         auto ret = metrics_.try_emplace(id, id, *this);
         return ret.first->second;
@@ -78,6 +80,6 @@ private:
 
 private:
     std::string data_exchange_;
-    std::unordered_map<std::string, Metric<Source>> metrics_;
+    std::unordered_map<std::string, Metric> metrics_;
 };
 } // namespace metricq

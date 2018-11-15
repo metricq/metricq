@@ -36,12 +36,14 @@ namespace metricq
 class Transformer : public Sink
 {
 public:
+    using Metric = metricq::Metric<Transformer>;
+
     Transformer(const std::string& token);
 
     void send(const std::string& id, TimeValue tv);
     void send(const std::string& id, const DataChunk& dc);
 
-    Metric<Transformer>& operator[](const std::string& id)
+    Metric& operator[](const std::string& id)
     {
         auto ret = metrics_.try_emplace(id, id, *this);
         return ret.first->second;
@@ -59,6 +61,6 @@ private:
 
 private:
     std::string data_exchange_;
-    std::unordered_map<std::string, Metric<Transformer>> metrics_;
+    std::unordered_map<std::string, Metric> metrics_;
 };
 } // namespace metricq
