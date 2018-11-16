@@ -129,7 +129,11 @@ void Connection::connect(const std::string& server_address)
 void Connection::register_management_callback(const std::string& function, ManagementCallback cb)
 {
     auto ret = management_callbacks_.emplace(function, std::move(cb));
-    assert(ret.second);
+    if (!ret.second)
+    {
+        log::error("trying to register management callback that is already registered: {}", function);
+        throw std::invalid_argument("trying to register management callback that is already registered");
+    }
 }
 
 void Connection::rpc(const std::string& function, ManagementResponseCallback response_callback,
@@ -149,7 +153,12 @@ void Connection::rpc(const std::string& function, ManagementResponseCallback res
 
     auto ret =
         management_rpc_response_callbacks_.emplace(correlation_id, std::move(response_callback));
-    assert(ret.second);
+    if (!ret.second)
+    {
+        log::error("trying to register management RPC response callback that is already registered: {}", correlation_id);
+        throw std::invalid_argument("trying to register management RPC response callback that is already registered");
+    }
+
     management_channel_->publish(management_exchange_, function, envelope);
 }
 
