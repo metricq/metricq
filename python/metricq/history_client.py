@@ -96,11 +96,14 @@ class HistoryClient(Client):
     async def ready_callback(self):
         logger.debug('{} ready', self.token)
 
-    async def history_metric_list(self, timeout=60):
+    async def history_metric_list(self, selector=None, timeout=60):
         request_future = asyncio.Future(loop=self.event_loop)
+        arguments = {'format': 'array'}
+        if selector:
+            arguments['selector'] = selector
         await self.rpc('history.get_metrics',
                        lambda **response: request_future.set_result(response),
-                       arguments={'format': 'array'})
+                       arguments=arguments)
         result = await asyncio.wait_for(request_future, timeout=timeout)
         if "metrics" in result:
             return result["metrics"]
