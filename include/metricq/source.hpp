@@ -79,7 +79,6 @@ private:
     void config(const nlohmann::json& config);
 
 private:
-    std::string data_exchange_;
     std::unordered_map<std::string, Metric> metrics_;
 };
 } // namespace metricq

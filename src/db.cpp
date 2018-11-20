@@ -57,7 +57,7 @@ void Db::on_history(const AMQP::Message &incoming_message)
     std::string reply_message = response.SerializeAsString();
     AMQP::Envelope envelope(reply_message.data(), reply_message.size());
     envelope.setCorrelationID(incoming_message.correlationID());
-    envelope.setContentType("application/json");
+    envelope.setPersistent(true);
 
     data_channel_->publish("", incoming_message.replyTo(), envelope);
 }

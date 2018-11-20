@@ -43,13 +43,13 @@ void Transformer::on_connected()
 
 void Transformer::send(const std::string& id, const DataChunk& dc)
 {
-    data_channel_->publish(data_exchange_, id, dc.SerializeAsString());
+    data_publish(id, dc);
 }
 
 void Transformer::send(const std::string& id, TimeValue tv)
 {
     // TODO evaluate optimization of string construction
-    data_channel_->publish(data_exchange_, id, DataChunk(tv).SerializeAsString());
+    data_publish(id, DataChunk(tv));
 }
 
 void Transformer::config(const json& config)

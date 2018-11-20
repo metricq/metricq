@@ -46,10 +46,28 @@ protected:
     void data_config(const json& config);
     void close() override;
 
+    template <typename PB>
+    void data_publish(const std::string& routing_key, const PB& protobuf)
+    {
+        if (data_exchange_.empty())
+        {
+            throw std::logic_error("cannot publish on DataClient with empty data_exchange_");
+        }
+        std::string payload = protobuf.SerializeAsString();
+        AMQP::Envelope envelope(payload.data(), payload.size());
+        envelope.setPersistent(data_persistent_);
+        data_channel_->publish(data_exchange_, routing_key, envelope);
+    }
+
 private:
     AMQP::LibAsioHandler data_handler_;
     std::optional<AMQP::Address> data_server_address_;
     std::unique_ptr<AMQP::TcpConnection> data_connection_;
+
+protected:
+    // Used by Transformer and Source, but not Sink in general
+    std::string data_exchange_;
+    bool data_persistent_ = true;
 
 protected:
     std::unique_ptr<AMQP::TcpChannel> data_channel_;

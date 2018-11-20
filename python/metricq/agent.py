@@ -145,7 +145,8 @@ class Agent(RPCBase):
         msg = aio_pika.Message(body=body, correlation_id=correlation_id,
                                app_id=self.token,
                                reply_to=self._management_agent_queue.name,
-                               content_type='application/json')
+                               content_type='application/json',
+                               delivery_mode=aio_pika.DeliveryMode.PERSISTENT)
         self._rpc_response_handlers[correlation_id] = (response_callback, cleanup_on_response)
         await exchange.publish(msg, routing_key=routing_key)
 
@@ -181,7 +182,8 @@ class Agent(RPCBase):
                     aio_pika.Message(body=json.dumps(response).encode(),
                                      correlation_id=correlation_id,
                                      content_type='application/json',
-                                     app_id=self.token),
+                                     app_id=self.token,
+                                     delivery_mode=aio_pika.DeliveryMode.PERSISTENT),
                     routing_key=message.reply_to)
             else:
                 logger.debug('message is an RPC response')

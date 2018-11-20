@@ -150,6 +150,7 @@ void Connection::rpc(const std::string& function, ManagementResponseCallback res
     assert(!management_client_queue_.empty());
     envelope.setReplyTo(management_client_queue_);
     envelope.setContentType("application/json");
+    envelope.setPersistent(true);
 
     auto ret =
         management_rpc_response_callbacks_.emplace(correlation_id, std::move(response_callback));
@@ -206,6 +207,7 @@ void Connection::handle_management_message(const AMQP::Message& incoming_message
 
             log::debug("sending reply '{}' to {} / {}", reply_message, incoming_message.replyTo(),
                        incoming_message.correlationID());
+            envelope.setPersistent(true);
             management_channel_->publish("", incoming_message.replyTo(), envelope);
         }
         else

@@ -55,6 +55,9 @@ class Source(Client):
         self.data_channel = None
         self.data_exchange = None
 
+        # Maybe a subclass wants to change this some time
+        self.data_delivery_mode = aio_pika.DeliveryMode.PERSISTENT
+
         self.metrics = dict()
 
     async def connect(self):
@@ -122,5 +125,5 @@ class Source(Client):
         Actual send of a chunk,
         don't call from anywhere other than SourceMetric
         """
-        msg = aio_pika.Message(datachunk.SerializeToString())
+        msg = aio_pika.Message(datachunk.SerializeToString(), delivery_mode=self.data_delivery_mode)
         await self.data_exchange.publish(msg, routing_key=id)
