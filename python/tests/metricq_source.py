@@ -63,5 +63,5 @@ if __name__ == '__main__':
     logger.setLevel(logging.DEBUG)
     logger.addHandler(ch)
 
-    src = TestSource('pyTestSource', 'amqp://localhost')
+    src = TestSource('source-py-test', 'amqp://localhost')
     src.run()

@@ -38,19 +38,22 @@ logger = get_logger(__name__)
 
 def run_source(ssource):
     ssource.declare_metrics({
-        'foo': {
-            'unit': 'fu',
-            'location': 'localghost',
+        'dummy.time': {
+            'unit': 's',
+            'location': 'localhost',
         }
     })
-    for i in range(100):
-        ssource.send('foo', time.time(), i)
-        time.sleep(0.1)
+    try:
+        while True:
+            ssource.send('dummy.time', time.time(), time.time())
+            time.sleep(0.1)
+    except KeyboardInterrupt:
+        print("Exiting")
     ssource.stop()
 
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
 
-    ssource = SynchronousSource('pySynchronousTestSource', 'amqp://localhost')
+    ssource = SynchronousSource('source-py-test-sync', 'amqp://127.0.0.1')
     run_source(ssource)

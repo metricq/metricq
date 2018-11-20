@@ -46,12 +46,17 @@ if __name__ == '__main__':
     logger.addHandler(ch)
 
     sources = [
-        SynchronousSource('pySynchronousTestSource{}'.format(i), 'amqp://localhost')
+        SynchronousSource('source-py-test-sync-{}'.format(i), 'amqp://127.0.0.1')
         for i in range(5)
     ]
 
-    for i in range(100):
-        sources[i % len(sources)].send('foo', time.time(), i)
+    try:
+        while True:
+            for i in range(5):
+                sources[i % len(sources)].send('foo', time.time(), i)
+                time.sleep(0.1)
+    except KeyboardInterrupt:
+        print("Exiting")
 
     for source in sources:
         source.stop()
