@@ -60,7 +60,7 @@ static std::string make_token(const std::string& token, bool add_uuid)
 Connection::Connection(const std::string& connection_token, bool add_uuid,
                        std::size_t concurrency_hint)
 : io_service(concurrency_hint), connection_token_(make_token(connection_token, add_uuid)),
-  management_handler_(io_service)
+  management_handler_(*this, io_service)
 {
 }
 
@@ -73,20 +73,21 @@ void Connection::main_loop()
     io_service.run();
 }
 
+class SSLInit
+{
+public:
+    SSLInit()
+    {
+        // init the SSL library (this works for openssl 1.1, for openssl 1.0 use SSL_library_init())
+        // OPENSSL_init_ssl(0, NULL);
+        SSL_library_init();
+    }
+};
+
 static void init_ssl()
 {
-    // THIS IS NOT THREADSAFE
-    static bool is_initialized = false;
-    if (is_initialized)
-    {
-        return;
-    }
-
-    // init the SSL library (this works for openssl 1.1, for openssl 1.0 use SSL_library_init())
-    // OPENSSL_init_ssl(0, NULL);
-    SSL_library_init();
-
-    is_initialized = true;
+    static SSLInit initialize_ssl;
+    (void)initialize_ssl;
 }
 
 void Connection::connect(const std::string& server_address)
@@ -131,8 +132,10 @@ void Connection::register_management_callback(const std::string& function, Manag
     auto ret = management_callbacks_.emplace(function, std::move(cb));
     if (!ret.second)
     {
-        log::error("trying to register management callback that is already registered: {}", function);
-        throw std::invalid_argument("trying to register management callback that is already registered");
+        log::error("trying to register management callback that is already registered: {}",
+                   function);
+        throw std::invalid_argument(
+            "trying to register management callback that is already registered");
     }
 }
 
@@ -155,8 +158,11 @@ void Connection::rpc(const std::string& function, ManagementResponseCallback res
         management_rpc_response_callbacks_.emplace(correlation_id, std::move(response_callback));
     if (!ret.second)
     {
-        log::error("trying to register management RPC response callback that is already registered: {}", correlation_id);
-        throw std::invalid_argument("trying to register management RPC response callback that is already registered");
+        log::error(
+            "trying to register management RPC response callback that is already registered: {}",
+            correlation_id);
+        throw std::invalid_argument(
+            "trying to register management RPC response callback that is already registered");
     }
 
     management_channel_->publish(management_exchange_, function, envelope);

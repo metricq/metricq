@@ -37,7 +37,7 @@
 namespace metricq
 {
 DataClient::DataClient(const std::string& token, bool add_uuid)
-: Connection(token, add_uuid), data_handler_(io_service)
+: Connection(token, add_uuid), data_handler_(*this, io_service)
 {
     TimePoint starting_time = Clock::now();
     register_management_callback("discover", [token, starting_time](const json&) {

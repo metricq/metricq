@@ -29,10 +29,14 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
+
 #include <asio/io_service.hpp>
 
 #include <amqpcpp.h>
 #include <amqpcpp/libasio.h>
+
+#include <metricq/asio_handler.hpp>
+
 
 #include <nlohmann/json.hpp>
 
@@ -62,6 +66,20 @@ protected:
 public:
     void connect(const std::string& server_address);
 
+public:
+    virtual void on_error(const char* message)
+    {
+        (void)message;
+    }
+
+    virtual void on_lost()
+    {
+    }
+
+    virtual void on_detached()
+    {
+    }
+
 protected:
     virtual void on_connected() = 0;
 
@@ -87,7 +105,7 @@ private:
     std::string connection_token_;
 
     // TODO combine & abstract to extra class
-    AMQP::LibAsioHandler management_handler_;
+    metricq::AsioHandler<Connection> management_handler_;
     std::unique_ptr<AMQP::TcpConnection> management_connection_;
     std::unique_ptr<AMQP::TcpChannel> management_channel_;
     std::unordered_map<std::string, ManagementCallback> management_callbacks_;

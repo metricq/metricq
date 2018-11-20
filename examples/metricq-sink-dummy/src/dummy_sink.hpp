@@ -45,7 +45,7 @@ private:
 
     void on_connected() override;
 
-    void on_data(const AMQP::Message& message, uint64_t delivery_tag, bool redelivered);
+    void on_data(const AMQP::Message& message, uint64_t delivery_tag, bool redelivered) override;
     void on_data(const std::string& id, metricq::TimeValue tv) override;
 
     asio::signal_set signals_;

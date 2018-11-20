@@ -37,14 +37,24 @@
 DummySource::DummySource(const std::string& manager_host, const std::string& token, int interval_ms)
 : metricq::Source(token), signals_(io_service, SIGINT, SIGTERM), interval_ms(interval_ms), t(0),
   timer_(io_service)
-{ // Register signal handlers so that the daemon may be shut down.
+{
+    Log::debug() << "DummySource::DummySource() called";
+
+    // Register signal handlers so that the daemon may be shut down.
     signals_.async_wait([this](auto, auto signal) {
         if (!signal)
         {
             return;
         }
         Log::info() << "Caught signal " << signal << ". Shutdown.";
-        stop_requested_ = true;
+        if (running_)
+        {
+            stop_requested_ = true;
+        }
+        else
+        {
+            stop();
+        }
     });
 
     connect(manager_host);
@@ -56,13 +66,35 @@ DummySource::~DummySource()
 
 void DummySource::on_source_config(const nlohmann::json&)
 {
-    (*this)["dummy.sin"];
+    Log::debug() << "DummySource::on_source_config() called";
+    (*this)["dummy.source"];
 }
 
 void DummySource::on_source_ready()
 {
+    Log::debug() << "DummySource::on_source_ready() called";
     timer_.start([this](auto err) { return this->timeout_cb(err); },
                  std::chrono::milliseconds(interval_ms));
+
+    running_ = true;
+}
+
+void DummySource::on_error(const char* message)
+{
+    Log::debug() << "DummySource::on_error() called";
+    Log::error() << "Shit hits the fan: " << message;
+    signals_.cancel();
+    timer_.cancel();
+}
+
+void DummySource::on_lost()
+{
+    Log::debug() << "DummySource::on_lost() called";
+}
+
+void DummySource::on_detached()
+{
+    Log::debug() << "DummySource::on_detached() called";
 }
 
 metricq::Timer::TimerResult DummySource::timeout_cb(std::error_code)
@@ -76,7 +108,7 @@ metricq::Timer::TimerResult DummySource::timeout_cb(std::error_code)
     Log::debug() << "sending metrics...";
     auto current_time = metricq::Clock::now();
     const auto r = 10;
-    auto& metric = (*this)["dummy.sin"];
+    auto& metric = (*this)["dummy.source"];
     metric.set_chunksize(0);
     for (int i = 0; i < r; i++)
     {

@@ -41,6 +41,10 @@ public:
     DummySource(const std::string& manager_host, const std::string& token, int interval_ms);
     ~DummySource();
 
+    void on_error(const char* message) override;
+    void on_lost() override;
+    void on_detached() override;
+
 private:
     void on_source_config(const nlohmann::json& config) override;
     void on_source_ready() override;
@@ -51,6 +55,7 @@ private:
     int t;
     metricq::Timer timer_;
     std::atomic<bool> stop_requested_ = false;
+    bool running_ = false;
 
     metricq::Timer::TimerResult timeout_cb(std::error_code);
 };

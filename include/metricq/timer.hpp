@@ -57,6 +57,7 @@ public:
     void start(std::chrono::microseconds interval)
     {
         interval_ = interval;
+        canceled_ = false;
         timer_.expires_from_now(interval);
         timer_.async_wait([this](auto error) { this->timer_callback(error); });
     }
@@ -67,12 +68,18 @@ public:
         start(interval);
     }
 
+    void cancel()
+    {
+        canceled_ = true;
+        timer_.cancel();
+    }
+
 private:
     void timer_callback(std::error_code err)
     {
         auto res = callback_(err);
 
-        if (res == TimerResult::repeat)
+        if (res == TimerResult::repeat && !canceled_)
         {
             timer_.expires_at(timer_.expires_at() + interval_);
             timer_.async_wait([this](auto error) { this->timer_callback(error); });
@@ -83,6 +90,7 @@ private:
     asio::basic_waitable_timer<std::chrono::system_clock> timer_;
     Callback callback_;
     std::chrono::microseconds interval_;
+    bool canceled_;
 };
 
 } // namespace metricq

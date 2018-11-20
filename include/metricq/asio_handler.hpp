@@ -29,61 +29,46 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#include <metricq/drain.hpp>
-#include <metricq/ostream.hpp>
-#include <metricq/types.hpp>
+#include <amqpcpp.h>
+#include <amqpcpp/libasio.h>
 
-#include <string>
-#include <unordered_map>
-#include <vector>
+#include <asio/io_service.hpp>
 
 namespace metricq
 {
-class SimpleDrain : public Drain
+
+template <typename Delegate>
+class AsioHandler : public AMQP::LibAsioHandler
 {
+    using base = AMQP::LibAsioHandler;
+
 public:
-    SimpleDrain(const std::string& token, const std::string& queue) : Drain(token, queue)
+    AsioHandler(Delegate& delegate, asio::io_service& io_service)
+    : base(io_service), delegate_(delegate)
     {
     }
 
-    using Drain::on_data;
+    // TODO implement SSL handshake checking
 
-    void on_data(const std::string& id, const metricq::DataChunk& chunk) override
+    void onError(AMQP::TcpConnection* connection, const char* message) override
     {
-        auto& d = data_.at(id);
-        for (const auto& tv : chunk)
-        {
-            d.emplace_back(tv);
-        }
+        base::onError(connection, message);
+        delegate_.on_error(message);
     }
 
-    /**
-     * warning this (re)move the entire map
-     */
-    std::unordered_map<std::string, std::vector<TimeValue>>& get()
+    void onLost(AMQP::TcpConnection* connection) override
     {
-        return data_;
-    };
-
-    /**
-     * warning this (re)moves the vector
-     */
-    std::vector<TimeValue>& at(const std::string& metric)
-    {
-        return data_.at(metric);
+        base::onLost(connection);
+        delegate_.on_lost();
     }
 
-protected:
-    void on_connected() override
+    void onDetached(AMQP::TcpConnection* connection) override
     {
-        Drain::on_connected();
-        for (const auto& metric : metrics_)
-        {
-            data_[metric];
-        }
+        base::onDetached(connection);
+        delegate_.on_detached();
     }
 
 private:
-    std::unordered_map<std::string, std::vector<TimeValue>> data_;
+    Delegate& delegate_;
 };
 } // namespace metricq

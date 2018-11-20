@@ -17,3 +17,6 @@ endif()
 
 add_executable(asio_event_loop_test asio_event_loop_test.cpp)
 target_link_libraries(asio_event_loop_test PRIVATE asio::asio amqpcpp::amqpcpp)
+
+add_executable(asio_signal_handler asio_signal_handler.cpp)
+target_link_libraries(asio_signal_handler PUBLIC asio::asio amqpcpp::amqpcpp)
