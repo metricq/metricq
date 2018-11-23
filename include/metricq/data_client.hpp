@@ -29,9 +29,9 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
+#include "../../src/connection_handler.hpp"
 #include <metricq/asio_handler.hpp>
 #include <metricq/connection.hpp>
-
 
 #include <amqpcpp.h>
 
@@ -49,11 +49,10 @@ protected:
     void close() override;
 
 private:
-    metricq::AsioHandler<Connection> data_handler_;
     std::optional<AMQP::Address> data_server_address_;
-    std::unique_ptr<AMQP::TcpConnection> data_connection_;
+    std::unique_ptr<ConnectionHandler> data_connection_;
 
 protected:
-    std::unique_ptr<AMQP::TcpChannel> data_channel_;
+    std::unique_ptr<AMQP::Channel> data_channel_;
 };
 } // namespace metricq

@@ -27,12 +27,14 @@
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #include <metricq/connection.hpp>
 
-#include <metricq/logger.hpp>
-
+#include "connection_handler.hpp"
 #include "log.hpp"
 #include "util.hpp"
+
+#include <metricq/logger.hpp>
 
 #include <amqpcpp.h>
 extern "C"
@@ -59,8 +61,7 @@ static std::string make_token(const std::string& token, bool add_uuid)
 
 Connection::Connection(const std::string& connection_token, bool add_uuid,
                        std::size_t concurrency_hint)
-: io_service(concurrency_hint), connection_token_(make_token(connection_token, add_uuid)),
-  management_handler_(*this, io_service)
+: io_service(concurrency_hint), connection_token_(make_token(connection_token, add_uuid))
 {
 }
 
@@ -101,9 +102,8 @@ void Connection::connect(const std::string& server_address)
 
     log::info("connecting to management server: {}", *management_address_);
 
-    management_connection_ =
-        std::make_unique<AMQP::TcpConnection>(&management_handler_, *management_address_);
-    management_channel_ = std::make_unique<AMQP::TcpChannel>(management_connection_.get());
+    management_connection_ = std::make_unique<ConnectionHandler>(io_service, *management_address_);
+    management_channel_ = management_connection_->make_channel();
     management_channel_->onReady(debug_success_cb("management channel ready"));
     management_channel_->onError(debug_error_cb("management channel error"));
 

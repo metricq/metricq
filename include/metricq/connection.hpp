@@ -29,14 +29,11 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-
 #include <asio/io_service.hpp>
 
 #include <amqpcpp.h>
-#include <amqpcpp/libasio.h>
 
 #include <metricq/asio_handler.hpp>
-
 
 #include <nlohmann/json.hpp>
 
@@ -49,6 +46,8 @@
 namespace metricq
 {
 using json = nlohmann::json;
+
+class ConnectionHandler;
 
 class Connection
 {
@@ -105,9 +104,8 @@ private:
     std::string connection_token_;
 
     // TODO combine & abstract to extra class
-    metricq::AsioHandler<Connection> management_handler_;
-    std::unique_ptr<AMQP::TcpConnection> management_connection_;
-    std::unique_ptr<AMQP::TcpChannel> management_channel_;
+    std::unique_ptr<ConnectionHandler> management_connection_;
+    std::unique_ptr<AMQP::Channel> management_channel_;
     std::unordered_map<std::string, ManagementCallback> management_callbacks_;
     std::unordered_map<std::string, ManagementResponseCallback> management_rpc_response_callbacks_;
     std::string management_client_queue_;

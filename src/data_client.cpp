@@ -36,8 +36,7 @@
 
 namespace metricq
 {
-DataClient::DataClient(const std::string& token, bool add_uuid)
-: Connection(token, add_uuid), data_handler_(*this, io_service)
+DataClient::DataClient(const std::string& token, bool add_uuid) : Connection(token, add_uuid)
 {
     TimePoint starting_time = Clock::now();
     register_management_callback("discover", [token, starting_time](const json&) {
@@ -69,10 +68,9 @@ void DataClient::data_config(const metricq::json& config)
     data_server_address_ = new_data_server_address;
 
     log::debug("opening data connection to {}", *data_server_address_);
-    data_connection_ =
-        std::make_unique<AMQP::TcpConnection>(&data_handler_, *data_server_address_);
-    data_channel_ = std::make_unique<AMQP::TcpChannel>(data_connection_.get());
-    data_channel_->onReady([this](){
+    data_connection_ = std::make_unique<ConnectionHandler>(io_service, *data_server_address_);
+    data_channel_ = data_connection_->make_channel();
+    data_channel_->onReady([this]() {
         log::debug("data_channel ready");
         this->on_data_channel_ready();
     });
@@ -91,6 +89,7 @@ void DataClient::close()
     log::info("closed data_connection: {}", alive);
 }
 
-void DataClient::on_data_channel_ready() {
+void DataClient::on_data_channel_ready()
+{
 }
 } // namespace metricq

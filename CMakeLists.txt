@@ -22,7 +22,7 @@ add_subdirectory(lib)
 
 protobuf_generate_cpp(PROTO_SRC PROTO_HEADER src/datachunk.proto src/history.proto)
 add_library(metricq-messages ${PROTO_SRC})
-# this is needed to get the generated protobuf files in a sane location :(
+#this is needed to get the generated protobuf files in a sane location : (
 add_custom_command(TARGET metricq-messages PRE_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/include/metricq
     COMMAND ${CMAKE_COMMAND} -E copy ${PROTO_HEADER} ${CMAKE_CURRENT_BINARY_DIR}/include/metricq
@@ -38,7 +38,7 @@ set_target_properties(metricq-messages PROPERTIES
 )
 target_compile_features(metricq-messages PRIVATE cxx_std_14)
 
-set(CORE_SRCS src/chrono.cpp src/connection.cpp src/log.cpp src/data_client.cpp)
+set(CORE_SRCS src/chrono.cpp src/connection.cpp src/connection_handler.cpp src/log.cpp src/data_client.cpp)
 set(SOURCE_SRCS src/source.cpp)
 set(SINK_SRCS src/sink.cpp src/drain.cpp src/subscriber.cpp src/simple.cpp)
 set(TRANSFORMER_SRCS src/transformer.cpp)
