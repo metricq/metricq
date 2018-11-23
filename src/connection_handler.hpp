@@ -137,6 +137,40 @@ public:
      */
     virtual void onClosed(AMQP::Connection* connection) override;
 
+    /**
+     *  Method that is called when the heartbeat frequency is negotiated
+     *  between the server and the client durion connection setup. You
+     *  normally do not have to override this method, because in the default
+     *  implementation the suggested heartbeat is simply rejected by the client.
+     *
+     *  However, if you want to enable heartbeats you can override this
+     *  method. You should "return interval" if you want to accept the
+     *  heartbeat interval that was suggested by the server, or you can
+     *  return an alternative value if you want a shorter or longer interval.
+     *  Return 0 if you want to disable heartbeats.
+     *
+     *  If heartbeats are enabled, you yourself are responsible to send
+     *  out a heartbeat every *interval* number of seconds by calling
+     *  the Connection::heartbeat() method.
+     *
+     *  @param  connection      The connection that suggested a heartbeat interval
+     *  @param  interval        The suggested interval from the server
+     *  @return uint16_t        The interval to use
+     */
+    virtual uint16_t onNegotiate(AMQP::Connection* connection, uint16_t interval) override;
+
+    /**
+     *  Method that is called when the AMQP-CPP library received a heartbeat
+     *  frame that was sent by the server to the client.
+     *
+     *  You do not have to do anything here, the client sends back a heartbeat
+     *  frame automatically, but if you like, you can implement/override this
+     *  method if you want to be notified of such heartbeats
+     *
+     *  @param  connection      The connection over which the heartbeat was received
+     */
+    virtual void onHeartbeat(AMQP::Connection* connection) override;
+
     bool close();
 
     void connect(const AMQP::Address& address);
@@ -153,6 +187,7 @@ private:
     std::unique_ptr<AMQP::Connection> connection_;
     std::optional<AMQP::Address> address_;
     asio::system_timer reconnect_timer_;
+    metricq::Timer heartbeat_timer_;
     asio::ip::tcp::resolver resolver_;
     asio::ip::tcp::socket socket_;
     asio::streambuf recv_buffer_;

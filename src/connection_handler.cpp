@@ -29,11 +29,11 @@
 #include "connection_handler.hpp"
 #include "log.hpp"
 
-
 namespace metricq
 {
 ConnectionHandler::ConnectionHandler(asio::io_service& io_service)
-: reconnect_timer_(io_service), resolver_(io_service), socket_(io_service)
+: reconnect_timer_(io_service), heartbeat_timer_(io_service), resolver_(io_service),
+  socket_(io_service)
 {
 }
 
@@ -80,6 +80,46 @@ void ConnectionHandler::connect(asio::ip::tcp::resolver::iterator endpoint_itera
         });
 }
 
+uint16_t ConnectionHandler::onNegotiate(AMQP::Connection* connection, uint16_t timeout)
+{
+    (void) connection;
+
+    log::debug("Negotiated heartbeat interval to {} seconds", timeout);
+
+    // According to https://www.rabbitmq.com/heartbeats.html we actually get the timeout here
+    // and we should send a heartbeat every timeout/2. I guess this is an issue in AMQP-CPP
+
+    heartbeat_timer_.start(
+        [this](auto error) {
+            if(error)
+            {
+                log::error("heartbeat timer failed: {}", error.message());
+                this->onError("heartbeat timer failed");
+
+                return Timer::TimerResult::cancel;
+            }
+
+            if (!this->socket_.is_open())
+            {
+                return Timer::TimerResult::cancel;
+            }
+
+            log::debug("Sending heartbeat to server");
+            this->connection_->heartbeat();
+            return Timer::TimerResult::repeat;
+        },
+        std::chrono::seconds(timeout/2));
+
+    return timeout;
+}
+
+void ConnectionHandler::onHeartbeat(AMQP::Connection* connection)
+{
+    (void)connection;
+
+    log::debug("Received heartbeat from server");
+}
+
 /**
  *  Method that is called by the AMQP library every time it has data
  *  available that should be sent to RabbitMQ.
@@ -123,8 +163,8 @@ void ConnectionHandler::onError(AMQP::Connection* connection, const char* messag
     socket_.close();
 
     reconnect_timer_.expires_from_now(std::chrono::seconds(1));
-    reconnect_timer_.async_wait([this](const auto& error){
-        if(error)
+    reconnect_timer_.async_wait([this](const auto& error) {
+        if (error)
         {
             log::error("reconnect timer failed: {}", error.message());
             return;
@@ -134,6 +174,7 @@ void ConnectionHandler::onError(AMQP::Connection* connection, const char* messag
         this->recv_buffer_.consume(this->recv_buffer_.size());
         this->flush_in_progress_ = false;
         this->connection_.reset();
+        this->heartbeat_timer_.cancel();
 
         this->connect(*this->address_);
     });
@@ -180,10 +221,13 @@ void ConnectionHandler::read()
 
                                 recv_buffer_.commit(received_bytes);
 
-                                std::vector<char> data(asio::buffers_begin(recv_buffer_.data()),
-                                                       asio::buffers_end(recv_buffer_.data()));
-                                auto consumed = connection_->parse(data.data(), data.size());
-                                recv_buffer_.consume(consumed);
+                                if (recv_buffer_.size() >= connection_->expected())
+                                {
+                                    std::vector<char> data(asio::buffers_begin(recv_buffer_.data()),
+                                                           asio::buffers_end(recv_buffer_.data()));
+                                    auto consumed = connection_->parse(data.data(), data.size());
+                                    recv_buffer_.consume(consumed);
+                                }
 
                                 if (socket_.is_open())
                                 {
