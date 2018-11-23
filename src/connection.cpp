@@ -102,7 +102,8 @@ void Connection::connect(const std::string& server_address)
 
     log::info("connecting to management server: {}", *management_address_);
 
-    management_connection_ = std::make_unique<ConnectionHandler>(io_service, *management_address_);
+    management_connection_ = std::make_unique<ConnectionHandler>(io_service);
+    management_connection_->connect(*management_address_);
     management_channel_ = management_connection_->make_channel();
     management_channel_->onReady(debug_success_cb("management channel ready"));
     management_channel_->onError(debug_error_cb("management channel error"));

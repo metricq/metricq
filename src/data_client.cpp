@@ -68,7 +68,8 @@ void DataClient::data_config(const metricq::json& config)
     data_server_address_ = new_data_server_address;
 
     log::debug("opening data connection to {}", *data_server_address_);
-    data_connection_ = std::make_unique<ConnectionHandler>(io_service, *data_server_address_);
+    data_connection_ = std::make_unique<ConnectionHandler>(io_service);
+    data_connection_->connect(*data_server_address_);
     data_channel_ = data_connection_->make_channel();
     data_channel_->onReady([this]() {
         log::debug("data_channel ready");

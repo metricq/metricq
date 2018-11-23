@@ -28,20 +28,74 @@
 
 #pragma once
 
+#include <metricq/timer.hpp>
+
 #include <amqpcpp.h>
 
 #include <asio.hpp>
+#include <asio/basic_waitable_timer.hpp>
 
 #include <memory>
+#include <optional>
 #include <queue>
 #include <vector>
 
 namespace metricq
 {
+
+template <typename Buffer = std::vector<char>>
+class QueuedBuffer
+{
+public:
+    template <typename... Args>
+    void emplace(Args&&... args)
+    {
+        buffers_.emplace(std::forward<Args>(args)...);
+    }
+
+    bool empty() const
+    {
+        return buffers_.empty();
+    }
+
+    auto front() const
+    {
+        assert(!empty());
+
+        return asio::buffer(buffers_.front().data() + offset_, buffers_.front().size() - offset_);
+    }
+
+    void consume(std::size_t consumed_bytes)
+    {
+        assert(!empty());
+        assert(buffers_.front().size() <= offset_ + consumed_bytes);
+
+        if (buffers_.front().size() == offset_ + consumed_bytes)
+        {
+            offset_ = 0;
+            buffers_.pop();
+        }
+        else
+        {
+            offset_ += consumed_bytes;
+        }
+    }
+
+    void clear()
+    {
+        buffers_ = decltype(buffers_)();
+        offset_ = 0;
+    }
+
+private:
+    std::queue<Buffer> buffers_;
+    std::size_t offset_ = 0;
+};
+
 class ConnectionHandler : public AMQP::ConnectionHandler
 {
 public:
-    ConnectionHandler(asio::io_service& io_service, const AMQP::Address& address);
+    ConnectionHandler(asio::io_service& io_service);
 
     /**
      *  Method that is called by the AMQP library every time it has data
@@ -62,7 +116,7 @@ public:
 
     void onError(const std::string& message)
     {
-        onError(&connection_, message.c_str());
+        onError(connection_.get(), message.c_str());
     }
 
     /**
@@ -85,6 +139,8 @@ public:
 
     bool close();
 
+    void connect(const AMQP::Address& address);
+
 private:
     void connect(asio::ip::tcp::resolver::iterator endpoint_iterator);
     void read();
@@ -94,10 +150,13 @@ public:
     std::unique_ptr<AMQP::Channel> make_channel();
 
 private:
-    AMQP::Connection connection_;
+    std::unique_ptr<AMQP::Connection> connection_;
+    std::optional<AMQP::Address> address_;
+    asio::system_timer reconnect_timer_;
     asio::ip::tcp::resolver resolver_;
     asio::ip::tcp::socket socket_;
     asio::streambuf recv_buffer_;
-    asio::streambuf send_buffer_;
+    QueuedBuffer<> send_buffers_;
+    bool flush_in_progress_ = false;
 };
 } // namespace metricq
