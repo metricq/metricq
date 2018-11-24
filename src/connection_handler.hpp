@@ -43,15 +43,10 @@
 namespace metricq
 {
 
-template <typename Buffer = std::vector<char>>
 class QueuedBuffer
 {
 public:
-    template <typename... Args>
-    void emplace(Args&&... args)
-    {
-        buffers_.emplace(std::forward<Args>(args)...);
-    }
+    void emplace(const char* ptr, std::size_t size);
 
     bool empty() const
     {
@@ -65,21 +60,7 @@ public:
         return asio::buffer(buffers_.front().data() + offset_, buffers_.front().size() - offset_);
     }
 
-    void consume(std::size_t consumed_bytes)
-    {
-        assert(!empty());
-        assert(buffers_.front().size() <= offset_ + consumed_bytes);
-
-        if (buffers_.front().size() == offset_ + consumed_bytes)
-        {
-            offset_ = 0;
-            buffers_.pop();
-        }
-        else
-        {
-            offset_ += consumed_bytes;
-        }
-    }
+    void consume(std::size_t consumed_bytes);
 
     void clear()
     {
@@ -88,7 +69,8 @@ public:
     }
 
 private:
-    std::queue<Buffer> buffers_;
+    std::queue<std::vector<char>> buffers_;
+    std::queue<std::vector<char>> empty_buffers_;
     std::size_t offset_ = 0;
 };
 
@@ -191,7 +173,7 @@ private:
     asio::ip::tcp::resolver resolver_;
     asio::ip::tcp::socket socket_;
     asio::streambuf recv_buffer_;
-    QueuedBuffer<> send_buffers_;
+    QueuedBuffer send_buffers_;
     bool flush_in_progress_ = false;
 };
 } // namespace metricq

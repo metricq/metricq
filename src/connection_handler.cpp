@@ -31,6 +31,55 @@
 
 namespace metricq
 {
+
+void QueuedBuffer::emplace(const char* ptr, std::size_t size)
+{
+    // check if this fits at the back of the last queued buffer
+    if (!empty() && buffers_.back().size() + size <= buffers_.back().capacity())
+    {
+        log::debug("Reusing buffer of size {} for {} bytes", buffers_.back().size(), size);
+        std::copy(ptr, ptr + size, std::back_inserter(buffers_.back()));
+    }
+    else
+    {
+
+        if (empty_buffers_.empty()  || empty_buffers_.front().capacity() < size)
+        {
+            log::debug("Allocating buffer for {} bytes", size);
+
+            buffers_.emplace();
+            buffers_.back().reserve(std::max<std::size_t>(size, 4096));
+        }
+        else
+        {
+            log::debug("Reusing buffer from cached buffers for {} bytes", size);
+
+            buffers_.emplace(std::move(empty_buffers_.front()));
+            empty_buffers_.pop();
+        }
+
+        std::copy(ptr, ptr + size, std::back_inserter(buffers_.back()));
+    }
+}
+
+void QueuedBuffer::consume(std::size_t consumed_bytes)
+{
+    assert(!empty());
+    //        assert(buffers_.front().size() <= offset_ + consumed_bytes);
+
+    if (buffers_.front().size() == offset_ + consumed_bytes)
+    {
+        offset_ = 0;
+        buffers_.front().resize(0);
+        empty_buffers_.emplace(std::move(buffers_.front()));
+        buffers_.pop();
+    }
+    else
+    {
+        offset_ += consumed_bytes;
+    }
+}
+
 ConnectionHandler::ConnectionHandler(asio::io_service& io_service)
 : reconnect_timer_(io_service), heartbeat_timer_(io_service), resolver_(io_service),
   socket_(io_service)
@@ -82,7 +131,7 @@ void ConnectionHandler::connect(asio::ip::tcp::resolver::iterator endpoint_itera
 
 uint16_t ConnectionHandler::onNegotiate(AMQP::Connection* connection, uint16_t timeout)
 {
-    (void) connection;
+    (void)connection;
 
     log::debug("Negotiated heartbeat interval to {} seconds", timeout);
 
@@ -91,7 +140,7 @@ uint16_t ConnectionHandler::onNegotiate(AMQP::Connection* connection, uint16_t t
 
     heartbeat_timer_.start(
         [this](auto error) {
-            if(error)
+            if (error)
             {
                 log::error("heartbeat timer failed: {}", error.message());
                 this->onError("heartbeat timer failed");
@@ -108,7 +157,7 @@ uint16_t ConnectionHandler::onNegotiate(AMQP::Connection* connection, uint16_t t
             this->connection_->heartbeat();
             return Timer::TimerResult::repeat;
         },
-        std::chrono::seconds(timeout/2));
+        std::chrono::seconds(timeout / 2));
 
     return timeout;
 }
@@ -133,7 +182,7 @@ void ConnectionHandler::onData(AMQP::Connection* connection, const char* data, s
 
     log::debug("writing {} bytes", size);
 
-    send_buffers_.emplace(data, data + size);
+    send_buffers_.emplace(data, size);
     flush();
 }
 
