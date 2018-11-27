@@ -43,7 +43,7 @@ void QueuedBuffer::emplace(const char* ptr, std::size_t size)
     else
     {
 
-        if (empty_buffers_.empty()  || empty_buffers_.front().capacity() < size)
+        if (empty_buffers_.empty() || empty_buffers_.front().capacity() < size)
         {
             log::debug("Allocating buffer for {} bytes", size);
 
@@ -81,8 +81,8 @@ void QueuedBuffer::consume(std::size_t consumed_bytes)
 }
 
 ConnectionHandler::ConnectionHandler(asio::io_service& io_service)
-: reconnect_timer_(io_service), heartbeat_timer_(io_service), resolver_(io_service),
-  socket_(io_service)
+: reconnect_timer_(io_service), heartbeat_timer_(io_service),
+  heartbeat_interval_(std::chrono::seconds(0)), resolver_(io_service), socket_(io_service)
 {
 }
 
@@ -137,27 +137,12 @@ uint16_t ConnectionHandler::onNegotiate(AMQP::Connection* connection, uint16_t t
 
     // According to https://www.rabbitmq.com/heartbeats.html we actually get the timeout here
     // and we should send a heartbeat every timeout/2. I guess this is an issue in AMQP-CPP
+    heartbeat_interval_ = std::chrono::seconds(timeout / 2);
 
-    heartbeat_timer_.start(
-        [this](auto error) {
-            if (error)
-            {
-                log::error("heartbeat timer failed: {}", error.message());
-                this->onError("heartbeat timer failed");
-
-                return Timer::TimerResult::cancel;
-            }
-
-            if (!this->socket_.is_open())
-            {
-                return Timer::TimerResult::cancel;
-            }
-
-            log::debug("Sending heartbeat to server");
-            this->connection_->heartbeat();
-            return Timer::TimerResult::repeat;
-        },
-        std::chrono::seconds(timeout / 2));
+    // We don't need to setup the heartbeat timer here. The library will report back our returned
+    // timeout value to the server, which inevitable will trigger a send operation, which will
+    // setup the heartbeat timer once it was completed. So we could setup the timer here, but it
+    // would be canceled anyway.
 
     return timeout;
 }
@@ -241,12 +226,18 @@ void ConnectionHandler::onClosed(AMQP::Connection* connection)
     (void)connection;
     log::debug("onClosed");
 
+    // close the socket
+    socket_.close();
+
+    // cancel the heartbeat timer, which relies on the socket to be closed.
+    // If the timer is canceled but the socket is still open, the timer will schedule itself again.
+    heartbeat_timer_.cancel();
+
     if (!send_buffers_.empty())
     {
         throw std::logic_error("Socket was closed before all data could be sent out.");
     }
 
-    socket_.close();
     connection_.reset();
 }
 
@@ -306,9 +297,43 @@ void ConnectionHandler::flush()
 
         this->send_buffers_.consume(transferred);
 
+        if (heartbeat_interval_.count() != 0)
+        {
+            // we just sent something, so we can delay the heartbeat
+            this->heartbeat_timer_.expires_after(this->heartbeat_interval_);
+            this->heartbeat_timer_.async_wait([this](auto error) { this->beat(error); });
+        }
+
         this->flush_in_progress_ = false;
         this->flush();
     });
+}
+
+void ConnectionHandler::beat(const asio::error_code& error)
+{
+    if (error && error == asio::error::operation_aborted)
+    {
+        // timer was canceled, this is probably fine
+        return;
+    }
+
+    if (error && error != asio::error::operation_aborted)
+    {
+        // something weird did happen
+        log::error("heartbeat timer failed: {}", error.message());
+        onError("heartbeat timer failed");
+
+        return;
+    }
+
+    log::debug("Sending heartbeat to server");
+    // Yes, I know. This looks stupid. This is stupid. And I feel stupid doing it. But just have a
+    // quick look at AMQP::ConnectionImpl::heartbeat(). But be careful, you might facepalm to hard.
+    connection_->heartbeat();
+    connection_->heartbeat();
+
+    // We don't need to setup the timer again, this will be done by the flush() handler triggerd by
+    // the heartbeat() call itself
 }
 
 std::unique_ptr<AMQP::Channel> ConnectionHandler::make_channel()

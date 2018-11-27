@@ -28,8 +28,6 @@
 
 #pragma once
 
-#include <metricq/timer.hpp>
-
 #include <amqpcpp.h>
 
 #include <asio.hpp>
@@ -161,6 +159,7 @@ private:
     void connect(asio::ip::tcp::resolver::iterator endpoint_iterator);
     void read();
     void flush();
+    void beat(const asio::error_code&);
 
 public:
     std::unique_ptr<AMQP::Channel> make_channel();
@@ -169,7 +168,8 @@ private:
     std::unique_ptr<AMQP::Connection> connection_;
     std::optional<AMQP::Address> address_;
     asio::system_timer reconnect_timer_;
-    metricq::Timer heartbeat_timer_;
+    asio::system_timer heartbeat_timer_;
+    std::chrono::milliseconds heartbeat_interval_;
     asio::ip::tcp::resolver resolver_;
     asio::ip::tcp::socket socket_;
     asio::streambuf recv_buffer_;
