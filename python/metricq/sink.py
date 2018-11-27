@@ -1,6 +1,4 @@
-# Copyright (c) 2018, ZIH,
-# Technische Universitaet Dresden,
-# Federal Republic of Germany
+# Copyright (c) 2018, ZIH, Technische Universitaet Dresden, Federal Republic of Germany
 #
 # All rights reserved.
 #
@@ -27,11 +25,13 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-from .agent import Agent
-from .client import Client
-from .data_client import DataClient
+
 from .logging import get_logger
-from .source import Source
-from .sink import Sink
-from .synchronous_source import SynchronousSource
-from .rpc import rpc_handler
+from .data_client import DataClient
+
+logger = get_logger(__name__)
+
+
+class Sink(DataClient):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)

@@ -27,6 +27,9 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+import asyncio
+
 from .logging import get_logger
 from .agent import Agent
 
@@ -55,3 +58,11 @@ class Client(Agent):
         await self._rpc(function, response_callback,
                         exchange=self._management_exchange, routing_key=function,
                         cleanup_on_response=True, **kwargs)
+
+    async def rpc_response(self, function, **kwargs):
+        request_future = asyncio.Future(loop=self.event_loop)
+        await self.rpc(function,
+                       lambda **response: request_future.set_result(response),
+                       **kwargs)
+        return await asyncio.wait_for(request_future, timeout=60)
+

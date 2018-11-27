@@ -1,6 +1,4 @@
-# Copyright (c) 2018, ZIH,
-# Technische Universitaet Dresden,
-# Federal Republic of Germany
+# Copyright (c) 2018, ZIH, Technische Universitaet Dresden, Federal Republic of Germany
 #
 # All rights reserved.
 #
@@ -27,11 +25,41 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-from .agent import Agent
-from .client import Client
-from .data_client import DataClient
+
+from time import time
+
 from .logging import get_logger
-from .source import Source
-from .sink import Sink
-from .synchronous_source import SynchronousSource
 from .rpc import rpc_handler
+from .client import Client
+from .types import to_timestamp
+
+logger = get_logger(__name__)
+
+
+class DataClient(Client):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.starting_time = time()
+
+        self.data_server_address = None
+        self.data_connection = None
+        self.data_channel = None
+        self.data_exchange = None
+
+    @rpc_handler('discover')
+    async def handle_discover(self, **kwargs):
+        logger.info('responding to discover')
+        t = time()
+        return {
+            'alive': True,
+            'uptime': to_timestamp(t - self.starting_time),
+            'time': to_timestamp(t),
+        }
+
+    async def data_config(self, dataServerAddress, dataExchange, **kwargs):
+        assert not self.data_connection
+        self.data_server_address = self.add_credentials(dataServerAddress)
+        self.data_connection = await self._connect(self.data_server_address)
+        self.data_channel = await self.data_connection.channel()
+        self.data_exchange = await self.data_channel.declare_exchange(
+            name=dataExchange, passive=True)

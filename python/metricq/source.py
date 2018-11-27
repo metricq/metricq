@@ -37,39 +37,21 @@ import aio_pika
 from .logging import get_logger
 from . import datachunk_pb2
 from .rpc import rpc_handler
-from .client import Client
+from .data_client import DataClient
 from .datachunk_pb2 import DataChunk
 from .source_metric import SourceMetric
-from .types import to_timestamp
 
 logger = get_logger(__name__)
 
 
-class Source(Client):
+class Source(DataClient):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.starting_time = time()
-
-        self.data_server_address = None
-        self.data_connection = None
-        self.data_channel = None
-        self.data_exchange = None
-
         self.metrics = dict()
 
     async def connect(self):
         await super().connect()
         await self.rpc('source.register', self.handle_register_response)
-
-    @rpc_handler('discover')
-    async def handle_discover(self, **kwargs):
-        logger.info('responding to discover')
-        t = time()
-        return {
-            'alive': True,
-            'uptime': to_timestamp(t - self.starting_time),
-            'time': to_timestamp(t),
-        }
 
     @rpc_handler('config')
     async def handle_config(self, **config):
@@ -77,12 +59,8 @@ class Source(Client):
 
     async def handle_register_response(self, **response):
         logger.info('register response: {}', response)
-        assert not self.data_connection
-        self.data_server_address = self.add_credentials(response['dataServerAddress'])
-        self.data_connection = await self._connect(self.data_server_address)
-        self.data_channel = await self.data_connection.channel()
-        self.data_exchange = await self.data_channel.declare_exchange(
-            name=response['dataExchange'], passive=True)
+
+        self.data_config(**response)
 
         if 'config' in response:
             await self.rpc_dispatch('config', **response['config'])
@@ -94,6 +72,7 @@ class Source(Client):
 
         #TODO @bmario make a nice timer class
 
+    # TODO can we get rid of this?
     async def ready_callback(self):
         logger.debug('{} ready', self.token)
 

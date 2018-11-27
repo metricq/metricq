@@ -96,7 +96,9 @@ class HistoryClient(Client):
     async def ready_callback(self):
         logger.debug('{} ready', self.token)
 
+
     async def history_metric_list(self, selector=None, timeout=60):
+        # TODO use new rpc_response()
         request_future = asyncio.Future(loop=self.event_loop)
         arguments = {'format': 'array'}
         if selector:
