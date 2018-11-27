@@ -58,6 +58,7 @@ public:
     {
         interval_ = interval;
         canceled_ = false;
+        running_ = true;
         timer_.expires_from_now(interval);
         timer_.async_wait([this](auto error) { this->timer_callback(error); });
     }
@@ -72,6 +73,12 @@ public:
     {
         timer_.cancel();
         canceled_ = true;
+        running_ = false;
+    }
+
+    bool running() const
+    {
+        return running_;
     }
 
 private:
@@ -84,6 +91,10 @@ private:
             timer_.expires_at(timer_.expires_at() + interval_);
             timer_.async_wait([this](auto error) { this->timer_callback(error); });
         }
+        else
+        {
+            running_ = false;
+        }
     }
 
 private:
@@ -91,6 +102,7 @@ private:
     Callback callback_;
     std::chrono::microseconds interval_;
     bool canceled_ = false;
+    bool running_ = false;
 };
 
 } // namespace metricq
