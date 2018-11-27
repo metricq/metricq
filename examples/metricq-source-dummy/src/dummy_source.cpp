@@ -47,12 +47,13 @@ DummySource::DummySource(const std::string& manager_host, const std::string& tok
             return;
         }
         Log::info() << "Caught signal " << signal << ". Shutdown.";
-        if (running_)
+        if (timer_.running())
         {
             stop_requested_ = true;
         }
         else
         {
+            Log::info() << "closing source";
             stop();
         }
     });
