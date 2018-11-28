@@ -19,6 +19,7 @@ find_package(OpenSSL REQUIRED)
 
 set(AMQP_SRCS
 amqpcpp/src/array.cpp
+amqpcpp/src/channel.cpp
 amqpcpp/src/channelimpl.cpp
 amqpcpp/src/connectionimpl.cpp
 amqpcpp/src/deferredcancel.cpp
@@ -32,8 +33,6 @@ amqpcpp/src/field.cpp
 amqpcpp/src/flags.cpp
 amqpcpp/src/receivedframe.cpp
 amqpcpp/src/table.cpp
-amqpcpp/src/linux_tcp/openssl.cpp
-amqpcpp/src/linux_tcp/tcpconnection.cpp
 amqpcpp/src/watchable.cpp
 )
 
