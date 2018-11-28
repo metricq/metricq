@@ -52,7 +52,7 @@ void Drain::unsubscribe_complete(const json& response)
     sink_config(response);
 }
 
-void Drain::on_data(const AMQP::Message &message, uint64_t delivery_tag, bool redelivered)
+void Drain::on_data(const AMQP::Message& message, uint64_t delivery_tag, bool redelivered)
 {
     if (message.typeName() == "end")
     {
