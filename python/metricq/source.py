@@ -57,10 +57,13 @@ class Source(DataClient):
     async def handle_config(self, **config):
         pass
 
-    async def handle_register_response(self, **response):
+    async def handle_register_response(self, dataExchange, **response):
         logger.info('register response: {}', response)
 
         self.data_config(**response)
+
+        self.data_exchange = await self.data_channel.declare_exchange(
+            name=dataExchange, passive=True)
 
         if 'config' in response:
             await self.rpc_dispatch('config', **response['config'])

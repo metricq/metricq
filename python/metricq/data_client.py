@@ -56,10 +56,8 @@ class DataClient(Client):
             'time': to_timestamp(t),
         }
 
-    async def data_config(self, dataServerAddress, dataExchange, **kwargs):
+    async def data_config(self, dataServerAddress, **kwargs):
         assert not self.data_connection
         self.data_server_address = self.add_credentials(dataServerAddress)
         self.data_connection = await self._connect(self.data_server_address)
         self.data_channel = await self.data_connection.channel()
-        self.data_exchange = await self.data_channel.declare_exchange(
-            name=dataExchange, passive=True)
