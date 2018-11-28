@@ -327,9 +327,6 @@ void ConnectionHandler::beat(const asio::error_code& error)
     }
 
     log::debug("Sending heartbeat to server");
-    // Yes, I know. This looks stupid. This is stupid. And I feel stupid doing it. But just have a
-    // quick look at AMQP::ConnectionImpl::heartbeat(). But be careful, you might facepalm to hard.
-    connection_->heartbeat();
     connection_->heartbeat();
 
     // We don't need to setup the timer again, this will be done by the flush() handler triggerd by
