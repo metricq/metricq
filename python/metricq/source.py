@@ -51,33 +51,20 @@ class Source(DataClient):
 
     async def connect(self):
         await super().connect()
-        await self.rpc('source.register', self.handle_register_response)
-
-    @rpc_handler('config')
-    async def handle_config(self, **config):
-        pass
-
-    async def handle_register_response(self, dataExchange, **response):
+        response = await self.rpc('source.register')
         logger.info('register response: {}', response)
 
-        self.data_config(**response)
+        self.data_config(response)
 
         self.data_exchange = await self.data_channel.declare_exchange(
-            name=dataExchange, passive=True)
+            name=response['dataExchange'], passive=True)
 
         if 'config' in response:
             await self.rpc_dispatch('config', **response['config'])
 
-        await self.ready_callback()
-
-        if hasattr(self, 'run_forever'):
-            asyncio.get_event_loop().create_task(self.run_forever())
-
-        #TODO @bmario make a nice timer class
-
-    # TODO can we get rid of this?
-    async def ready_callback(self):
-        logger.debug('{} ready', self.token)
+    @rpc_handler('config')
+    def _source_config(self, **kwargs):
+        logger.info('received config {}', kwargs)
 
     def __getitem__(self, id):
         if id not in self.metrics:
@@ -86,23 +73,22 @@ class Source(DataClient):
 
     async def declare_metrics(self, metrics):
         logger.debug('declare_metrics({})', metrics)
-        await self.rpc('source.declare_metrics', response_callback=None,
-                       arguments={'metrics': metrics})
+        await self.rpc('source.declare_metrics', arguments={'metrics': metrics})
 
-    async def send(self, id, time, value):
+    async def send(self, metric, time, value):
         """
         Logical send.
         Dispatches to the SourceMetric for chunking
         """
-        logger.debug('send({},{},{})', id, time, value)
-        metric = self[id]
-        assert metric is not None
-        await metric.send(time, value)
+        logger.debug('send({},{},{})', metric, time, value)
+        metric_object = self[metric]
+        assert metric_object is not None
+        await metric_object.send(time, value)
 
-    async def _send(self, id, datachunk: DataChunk):
+    async def _send(self, metric, data_chunk: DataChunk):
         """
         Actual send of a chunk,
         don't call from anywhere other than SourceMetric
         """
-        msg = aio_pika.Message(datachunk.SerializeToString())
-        await self.data_exchange.publish(msg, routing_key=id)
+        msg = aio_pika.Message(data_chunk.SerializeToString())
+        await self.data_exchange.publish(msg, routing_key=metric)

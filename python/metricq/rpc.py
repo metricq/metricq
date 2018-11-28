@@ -27,43 +27,68 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 from abc import ABCMeta
+from collections import defaultdict
 from collections.abc import Awaitable
 
 
 class RPCMeta(ABCMeta):
+    """
+    The created classes will have an _rpc_handlers attribute which contains
+    lists of handlers for each rpc tag.
+    In each list, the base-class rpc handlers will be before the child class ones
+    """
     def __new__(mcs, name, bases, attrs, **kwargs):
-        rpc_handlers = dict()
+        rpc_handlers = defaultdict(list)
         for base in bases:
             try:
-                rpc_handlers.update(base._rpc_handlers)
+                for function_tag, handlers in base._rpc_handlers.items():
+                    rpc_handlers[function_tag] += handlers
             except AttributeError:
                 pass
 
-        for fun in attrs.values():
+        for handler in attrs.values():
             try:
-                tags = getattr(fun, '__rpc_tags')
-                for tag in tags:
-                    rpc_handlers[tag] = fun
+                function_tags = getattr(handler, '__rpc_tags')
+                for function_tag in function_tags:
+                    rpc_handlers[function_tag].append(handler)
             except AttributeError:
+                # oops, not an rpc handler
                 pass
 
         attrs['_rpc_handlers'] = rpc_handlers
         return super().__new__(mcs, name, bases, attrs)
 
 
-class RPCBase(metaclass=RPCMeta):
+class RPCDispatcher(metaclass=RPCMeta):
     async def rpc_dispatch(self, function, **kwargs):
+        """
+        Dispatches an incoming (or fake) RPC to all handlers, beginning with the base class handlers
+        return values are only allowed for unique RPC handlers.
+        Only keyword arguments are supported in RPCs
+        :param function the tag of the function to be called.
+        WARNING: DO NOT RENAME. It must be called function because it is called directly with the json dict
+        """
         if function not in self._rpc_handlers:
             raise KeyError('Missing rpc handler for {}'.format(function))
-        task = self._rpc_handlers[function](self, **kwargs)
-        if not isinstance(task, Awaitable):
-            raise TypeError('RPC handler for {} is not a coroutine'.format(function))
-        return await task
+
+        for handler in self._rpc_handlers[function]:
+            task = handler(self, **kwargs)
+            if not isinstance(task, Awaitable):
+                raise TypeError('RPC handler for {} is not a coroutine'.format(function))
+            rv = await task
+            if len(self._rpc_handlers[function]) == 1:
+                return rv
+            elif rv is not None:
+                raise TypeError('multiple RPC handlers attempting to return a non-none value which is not permitted.')
 
 
-def rpc_handler(*tags):
-    def decorator(fun):
-        fun.__rpc_tags = tags
-        return fun
+def rpc_handler(*function_tags):
+    """
+    Decorator for an RPC handler, may contain multiple functions
+    """
+    def decorator(handler):
+        handler.__rpc_tags = function_tags
+        return handler
     return decorator

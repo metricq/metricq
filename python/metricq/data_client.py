@@ -26,12 +26,10 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from time import time
 
 from .logging import get_logger
 from .rpc import rpc_handler
 from .client import Client
-from .types import to_timestamp
 
 logger = get_logger(__name__)
 
@@ -39,25 +37,23 @@ logger = get_logger(__name__)
 class DataClient(Client):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.starting_time = time()
 
         self.data_server_address = None
         self.data_connection = None
         self.data_channel = None
         self.data_exchange = None
 
-    @rpc_handler('discover')
-    async def handle_discover(self, **kwargs):
-        logger.info('responding to discover')
-        t = time()
-        return {
-            'alive': True,
-            'uptime': to_timestamp(t - self.starting_time),
-            'time': to_timestamp(t),
-        }
-
     async def data_config(self, dataServerAddress, **kwargs):
-        assert not self.data_connection
-        self.data_server_address = self.add_credentials(dataServerAddress)
-        self.data_connection = await self._connect(self.data_server_address)
-        self.data_channel = await self.data_connection.channel()
+        """
+        You should not call this in child classes because it is a registered RPC handler
+        """
+        dataServerAddress = self.add_credentials(dataServerAddress)
+        if self.data_connection:
+            if dataServerAddress != self.data_server_address:
+                logger.error('attempting to change dataServerAddress on the fly, not supported.')
+            logger.info('ignoring new config')
+        else:
+            logger.info('setting up data connection to {}', dataServerAddress.with_password('***'))
+            self.data_server_address = dataServerAddress
+            self.data_connection = await self.make_connection(self.data_server_address)
+            self.data_channel = await self.data_connection.channel()

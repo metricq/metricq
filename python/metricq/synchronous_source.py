@@ -29,7 +29,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import asyncio
 from threading import Thread, Lock, Event
-import traceback
 
 from .source import Source
 from .logging import get_logger
@@ -47,8 +46,8 @@ class _SynchronousSource(Source):
         self.exception = None
         self._ready_event = Event()
 
-    async def ready_callback(self):
-        await super().ready_callback()
+    async def connect(self):
+        await super().connect()
         self.event_loop.set_exception_handler(handle_exception)
         self._ready_event.set()
 
@@ -93,9 +92,9 @@ class SynchronousSource:
 
         logger.info('[SynchronousSource] ready')
 
-    def send(self, id, time, value, block=True, timeout=60):
+    def send(self, metric, time, value, block=True, timeout=60):
         f = asyncio.run_coroutine_threadsafe(
-            self._source.send(id, time, value),
+            self._source.send(metric, time, value),
             self._source.event_loop
         )
         if block:

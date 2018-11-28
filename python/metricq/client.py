@@ -29,14 +29,22 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import asyncio
+from time import time
 
-from .logging import get_logger
 from .agent import Agent
+from .logging import get_logger
+from .rpc import rpc_handler
+from .types import to_timestamp
 
 logger = get_logger(__name__)
 
 
 class Client(Agent):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.starting_time = time()
+
     @property
     def name(self):
         return 'client-' + self.token
@@ -49,15 +57,15 @@ class Client(Agent):
         self._management_exchange = await self._management_channel.declare_exchange(
             name=self._management_exchange_name, passive=True)
 
-        await self._management_agent_queue.bind(
+        await self.management_rpc_queue.bind(
             exchange=self._management_broadcast_exchange, routing_key="#")
 
-        await self._management_consume()
+        await self.rpc_consume()
 
     async def rpc(self, function, response_callback, **kwargs):
-        await self._rpc(function, response_callback,
-                        exchange=self._management_exchange, routing_key=function,
-                        cleanup_on_response=True, **kwargs)
+        await self.rpc(function, response_callback,
+                       exchange=self._management_exchange, routing_key=function,
+                       cleanup_on_response=True, **kwargs)
 
     async def rpc_response(self, function, **kwargs):
         request_future = asyncio.Future(loop=self.event_loop)
@@ -66,3 +74,12 @@ class Client(Agent):
                        **kwargs)
         return await asyncio.wait_for(request_future, timeout=60)
 
+    @rpc_handler('discover')
+    async def _on_discover(self, **kwargs):
+        logger.info('responding to discover')
+        t = time()
+        return {
+            'alive': True,
+            'uptime': to_timestamp(t - self.starting_time),
+            'time': to_timestamp(t),
+        }
