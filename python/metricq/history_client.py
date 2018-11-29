@@ -52,7 +52,7 @@ class HistoryClient(Client):
 
     async def connect(self):
         await super().connect()
-        response = await self.rpc('history.register', self.handle_register_response)
+        response = await self.rpc('history.register')
         logger.info('register response: {}', response)
 
         self.history_server_address = self.add_credentials(response['historyServerAddress'])
@@ -66,7 +66,23 @@ class HistoryClient(Client):
 
         await self._history_consume()
 
-    async def history_data_request(self, metric, start_time_ns, end_time_ns, interval_ns, timeout=60):
+    async def stop(self, reason=None):
+        logger.info('closing history channel and connection.')
+        if self.history_channel:
+            await self.history_channel.close()
+            self.history_channel = None
+        if self.history_connection:
+            await self.history_connection.close()
+            self.history_connection = None
+        self.history_exchange = None
+        await super().stop()
+
+    # TODO refactor return type (namedtuple) and input times
+    # caller should not need to know anythinga bout the protobuf representation
+    async def history_data_request(self, metric: str, start_time_ns, end_time_ns, interval_ns, timeout=60):
+        logger.info('running history request for {} ({}-{},{})', metric, start_time_ns, end_time_ns, interval_ns)
+        if not metric:
+            raise ValueError('metric must be a non-empty string')
         correlation_id = 'mq-history-py-{}-{}'.format(self.token, uuid.uuid4().hex)
         request = HistoryRequest()
         request.start_time = start_time_ns

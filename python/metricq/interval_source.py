@@ -26,48 +26,45 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from yarl import URL
+from abc import abstractmethod
+import asyncio
 
 from .logging import get_logger
-from .client import Client
+from .source import Source
 
 logger = get_logger(__name__)
 
 
-class DataClient(Client):
-    def __init__(self, *args, **kwargs):
+class IntervalSource(Source):
+    def __init__(self, *args, period=None, **kwargs):
+        """
+        :param period: in seconds
+        """
         super().__init__(*args, **kwargs)
+        self.period = period
+        self._stop_future = None
 
-        self.data_server_address = None
-        self.data_connection = None
-        self.data_channel = None
-        self.data_exchange = None
-
-    async def data_config(self, dataServerAddress, **kwargs):
-        """
-        You should not call this in child classes because it is a registered RPC handler
-        """
-        logger.debug('data_config(dataServerAddress={})', dataServerAddress)
-        if not dataServerAddress:
-            raise ValueError("invalid dataServerAddress provided: {}".format(dataServerAddress))
-        dataServerAddress = self.add_credentials(dataServerAddress)
-        if self.data_connection:
-            if dataServerAddress != self.data_server_address:
-                logger.error('attempting to change dataServerAddress on the fly, not supported.')
-            logger.info('ignoring new config')
-        else:
-            logger.info('setting up data connection to {}', URL(dataServerAddress).with_password('***'))
-            self.data_server_address = dataServerAddress
-            self.data_connection = await self.make_connection(self.data_server_address)
-            self.data_channel = await self.data_connection.channel()
+    async def task(self):
+        self._stop_future = asyncio.Future()
+        while True:
+            await self.update()
+            try:
+                if self.period is None:
+                    raise ValueError("IntervalSource.period not set before running task")
+                await asyncio.wait_for(asyncio.shield(self._stop_future), timeout=self.period)
+                self._stop_future.result()
+                logger.info("stopping IntervalSource task")
+                break
+            except asyncio.TimeoutError:
+                # This is the normal case, just continue with the loop
+                continue
 
     async def stop(self):
-        logger.info('closing data channel and connection.')
-        if self.data_channel:
-            await self.data_channel.close()
-            self.data_channel = None
-        if self.data_connection:
-            await self.data_connection.close()
-            self.data_connection = None
-        self.data_exchange = None
+        logger.debug('stop()')
+        if self._stop_future is not None:
+            self._stop_future.set_result(42)
         await super().stop()
+
+    @abstractmethod
+    async def update(self):
+        pass

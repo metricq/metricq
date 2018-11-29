@@ -62,17 +62,9 @@ class Client(Agent):
 
         await self.rpc_consume()
 
-    async def rpc(self, function, response_callback, **kwargs):
-        await self.rpc(function, response_callback,
-                       exchange=self._management_exchange, routing_key=function,
-                       cleanup_on_response=True, **kwargs)
-
-    async def rpc_response(self, function, **kwargs):
-        request_future = asyncio.Future(loop=self.event_loop)
-        await self.rpc(function,
-                       lambda **response: request_future.set_result(response),
-                       **kwargs)
-        return await asyncio.wait_for(request_future, timeout=60)
+    async def rpc(self, function, **kwargs):
+        return await super().rpc(function=function, exchange=self._management_exchange, routing_key=function,
+                                 cleanup_on_response=True, **kwargs)
 
     @rpc_handler('discover')
     async def _on_discover(self, **kwargs):

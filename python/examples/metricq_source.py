@@ -1,6 +1,5 @@
-# Copyright (c) 2018, ZIH,
-# Technische Universitaet Dresden,
-# Federal Republic of Germany
+#!/usr/bin/env python3
+# Copyright (c) 2018, ZIH, Technische Universitaet Dresden, Federal Republic of Germany
 #
 # All rights reserved.
 #
@@ -27,41 +26,52 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-import asyncio
+
 import logging
 from time import time
+
+import click
+import click_log
+import click_completion
 
 import metricq
 from metricq.logging import get_logger
 
-logger = get_logger(__name__)
+logger = get_logger()
+
+click_log.basic_config(logger)
+logger.setLevel('INFO')
+# Use this if we ever use threads
+# logger.handlers[0].formatter = logging.Formatter(fmt='%(asctime)s %(threadName)-16s %(levelname)-8s %(message)s')
+logger.handlers[0].formatter = logging.Formatter(fmt='%(asctime)s [%(levelname)-8s] [%(name)-20s] %(message)s')
+
+click_completion.init()
 
 
-class TestSource(metricq.Source):
+class DummySource(metricq.IntervalSource):
     def __init__(self, *args, **kwargs):
+        logger.info("initializing DummySourece")
         super().__init__(*args, **kwargs)
         self.period = None
 
     @metricq.rpc_handler('config')
-    async def handle_config(self, **config):
-        metricq.logger.info('test config {}', config)
+    async def _on_config(self, **config):
+        logger.info('DummySource config: {}', config)
         self.period = 1 / config['frequency']
 
-    async def ready_callback(self):
-        logger.info('TestSource ready')
+    async def update(self):
+        await self['dummyMetric'].send(time(), 42)
 
-    async def run_forever(self):
-        while True:
-            await self['dummyMetric'].send(time(), 42)
-            await asyncio.sleep(self.period)
+
+@click.command()
+@click.option('--server', default='amqp://localhost/')
+@click.option('--token', default='source-py-dummy')
+@click_log.simple_verbosity_option(logger)
+def source(server, token):
+    src = DummySource(token=token, management_url=server)
+    src.run()
 
 
 if __name__ == '__main__':
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
+    source()
 
-    logger.setLevel(logging.DEBUG)
-    logger.addHandler(ch)
-
-    src = TestSource('source-py-test', 'amqp://localhost')
-    src.run()

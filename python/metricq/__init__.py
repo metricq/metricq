@@ -27,9 +27,11 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-from .agent import Agent
+from .agent import Agent, RPCError
 from .client import Client
 from .data_client import DataClient
+from .history_client import HistoryClient
+from .interval_source import IntervalSource
 from .logging import get_logger
 from .source import Source
 from .sink import Sink

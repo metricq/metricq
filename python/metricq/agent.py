@@ -29,7 +29,9 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import asyncio
+import functools
 import json
+import signal
 import traceback
 import uuid
 
@@ -43,31 +45,15 @@ from .rpc import RPCDispatcher
 logger = get_logger(__name__)
 
 
-def handle_exception(loop, context):
-    logger.error('exception in event loop: {}'.format(context['message']))
-    try:
-        logger.error('Future: {}', context['future'])
-    except KeyError:
-        pass
-    try:
-        logger.error('Handle: {}', context['handle'])
-    except KeyError:
-        pass
-    try:
-        ex = context['exception']
-        logger.error('Exception: {} ({})', ex, type(ex).__qualname__)
-        # TODO figure out how to logger
-        traceback.print_tb(ex.__traceback__)
-    except KeyError:
-        pass
-    # We want to continue, so many things can go wrong...
-    # loop.stop()
+class RPCError(RuntimeError):
+    pass
 
 
 class Agent(RPCDispatcher):
     def __init__(self, token, management_url, event_loop=None):
         self.token = token
 
+        self._event_loop_owned = False
         self._event_loop = event_loop
 
         self._management_url = management_url
@@ -88,7 +74,8 @@ class Agent(RPCDispatcher):
     def add_credentials(self, address):
         """ Add the credentials from the management connection to the provided address """
         management_obj = URL(self._management_url)
-        return str(URL(address).with_user(management_obj.user).with_password(management_obj.password))
+        address_obj = URL(address)
+        return str(address_obj.with_user(management_obj.user).with_password(management_obj.password))
 
     @property
     def event_loop(self):
@@ -120,13 +107,20 @@ class Agent(RPCDispatcher):
         self.management_rpc_queue = await self._management_channel.declare_queue(
             '{}-rpc'.format(self.token), exclusive=True)
 
-    def run(self, exception_handler=handle_exception):
-        if exception_handler:
-            self.event_loop.set_exception_handler(exception_handler)
+    def run(self, catch_signals=('SIGINT', 'SIGTERM')):
+        self._event_loop_owned = True
+        self.event_loop.set_exception_handler(self.on_exception)
+        for signame in catch_signals:
+            try:
+                self.event_loop.add_signal_handler(getattr(signal, signame),
+                                                   functools.partial(self.on_signal, signame))
+            except RuntimeError as error:
+                logger.warning('failed to setup signal handler for {}: {}', signame, error)
+
         self.event_loop.create_task(self.connect())
         logger.debug('running event loop {}', self.event_loop)
         self.event_loop.run_forever()
-        logger.debug('run_forever completed')
+        logger.debug('event loop completed')
 
     async def rpc(self, exchange: aio_pika.Exchange, routing_key: str,
                   response_callback=None, timeout=60, cleanup_on_response=True, **kwargs):
@@ -167,7 +161,10 @@ class Agent(RPCDispatcher):
                 raise TypeError("no cleanup_on_response requested while no response callback is given")
 
             def response_callback(**response_kwargs):
-                request_future.set_result(response_kwargs)
+                if 'error' in response_kwargs:
+                    request_future.set_exception(RPCError(response_kwargs['error']))
+                else:
+                    request_future.set_result(response_kwargs)
         else:
             request_future = None
 
@@ -183,7 +180,7 @@ class Agent(RPCDispatcher):
             self.event_loop.call_later(timeout, cleanup)
 
         if request_future:
-            return asyncio.wait(request_future, timeout=timeout)
+            return await asyncio.wait_for(request_future, timeout=timeout)
 
     async def rpc_consume(self, extra_queues=[]):
         """
@@ -198,6 +195,49 @@ class Agent(RPCDispatcher):
             queue.consume(self._on_management_message)
             for queue in queues
         ], loop=self.event_loop)
+
+    def on_signal(self, signal):
+        logger.info('received signal {}, calling stop()', signal)
+        self.event_loop.create_task(self.stop())
+
+    def on_exception(self, loop, context):
+        logger.error('exception in event loop: {}'.format(context['message']))
+        try:
+            logger.error('Future: {}', context['future'])
+        except KeyError:
+            pass
+        try:
+            logger.error('Handle: {}', context['handle'])
+        except KeyError:
+            pass
+        try:
+            ex = context['exception']
+            if isinstance(ex, KeyboardInterrupt):
+                logger.info('stopping Agent on KeyboardInterrupt')
+                self.stop(ex)
+
+            logger.error('Exception: {} ({})', ex, type(ex).__qualname__)
+            # TODO figure out how to logger
+            traceback.print_tb(ex.__traceback__)
+        except KeyError:
+            pass
+
+    async def stop(self):
+        logger.info('closing management channel and connection.')
+        if self._management_channel:
+            await self._management_channel.close()
+            self._management_channel = None
+        if self._management_connection:
+            await self._management_connection.close()
+            self._management_connection = None
+        self._management_broadcast_exchange = None
+        self._management_exchange = None
+
+        if self._event_loop_owned:
+            logger.debug('remaining tasks when stopping event loop {}', asyncio.all_tasks(self.event_loop))
+            self.event_loop.stop()
+        else:
+            logger.debug('stop completed, we do not own the event loop, so it is not stopped')
 
     def _make_correlation_id(self):
         return 'metricq-rpc-py-{}-{}'.format(self.token, uuid.uuid4().hex)

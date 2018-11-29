@@ -28,35 +28,51 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 import logging
 import time
 
-from metricq import SynchronousSource, logger
+import click
+import click_log
+import click_completion
+
+from metricq import SynchronousSource, get_logger
+
+logger = get_logger()
+
+click_log.basic_config(logger)
+logger.setLevel('INFO')
+# Use this if we ever use threads
+# logger.handlers[0].formatter = logging.Formatter(fmt='%(asctime)s %(threadName)-16s %(levelname)-8s %(message)s')
+logger.handlers[0].formatter = logging.Formatter(fmt='%(asctime)s [%(levelname)-8s] [%(name)-20s] %(message)s')
+
+click_completion.init()
+
+
+def run_source(ssource):
+    ssource.declare_metrics({
+        'dummy.time': {
+            'unit': 's',
+            'location': 'localhost',
+        }
+    })
+    try:
+        while True:
+            ssource.send('dummy.time', time.time(), time.time())
+            time.sleep(0.1)
+    except KeyboardInterrupt:
+        logger.info("stopping SynchronousSource")
+    ssource.stop()
+
+
+@click.command()
+@click.option('--server', default='amqp://localhost/')
+@click.option('--token', default='source-py-dummy')
+@click_log.simple_verbosity_option(logger)
+def synchronous_source(server, token):
+    ssource = SynchronousSource(token=token, management_url=server)
+    run_source(ssource)
 
 
 if __name__ == '__main__':
-    formatter = logging.Formatter(fmt='%(asctime)s %(threadName)-16s %(levelname)-8s %(message)s',
-                                  datefmt='%Y-%m-%d %H:%M:%S')
-
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-    ch.setFormatter(formatter)
-
-    logger.setLevel(logging.DEBUG)
-    logger.addHandler(ch)
-
-    sources = [
-        SynchronousSource('source-py-test-sync-{}'.format(i), 'amqp://127.0.0.1')
-        for i in range(5)
-    ]
-
-    try:
-        while True:
-            for i in range(5):
-                sources[i % len(sources)].send('foo', time.time(), i)
-                time.sleep(0.1)
-    except KeyboardInterrupt:
-        print("Exiting")
-
-    for source in sources:
-        source.stop()
+    synchronous_source()

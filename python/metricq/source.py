@@ -27,15 +27,12 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 from abc import abstractmethod
-import asyncio
-from time import time
-import threading
 
 import aio_pika
 
 from .logging import get_logger
-from . import datachunk_pb2
 from .rpc import rpc_handler
 from .data_client import DataClient
 from .datachunk_pb2 import DataChunk
@@ -52,9 +49,9 @@ class Source(DataClient):
     async def connect(self):
         await super().connect()
         response = await self.rpc('source.register')
+        assert(response is not None)
         logger.info('register response: {}', response)
-
-        self.data_config(response)
+        await self.data_config(**response)
 
         self.data_exchange = await self.data_channel.declare_exchange(
             name=response['dataExchange'], passive=True)
@@ -62,9 +59,17 @@ class Source(DataClient):
         if 'config' in response:
             await self.rpc_dispatch('config', **response['config'])
 
-    @rpc_handler('config')
-    def _source_config(self, **kwargs):
-        logger.info('received config {}', kwargs)
+        self.event_loop.create_task(self.task())
+
+    @abstractmethod
+    def task(self):
+        """
+        override this with your main task for generating data, e.g.
+        while True:
+            await self.some_read_data_function()
+            await self.send(...)
+        """
+        pass
 
     def __getitem__(self, id):
         if id not in self.metrics:
@@ -92,3 +97,7 @@ class Source(DataClient):
         """
         msg = aio_pika.Message(data_chunk.SerializeToString())
         await self.data_exchange.publish(msg, routing_key=metric)
+
+    @rpc_handler('config')
+    async def _source_config(self, **kwargs):
+        logger.info('received config {}', kwargs)

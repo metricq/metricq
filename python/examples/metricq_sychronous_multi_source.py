@@ -33,27 +33,32 @@ import time
 
 from metricq import SynchronousSource, get_logger
 
-logger = get_logger(__name__)
-
-
-def run_source(ssource):
-    ssource.declare_metrics({
-        'dummy.time': {
-            'unit': 's',
-            'location': 'localhost',
-        }
-    })
-    try:
-        while True:
-            ssource.send('dummy.time', time.time(), time.time())
-            time.sleep(0.1)
-    except KeyboardInterrupt:
-        print("Exiting")
-    ssource.stop()
+logger = get_logger()
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
+    formatter = logging.Formatter(fmt='%(asctime)s %(threadName)-16s %(levelname)-8s %(message)s',
+                                  datefmt='%Y-%m-%d %H:%M:%S')
 
-    ssource = SynchronousSource('source-py-test-sync', 'amqp://127.0.0.1')
-    run_source(ssource)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    ch.setFormatter(formatter)
+
+    logger.setLevel(logging.INFO)
+    logger.addHandler(ch)
+
+    sources = [
+        SynchronousSource('source-py-test-sync-{}'.format(i), 'amqp://127.0.0.1')
+        for i in range(5)
+    ]
+
+    try:
+        while True:
+            for i in range(5):
+                sources[i % len(sources)].send('foo', time.time(), i)
+                time.sleep(0.1)
+    except KeyboardInterrupt:
+        print("Exiting")
+
+    for source in sources:
+        source.stop()

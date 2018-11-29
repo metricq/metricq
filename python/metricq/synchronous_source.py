@@ -32,7 +32,6 @@ from threading import Thread, Lock, Event
 
 from .source import Source
 from .logging import get_logger
-from .agent import handle_exception
 
 logger = get_logger(__name__)
 
@@ -43,19 +42,24 @@ class _SynchronousSource(Source):
         # Remember this is a threading.Event, which is threadsafe
         # not a asyncio.Event which is not threadsafe
         # Because we use threads anyway
+        # There is no threading.Future
         self.exception = None
         self._ready_event = Event()
 
     async def connect(self):
         await super().connect()
-        self.event_loop.set_exception_handler(handle_exception)
         self._ready_event.set()
 
-    def _panic(self, loop, context):
-        handle_exception(loop, context)
+    def on_exception(self, loop, context):
+        super().on_exception(loop, context)
 
-        self.exception = context['exception']
-        self._ready_event.set()
+        if not self._ready_event.is_set():
+            self.exception = context['exception']
+            self._ready_event.set()
+
+    async def task(self):
+        # Nothing to do, we are called from the outside
+        pass
 
     def wait_for_ready(self, timeout):
         if not self._ready_event.wait(timeout):
@@ -65,7 +69,7 @@ class _SynchronousSource(Source):
             raise self.exception
 
     def run(self):
-        super().run(exception_handler=self._panic)
+        super().run(catch_signals=())
 
 
 class SynchronousSource:
@@ -117,7 +121,10 @@ class SynchronousSource:
 
     def stop(self):
         logger.info('[SynchronousSource] stopping')
-        self._source.event_loop.stop()
-        logger.debug('[SynchronousSource] event loop stopped')
+        asyncio.run_coroutine_threadsafe(self._source.stop(), self._source.event_loop)
+        # We cannot wait for the future because stop never finishes completion as
+        # it kills the event loop before returning
+        # It's ok though because join will block until the event loop is done
+        logger.debug('[SynchronousSource] underlying source stopped')
         self._thread.join()
         logger.info('[SynchronousSource] thread joined')

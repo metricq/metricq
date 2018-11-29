@@ -57,6 +57,9 @@ setup(name='metricq',
       packages=['metricq', 'metricq_proto'],
       scripts=[],
       install_requires=['aio-pika', 'protobuf', 'yarl'],
+      extras_require={
+          'examples': ['aiomonitor', 'click', 'click-log', 'click-completion'],
+      },
       cmdclass={'build_py': ProtoBuildPy, 'develop': ProtoDevelop},
       package_dir={'': 'python', 'metricq_proto': 'src'},
-      test_suite='tests',)
+      test_suite='examples',)
