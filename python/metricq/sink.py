@@ -26,8 +26,12 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import aio_pika
+from abc import abstractmethod
+
 from .logging import get_logger
 from .data_client import DataClient
+from .datachunk_pb2 import DataChunk
 
 logger = get_logger(__name__)
 
@@ -35,3 +39,51 @@ logger = get_logger(__name__)
 class Sink(DataClient):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._data_queue = None
+
+    async def sink_config(self, dataQueue, **kwargs):
+        await self.data_config(**kwargs)
+        self._data_queue = await self.data_channel.declare_queue(name=dataQueue, passive=True)
+        logger.info('starting sink consume')
+        await self._data_queue.consume(self._on_data_message)
+
+    async def subscribe(self, metrics, **kwargs):
+        """
+        :param metrics:
+        :param expires: (optional) queue expiration time in seconds
+        :return:
+        """
+        if self._data_queue is not None:
+            kwargs['dataQueue'] = self._data_queue.name
+        response = await self.rpc('sink.subscribe', metrics=metrics, **kwargs)
+        if self._data_queue is None:
+            await self.sink_config(**response)
+        assert self._data_queue.name == response['dataQueue']
+
+    async def unsubscribe(self, metrics):
+        assert self._data_queue
+        await self.rpc('sink.unsubscribe', dataQueue=self._data_queue.name, metrics=metrics)
+
+    async def _on_data_message(self, message: aio_pika.IncomingMessage):
+        with message.process(requeue=True):
+            body = message.body
+            from_token = message.app_id
+            metric = message.routing_key
+
+            logger.debug('received message from {}', from_token)
+            data_response = DataChunk()
+            data_response.ParseFromString(body)
+
+            await self._on_data_chunk(metric, data_response)
+
+    async def _on_data_chunk(self, metric, data_chunk: DataChunk):
+        """ Only override this if absolutely necessary for performance """
+        last_timed = 0
+        zipped_tv = zip(data_chunk.time_delta, data_chunk.value)
+        for time_delta, value in zipped_tv:
+            last_timed += time_delta
+            await self.on_data(metric, last_timed, value)
+
+    @abstractmethod
+    async def on_data(self, metric, timestamp, value):
+        pass

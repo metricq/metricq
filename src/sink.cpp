@@ -37,6 +37,7 @@
 
 #include <amqpcpp.h>
 
+#include <exception>
 #include <iostream>
 
 namespace metricq
@@ -47,6 +48,22 @@ Sink::Sink(const std::string& token, bool add_uuid) : DataClient(token, add_uuid
 
 Sink::~Sink()
 {
+}
+
+void Sink::subscribe(const std::vector<std::string>& metrics, int64_t expires)
+{
+    rpc("sink.subscribe",
+        [this](const json& response) {
+            if (this->data_queue_.empty())
+            {
+                this->sink_config(response);
+            }
+            if (this->data_queue_ != response.at("dataQueue"))
+            {
+                throw std::runtime_error("inconsistent sink dataQueue setting after subscription");
+            }
+        },
+        { { "metrics", metrics }, { "expires", expires } });
 }
 
 void Sink::sink_config(const json& config)

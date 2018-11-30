@@ -65,6 +65,8 @@ protected:
 
     void sink_config(const json& config);
 
+    void subscribe(const std::vector<std::string>& metrics, int64_t expires=0);
+
 private:
     // let's hope the child classes never need to deal with this and the generic callback is
     // sufficient

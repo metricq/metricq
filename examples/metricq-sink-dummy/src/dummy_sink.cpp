@@ -57,9 +57,7 @@ DummySink::DummySink(const std::string& manager_host, const std::string& token,
 
 void DummySink::on_connected()
 {
-    rpc("sink.subscribe", [this](const json& response) { sink_config(response); },
-        { { "metrics", metrics_ }, { "expires", 0 } });
-
+    this->subscribe(metrics_);
     start_time_ = metricq::Clock::now();
 }
 

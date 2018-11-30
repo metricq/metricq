@@ -161,6 +161,7 @@ class Agent(RPCDispatcher):
                 raise TypeError("no cleanup_on_response requested while no response callback is given")
 
             def response_callback(**response_kwargs):
+                assert not request_future.done()
                 if 'error' in response_kwargs:
                     request_future.set_exception(RPCError(response_kwargs['error']))
                 else:
@@ -177,10 +178,16 @@ class Agent(RPCDispatcher):
                     del self._rpc_response_handlers[correlation_id]
                 except KeyError:
                     pass
-            self.event_loop.call_later(timeout, cleanup)
+            if not request_future:
+                self.event_loop.call_later(timeout, cleanup)
 
         if request_future:
-            return await asyncio.wait_for(request_future, timeout=timeout)
+            try:
+                return await asyncio.wait_for(request_future, timeout=timeout)
+            except TimeoutError as te:
+                logger.error("timeout when waiting for RPC response future {}", correlation_id)
+                cleanup()
+                raise te
 
     async def rpc_consume(self, extra_queues=[]):
         """
@@ -278,6 +285,7 @@ class Agent(RPCDispatcher):
                 except KeyError:
                     logger.error('received RPC response with unknown correlation id {} from {}',
                                  correlation_id, from_token)
+                    # We do not throw here, no requeue for this!
                     return
                 if cleanup:
                     del self._rpc_response_handlers[correlation_id]
