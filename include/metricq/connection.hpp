@@ -33,8 +33,6 @@
 
 #include <amqpcpp.h>
 
-#include <metricq/asio_handler.hpp>
-
 #include <nlohmann/json.hpp>
 
 #include <functional>

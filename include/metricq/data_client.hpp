@@ -29,8 +29,6 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#include "../../src/connection_handler.hpp"
-#include <metricq/asio_handler.hpp>
 #include <metricq/connection.hpp>
 
 #include <amqpcpp.h>
@@ -38,10 +36,15 @@
 namespace metricq
 {
 
+class ConnectionHandler;
+
 class DataClient : public Connection
 {
 public:
     DataClient(const std::string& token, bool add_uuid = false);
+
+    // We have to do this because of the ConnectionHandler forward declaration
+    ~DataClient();
 
 protected:
     virtual void on_data_channel_ready();

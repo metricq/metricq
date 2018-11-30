@@ -260,17 +260,18 @@ void ConnectionHandler::read()
                                     return;
                                 }
 
-                                recv_buffer_.commit(received_bytes);
+                                this->recv_buffer_.commit(received_bytes);
 
-                                if (recv_buffer_.size() >= connection_->expected())
+                                if (this->recv_buffer_.size() >= connection_->expected())
                                 {
-                                    std::vector<char> data(asio::buffers_begin(recv_buffer_.data()),
-                                                           asio::buffers_end(recv_buffer_.data()));
+                                    std::vector<char> data(
+                                        asio::buffers_begin(this->recv_buffer_.data()),
+                                        asio::buffers_end(this->recv_buffer_.data()));
                                     auto consumed = connection_->parse(data.data(), data.size());
-                                    recv_buffer_.consume(consumed);
+                                    this->recv_buffer_.consume(consumed);
                                 }
 
-                                if (socket_.is_open())
+                                if (this->socket_.is_open())
                                 {
                                     this->read();
                                 }
@@ -299,7 +300,7 @@ void ConnectionHandler::flush()
 
         if (heartbeat_interval_.count() != 0 && this->socket_.is_open())
         {
-            // we just sent something, so we can delay the heartbeat
+            // we completed a send operation. Now it's time to set up the heartbeat timer.
             this->heartbeat_timer_.expires_after(this->heartbeat_interval_);
             this->heartbeat_timer_.async_wait([this](auto error) { this->beat(error); });
         }

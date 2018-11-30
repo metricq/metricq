@@ -31,6 +31,7 @@
 #include <metricq/chrono.hpp>
 #include <metricq/data_client.hpp>
 
+#include "connection_handler.hpp"
 #include "log.hpp"
 #include "util.hpp"
 
@@ -47,6 +48,8 @@ DataClient::DataClient(const std::string& token, bool add_uuid) : Connection(tok
         return response;
     });
 }
+
+DataClient::~DataClient() = default;
 
 void DataClient::data_config(const metricq::json& config)
 {
