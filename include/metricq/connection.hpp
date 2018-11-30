@@ -81,6 +81,10 @@ public:
 
 protected:
     virtual void on_connected() = 0;
+    virtual void on_error(const std::string& message)
+    {
+        (void)message;
+    }
 
     void rpc(const std::string& function, ManagementResponseCallback callback,
              json payload = json({}));

@@ -37,23 +37,17 @@ void QueuedBuffer::emplace(const char* ptr, std::size_t size)
     // check if this fits at the back of the last queued buffer
     if (!empty() && buffers_.back().size() + size <= buffers_.back().capacity())
     {
-        log::debug("Reusing buffer of size {} for {} bytes", buffers_.back().size(), size);
         std::copy(ptr, ptr + size, std::back_inserter(buffers_.back()));
     }
     else
     {
-
         if (empty_buffers_.empty() || empty_buffers_.front().capacity() < size)
         {
-            log::debug("Allocating buffer for {} bytes", size);
-
             buffers_.emplace();
             buffers_.back().reserve(std::max<std::size_t>(size, 4096));
         }
         else
         {
-            log::debug("Reusing buffer from cached buffers for {} bytes", size);
-
             buffers_.emplace(std::move(empty_buffers_.front()));
             empty_buffers_.pop();
         }
@@ -65,7 +59,6 @@ void QueuedBuffer::emplace(const char* ptr, std::size_t size)
 void QueuedBuffer::consume(std::size_t consumed_bytes)
 {
     assert(!empty());
-    //        assert(buffers_.front().size() <= offset_ + consumed_bytes);
 
     if (buffers_.front().size() == offset_ + consumed_bytes)
     {
@@ -118,8 +111,8 @@ void ConnectionHandler::connect(asio::ip::tcp::resolver::iterator endpoint_itera
         this->socket_, endpoint_iterator, [this](const auto& error, auto successful_endpoint) {
             if (error)
             {
-                log::error("connection failed: {}", error.message());
-                this->onError("connect failed");
+                log::error("Failed to connect to: {}", error.message());
+                this->onError("Connect failed");
                 return;
             }
             log::debug("successfully connected to {} at {}", successful_endpoint->host_name(),
@@ -165,8 +158,6 @@ void ConnectionHandler::onData(AMQP::Connection* connection, const char* data, s
 {
     (void)connection;
 
-    log::debug("writing {} bytes", size);
-
     send_buffers_.emplace(data, size);
     flush();
 }
@@ -180,7 +171,7 @@ void ConnectionHandler::onData(AMQP::Connection* connection, const char* data, s
 void ConnectionHandler::onReady(AMQP::Connection* connection)
 {
     (void)connection;
-    log::debug("onReady");
+    log::debug("ConnectionHandler::onReady");
 }
 
 /**
@@ -193,25 +184,34 @@ void ConnectionHandler::onReady(AMQP::Connection* connection)
 void ConnectionHandler::onError(AMQP::Connection* connection, const char* message)
 {
     (void)connection;
-    log::debug("onError: {}", message);
+    log::debug("ConnectionHandler::onError: {}", message);
+    if (error_callback_)
+    {
+        error_callback_(message);
+    }
+
     socket_.close();
 
-    reconnect_timer_.expires_from_now(std::chrono::seconds(1));
-    reconnect_timer_.async_wait([this](const auto& error) {
-        if (error)
-        {
-            log::error("reconnect timer failed: {}", error.message());
-            return;
-        }
+    // We make a hard cut: Just throw the shit out of here.
+    throw std::runtime_error(std::string("ConnectionHandler::onError: ") + message);
 
-        this->send_buffers_.clear();
-        this->recv_buffer_.consume(this->recv_buffer_.size());
-        this->flush_in_progress_ = false;
-        this->connection_.reset();
-        this->heartbeat_timer_.cancel();
-
-        this->connect(*this->address_);
-    });
+    // TODO actually implement reconnect
+    // reconnect_timer_.expires_from_now(std::chrono::seconds(3));
+    // reconnect_timer_.async_wait([this](const auto& error) {
+    //     if (error)
+    //     {
+    //         log::error("reconnect timer failed: {}", error.message());
+    //         return;
+    //     }
+    //
+    //     this->send_buffers_.clear();
+    //     this->recv_buffer_.consume(this->recv_buffer_.size());
+    //     this->flush_in_progress_ = false;
+    //     this->connection_.reset();
+    //     this->heartbeat_timer_.cancel();
+    //
+    //     this->connect(*this->address_);
+    // });
 }
 
 /**
@@ -224,7 +224,7 @@ void ConnectionHandler::onError(AMQP::Connection* connection, const char* messag
 void ConnectionHandler::onClosed(AMQP::Connection* connection)
 {
     (void)connection;
-    log::debug("onClosed");
+    log::debug("ConnectionHandler::onClosed");
 
     // close the socket
     socket_.close();
@@ -255,6 +255,7 @@ void ConnectionHandler::read()
                                 if (error)
                                 {
                                     log::error("read failed: {}", error.message());
+                                    this->connection_->fail(error.message().c_str());
                                     this->onError("read failed");
                                     return;
                                 }
@@ -289,15 +290,14 @@ void ConnectionHandler::flush()
         if (error)
         {
             log::error("write failed: {}", error.message());
+            this->connection_->fail(error.message().c_str());
             this->onError("write failed");
             return;
         }
 
-        log::debug("wrote {} bytes", transferred);
-
         this->send_buffers_.consume(transferred);
 
-        if (heartbeat_interval_.count() != 0)
+        if (heartbeat_interval_.count() != 0 && this->socket_.is_open())
         {
             // we just sent something, so we can delay the heartbeat
             this->heartbeat_timer_.expires_after(this->heartbeat_interval_);
@@ -321,6 +321,7 @@ void ConnectionHandler::beat(const asio::error_code& error)
     {
         // something weird did happen
         log::error("heartbeat timer failed: {}", error.message());
+        connection_->fail(error.message().c_str());
         onError("heartbeat timer failed");
 
         return;

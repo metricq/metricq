@@ -77,6 +77,11 @@ class ConnectionHandler : public AMQP::ConnectionHandler
 public:
     ConnectionHandler(asio::io_service& io_service);
 
+    void set_error_callback(std::function<void(const std::string&)> callback)
+    {
+        error_callback_ = callback;
+    }
+
     /**
      *  Method that is called by the AMQP library every time it has data
      *  available that should be sent to RabbitMQ.
@@ -165,6 +170,7 @@ public:
     std::unique_ptr<AMQP::Channel> make_channel();
 
 private:
+    std::function<void(const std::string&)> error_callback_;
     std::unique_ptr<AMQP::Connection> connection_;
     std::optional<AMQP::Address> address_;
     asio::system_timer reconnect_timer_;
