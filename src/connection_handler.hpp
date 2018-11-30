@@ -31,6 +31,7 @@
 #include <amqpcpp.h>
 
 #include <asio.hpp>
+#include <asio/ssl.hpp>
 #include <asio/basic_waitable_timer.hpp>
 
 #include <memory>
@@ -156,12 +157,14 @@ public:
      */
     virtual void onHeartbeat(AMQP::Connection* connection) override;
 
+public:
     bool close();
 
     void connect(const AMQP::Address& address);
 
 private:
     void connect(asio::ip::tcp::resolver::iterator endpoint_iterator);
+    void ssl_handshake();
     void read();
     void flush();
     void beat(const asio::error_code&);
@@ -176,8 +179,9 @@ private:
     asio::system_timer reconnect_timer_;
     asio::system_timer heartbeat_timer_;
     std::chrono::milliseconds heartbeat_interval_;
+    asio::ssl::context ssl_context_;
     asio::ip::tcp::resolver resolver_;
-    asio::ip::tcp::socket socket_;
+    asio::ssl::stream<asio::ip::tcp::socket> socket_;
     asio::streambuf recv_buffer_;
     QueuedBuffer send_buffers_;
     bool flush_in_progress_ = false;

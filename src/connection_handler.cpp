@@ -29,6 +29,11 @@
 #include "connection_handler.hpp"
 #include "log.hpp"
 
+extern "C"
+{
+#include <openssl/x509.h>
+}
+
 namespace metricq
 {
 
@@ -75,13 +80,20 @@ void QueuedBuffer::consume(std::size_t consumed_bytes)
 
 ConnectionHandler::ConnectionHandler(asio::io_service& io_service)
 : reconnect_timer_(io_service), heartbeat_timer_(io_service),
-  heartbeat_interval_(std::chrono::seconds(0)), resolver_(io_service), socket_(io_service)
+  heartbeat_interval_(std::chrono::seconds(0)), ssl_context_(asio::ssl::context::tls),
+  resolver_(io_service), socket_(io_service, ssl_context_)
 {
+    // Create a context that uses the default paths for finding CA certificates.
+    ssl_context_.set_default_verify_paths();
+    socket_.set_verify_mode(asio::ssl::verify_peer);
+    ssl_context_.set_options(asio::ssl::context::default_workarounds |
+                             asio::ssl::context::no_sslv2 | asio::ssl::context::no_sslv3 |
+                             asio::ssl::context::tlsv12_client);
 }
 
 void ConnectionHandler::connect(const AMQP::Address& address)
 {
-    assert(!socket_.is_open());
+    assert(!socket_.lowest_layer().is_open());
     assert(!connection_);
 
     address_ = address;
@@ -107,19 +119,55 @@ void ConnectionHandler::connect(const AMQP::Address& address)
 
 void ConnectionHandler::connect(asio::ip::tcp::resolver::iterator endpoint_iterator)
 {
-    asio::async_connect(
-        this->socket_, endpoint_iterator, [this](const auto& error, auto successful_endpoint) {
-            if (error)
-            {
-                log::error("Failed to connect to: {}", error.message());
-                this->onError("Connect failed");
-                return;
-            }
-            log::debug("successfully connected to {} at {}", successful_endpoint->host_name(),
-                       successful_endpoint->endpoint());
-            this->read();
-            this->flush();
-        });
+    asio::async_connect(this->socket_.lowest_layer(), endpoint_iterator,
+                        [this](const auto& error, auto successful_endpoint) {
+                            if (error)
+                            {
+                                log::error("Failed to connect to: {}", error.message());
+                                this->onError("Connect failed");
+                                return;
+                            }
+                            log::debug("Established connection to {} at {}",
+                                       successful_endpoint->host_name(),
+                                       successful_endpoint->endpoint());
+
+#ifdef METRICQ_SSL_SKIP_VERIFY
+                            // Building without SSL verification; DO NOT USE THIS IN PRODUCTION!
+                            // This code will skip ANY SSL certificate verification.
+                            socket_.set_verify_callback([](bool, asio::ssl::verify_context& ctx) {
+                                char subject_name[256];
+                                X509* cert = X509_STORE_CTX_get_current_cert(ctx.native_handle());
+                                X509_NAME_oneline(X509_get_subject_name(cert), subject_name, 256);
+
+                                log::debug("Visiting certificate for subject: {}", subject_name);
+
+                                log::warn("Skipping certificate verification.");
+                                return true;
+                            });
+#else
+                            // This code will do proper SSL certification as described in RFC2818
+                            this->socket_.set_verify_callback(
+                                asio::ssl::rfc2818_verification(successful_endpoint->host_name()));
+#endif
+                            this->ssl_handshake();
+                        });
+}
+
+void ConnectionHandler::ssl_handshake()
+{
+    socket_.async_handshake(asio::ssl::stream_base::client, [this](const auto& error) {
+        if (error)
+        {
+            log::error("Failed to SSL handshake to: {}", error.message());
+            this->onError("SSL handshake failed");
+            return;
+        }
+
+        log::debug("SSL handshake was successful.");
+
+        this->read();
+        this->flush();
+    });
 }
 
 uint16_t ConnectionHandler::onNegotiate(AMQP::Connection* connection, uint16_t timeout)
@@ -190,7 +238,7 @@ void ConnectionHandler::onError(AMQP::Connection* connection, const char* messag
         error_callback_(message);
     }
 
-    socket_.close();
+    socket_.lowest_layer().close();
 
     // We make a hard cut: Just throw the shit out of here.
     throw std::runtime_error(std::string("ConnectionHandler::onError: ") + message);
@@ -226,19 +274,24 @@ void ConnectionHandler::onClosed(AMQP::Connection* connection)
     (void)connection;
     log::debug("ConnectionHandler::onClosed");
 
-    // close the socket
-    socket_.close();
+    socket_.async_shutdown([this](const auto& error) {
+        if (error)
+        {
+            log::error("Failed to shutdown connection: {}", error.message());
+            this->onError("Failed to shutdown connection");
+            return;
+        }
 
-    // cancel the heartbeat timer, which relies on the socket to be closed.
-    // If the timer is canceled but the socket is still open, the timer will schedule itself again.
+        connection_.reset();
+    });
+
+    // cancel the heartbeat timer
     heartbeat_timer_.cancel();
 
     if (!send_buffers_.empty())
     {
         throw std::logic_error("Socket was closed before all data could be sent out.");
     }
-
-    connection_.reset();
 }
 
 bool ConnectionHandler::close()
@@ -271,7 +324,7 @@ void ConnectionHandler::read()
                                     this->recv_buffer_.consume(consumed);
                                 }
 
-                                if (this->socket_.is_open())
+                                if (this->socket_.lowest_layer().is_open())
                                 {
                                     this->read();
                                 }
@@ -280,7 +333,7 @@ void ConnectionHandler::read()
 
 void ConnectionHandler::flush()
 {
-    if (!socket_.is_open() || send_buffers_.empty() || flush_in_progress_)
+    if (!socket_.lowest_layer().is_open() || send_buffers_.empty() || flush_in_progress_)
     {
         return;
     }
@@ -298,7 +351,7 @@ void ConnectionHandler::flush()
 
         this->send_buffers_.consume(transferred);
 
-        if (heartbeat_interval_.count() != 0 && this->socket_.is_open())
+        if (heartbeat_interval_.count() != 0 && this->socket_.lowest_layer().is_open())
         {
             // we completed a send operation. Now it's time to set up the heartbeat timer.
             this->heartbeat_timer_.expires_after(this->heartbeat_interval_);
