@@ -63,7 +63,7 @@ public:
         chunk_size_ = n;
     }
 
-    void chunk_size() const
+    int64_t chunk_size() const
     {
         return chunk_size_;
     }
@@ -74,7 +74,7 @@ private:
     std::string id_;
     Writer& writer_;
 
-    int chunk_size_ = 1;
+    int64_t chunk_size_ = 1;
     int64_t previous_timestamp_ = 0;
     DataChunk chunk_;
 };
