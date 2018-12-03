@@ -120,6 +120,7 @@ class Agent(RPCDispatcher):
         self.event_loop.create_task(self.connect())
         logger.debug('running event loop {}', self.event_loop)
         self.event_loop.run_forever()
+        self.event_loop.close()
         logger.debug('event loop completed')
 
     async def rpc(self, exchange: aio_pika.Exchange, routing_key: str,
