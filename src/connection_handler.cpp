@@ -29,10 +29,12 @@
 #include "connection_handler.hpp"
 #include "log.hpp"
 
+#ifdef METRICQ_SSL_SKIP_VERIFY
 extern "C"
 {
 #include <openssl/x509.h>
 }
+#endif
 
 namespace metricq
 {
@@ -274,24 +276,22 @@ void ConnectionHandler::onClosed(AMQP::Connection* connection)
     (void)connection;
     log::debug("ConnectionHandler::onClosed");
 
-    socket_.async_shutdown([this](const auto& error) {
-        if (error)
-        {
-            log::error("Failed to shutdown connection: {}", error.message());
-            this->onError("Failed to shutdown connection");
-            return;
-        }
+    // Technically, there is a ssl_shutdown method for the stream.
+    // But, it seems that we don't have to do that (⊙.☉)7
+    // If we try, the shutdown errors with a "connection reset by peer"
+    // ... instead we're just closing the socket ¯\_(ツ)_/¯
+    this->socket_.lowest_layer().close();
 
-        connection_.reset();
-    });
+    // this technically invalidates all existing channel objects. Those are the hard part for a
+    // robust connection
+    connection_.reset();
 
     // cancel the heartbeat timer
     heartbeat_timer_.cancel();
 
-    if (!send_buffers_.empty())
-    {
-        throw std::logic_error("Socket was closed before all data could be sent out.");
-    }
+    // check if send_buffers are empty, this would be strange, because that means that AMQP-CPP
+    // tried to sent something, after it sent the close frame.
+    assert(send_buffers_.empty());
 }
 
 bool ConnectionHandler::close()
