@@ -241,7 +241,11 @@ class Agent(RPCDispatcher):
         self._management_exchange = None
 
         if self._event_loop_owned:
-            logger.debug('remaining tasks when stopping event loop {}', asyncio.all_tasks(self.event_loop))
+            try:
+                logger.debug('remaining tasks when stopping event loop {}', asyncio.all_tasks(self.event_loop))
+            except AttributeError:
+                # needs python 3.7
+                pass
             self.event_loop.stop()
         else:
             logger.debug('stop completed, we do not own the event loop, so it is not stopped')
