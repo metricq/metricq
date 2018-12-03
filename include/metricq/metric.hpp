@@ -38,7 +38,7 @@
 namespace metricq
 {
 
-template<class Writer>
+template <class Writer>
 class Metric
 {
 public:
@@ -58,10 +58,16 @@ public:
      * set to 0 to do only manual flushes - use at your own risk!
      * set to 1 to flush on every new value
      */
-    void set_chunksize(size_t n)
+    void chunk_size(size_t n)
     {
         chunk_size_ = n;
     }
+
+    void chunk_size() const
+    {
+        return chunk_size_;
+    }
+
     void flush();
 
 private:
@@ -73,7 +79,7 @@ private:
     DataChunk chunk_;
 };
 
-template<class Writer>
+template <class Writer>
 inline void Metric<Writer>::flush()
 {
     writer_.send(id_, chunk_);
@@ -82,7 +88,7 @@ inline void Metric<Writer>::flush()
     previous_timestamp_ = 0;
 }
 
-template<class Writer>
+template <class Writer>
 inline void Metric<Writer>::send(TimeValue tv)
 {
     chunk_.add_time_delta(tv.time.time_since_epoch().count() - previous_timestamp_);

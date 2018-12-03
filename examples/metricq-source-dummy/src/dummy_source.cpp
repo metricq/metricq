@@ -110,7 +110,7 @@ metricq::Timer::TimerResult DummySource::timeout_cb(std::error_code)
     auto current_time = metricq::Clock::now();
     const auto r = 10;
     auto& metric = (*this)["dummy.source"];
-    metric.set_chunksize(0);
+    metric.chunk_size(0);
     for (int i = 0; i < r; i++)
     {
         double value = sin((2 * M_PI * (t + i * 0.1)) / interval_ms);
