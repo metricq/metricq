@@ -37,10 +37,6 @@
 #include <metricq/logger.hpp>
 
 #include <amqpcpp.h>
-extern "C"
-{
-#include <openssl/ssl.h>
-}
 
 #include <nlohmann/json.hpp>
 
@@ -74,30 +70,8 @@ void Connection::main_loop()
     io_service.run();
 }
 
-class SSLInit
-{
-public:
-    SSLInit()
-    {
-        // init the SSL library (this works for openssl 1.1, for openssl 1.0 use SSL_library_init())
-        // OPENSSL_init_ssl(0, NULL);
-        SSL_library_init();
-    }
-};
-
-static void init_ssl()
-{
-    static SSLInit initialize_ssl;
-    (void)initialize_ssl;
-}
-
 void Connection::connect(const std::string& server_address)
 {
-    if (server_address.substr(0, 5) == "amqps")
-    {
-        init_ssl();
-    }
-
     management_address_ = server_address;
 
     log::info("connecting to management server: {}", *management_address_);
@@ -253,9 +227,8 @@ void Connection::close()
 
 void Connection::stop()
 {
-    log::debug("requesting stop");
+    log::debug("Stop requested. Closing connection.");
     close();
-    log::info("stopping io_service");
     // the io_service will stop itself once all connections are closed
 }
 } // namespace metricq
