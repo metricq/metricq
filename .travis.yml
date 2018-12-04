@@ -90,7 +90,7 @@ cache:
 
 install:
   - PROTOBUF_VERSION=3.6.1 # Update cache too when changing this!
-  - PROTOBUF_DIR=${TRAVIS_BUILD_DIR}/deps/protobuf-${OTF2_VERSION}
+  - PROTOBUF_DIR=${TRAVIS_BUILD_DIR}/deps/protobuf-${PROTOBUF_VERSION}
   - |
     if [ -z "$(ls -A ${PROTOBUF_DIR})" ]; then
       wget https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOBUF_VERSION}/protobuf-all-${PROTOBUF_VERSION}.tar.gz
