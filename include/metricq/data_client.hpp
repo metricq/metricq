@@ -36,7 +36,7 @@
 namespace metricq
 {
 
-class ConnectionHandler;
+class BaseConnectionHandler;
 
 class DataClient : public Connection
 {
@@ -53,7 +53,7 @@ protected:
 
 private:
     std::optional<AMQP::Address> data_server_address_;
-    std::unique_ptr<ConnectionHandler> data_connection_;
+    std::unique_ptr<BaseConnectionHandler> data_connection_;
 
 protected:
     std::unique_ptr<AMQP::Channel> data_channel_;

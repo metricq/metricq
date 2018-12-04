@@ -76,7 +76,14 @@ void Connection::connect(const std::string& server_address)
 
     log::info("connecting to management server: {}", *management_address_);
 
-    management_connection_ = std::make_unique<ConnectionHandler>(io_service);
+    if (server_address.substr(0, 5) == "amqps")
+    {
+        management_connection_ = std::make_unique<SSLConnectionHandler>(io_service);
+    }
+    else
+    {
+        management_connection_ = std::make_unique<ConnectionHandler>(io_service);
+    }
     management_connection_->set_error_callback(
         [this](const auto& message) { this->on_error(message); });
     management_connection_->connect(*management_address_);
