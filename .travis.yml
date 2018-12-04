@@ -36,7 +36,7 @@ matrix:
         apt:
           packages:
             - clang-5.0
-            - g++-5
+            - g++-8
             - cmake
             - cmake-data
             - protobuf-compiler
@@ -51,6 +51,7 @@ matrix:
         apt:
           packages:
             - clang-6.0
+            - g++-8
             - cmake
             - cmake-data
             - libssl-dev
