@@ -63,14 +63,12 @@ matrix:
       addons:
         homebrew:
           packages:
-            - protobuf
             - openssl@1.1
     - os: osx
       osx_image: xcode10.1
       addons:
         homebrew:
           packages:
-            - protobuf
             - openssl@1.1
 
 cache:
