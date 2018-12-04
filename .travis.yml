@@ -79,7 +79,7 @@ matrix:
             - llvm-toolchain-trusty-4.0
             - ubuntu-toolchain-r-test
     - os: osx
-      osx_image: xcode9.4
+      osx_image: xcode10
       addons:
         homebrew:
           packages:
