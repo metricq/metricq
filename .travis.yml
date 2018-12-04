@@ -1,6 +1,6 @@
 language: generic
 
-dist: trusty
+dist: xenial
 
 matrix:
   include:
@@ -79,15 +79,19 @@ matrix:
             - llvm-toolchain-trusty-4.0
             - ubuntu-toolchain-r-test
     - os: osx
-      osx_image: xcode9.3
-      before_install:
-        - brew install protobuf
-        - brew install openssl@1.1
+      osx_image: xcode9.4
+      addons:
+        homebrew:
+          packages:
+            - protobuf
+            - openssl@1.1
     - os: osx
-      osx_image: xcode10
-      before_install:
-        - brew install protobuf
-        - brew install openssl@1.1
+      osx_image: xcode10.1
+      addons:
+        homebrew:
+          packages:
+            - protobuf
+            - openssl@1.1
 script:
   - cmake --version
   - cmake -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl@1.1/ .
