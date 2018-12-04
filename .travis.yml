@@ -1,0 +1,90 @@
+language: generic
+
+dist: trusty
+
+matrix:
+  include:
+    - os: linux
+      env: CXX="g++-7" CC="gcc-7"
+      compiler: gcc
+      addons:
+        apt:
+          packages:
+            - gcc-7
+            - g++-7
+            - cmake
+            - cmake-data
+            - protobuf-compiler
+            - libssl-dev
+          sources: &sources
+            - ubuntu-toolchain-r-test
+    - os: linux
+      env: CXX="g++-6" CC="gcc-6"
+      compiler: gcc
+      addons:
+        apt:
+          packages:
+            - gcc-6
+            - g++-6
+            - cmake
+            - cmake-data
+            - protobuf-compiler
+            - libssl-dev
+          sources: *sources
+    - os: linux
+      env: CXX="g++-8" CC="gcc-8"
+      compiler: gcc
+      addons:
+        apt:
+          packages:
+            - gcc-8
+            - g++-8
+            - cmake
+            - cmake-data
+            - protobuf-compiler
+            - libssl-dev
+          sources: *sources
+    - os: linux
+      env: CXX="clang++-5.0" CC="clang-5.0"
+      compiler: clang
+      addons:
+        apt:
+          packages:
+            - clang-5.0
+            - g++-5
+            - cmake
+            - cmake-data
+            - protobuf-compiler
+            - libssl-dev
+          sources:
+            - llvm-toolchain-trusty-5.0
+            - ubuntu-toolchain-r-test
+    - os: linux
+      env: CXX="clang++-4.0" CC="clang-4.0"
+      compiler: clang
+      addons:
+        apt:
+          packages:
+            - clang-4.0
+            - g++-5
+            - cmake
+            - cmake-data
+            - protobuf-compiler
+            - libssl-dev
+          sources:
+            - llvm-toolchain-trusty-4.0
+            - ubuntu-toolchain-r-test
+    - os: osx
+      osx_image: xcode9.3
+      before_install:
+        - brew install protobuf
+        - brew install openssl@1.1
+    - os: osx
+      osx_image: xcode10
+      before_install:
+        - brew install protobuf
+        - brew install openssl@1.1
+script:
+  - cmake --version
+  - cmake -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl@1.1/ .
+  - make -j 2
