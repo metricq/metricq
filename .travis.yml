@@ -15,6 +15,7 @@ matrix:
             - cmake
             - cmake-data
             - protobuf-compiler
+            - libprotobuf-dev
             - libssl-dev
           sources: &sources
             - ubuntu-toolchain-r-test
@@ -29,6 +30,7 @@ matrix:
             - cmake
             - cmake-data
             - protobuf-compiler
+            - libprotobuf-dev
             - libssl-dev
           sources: *sources
     - os: linux
@@ -42,6 +44,7 @@ matrix:
             - cmake
             - cmake-data
             - protobuf-compiler
+            - libprotobuf-dev
             - libssl-dev
           sources: *sources
     - os: linux
@@ -55,6 +58,7 @@ matrix:
             - cmake
             - cmake-data
             - protobuf-compiler
+            - libprotobuf-dev
             - libssl-dev
           sources:
             - llvm-toolchain-trusty-5.0
