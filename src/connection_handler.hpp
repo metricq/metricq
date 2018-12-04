@@ -31,8 +31,8 @@
 #include <amqpcpp.h>
 
 #include <asio.hpp>
-#include <asio/ssl.hpp>
 #include <asio/basic_waitable_timer.hpp>
+#include <asio/ssl.hpp>
 
 #include <memory>
 #include <optional>
@@ -73,15 +73,12 @@ private:
     std::size_t offset_ = 0;
 };
 
-class ConnectionHandler : public AMQP::ConnectionHandler
+class BaseConnectionHandler : public AMQP::ConnectionHandler
 {
 public:
-    ConnectionHandler(asio::io_service& io_service);
+    BaseConnectionHandler(asio::io_service& io_service);
 
-    void set_error_callback(std::function<void(const std::string&)> callback)
-    {
-        error_callback_ = callback;
-    }
+    ~BaseConnectionHandler() = default;
 
     /**
      *  Method that is called by the AMQP library every time it has data
@@ -100,11 +97,6 @@ public:
      */
     void onReady(AMQP::Connection* connection) override;
 
-    void onError(const std::string& message)
-    {
-        onError(connection_.get(), message.c_str());
-    }
-
     /**
      *  Method that is called by the AMQP library when a fatal error occurs
      *  on the connection, for example because data received from RabbitMQ
@@ -113,6 +105,10 @@ public:
      *  @param  message         A human readable error message
      */
     void onError(AMQP::Connection* connection, const char* message) override;
+    void onError(const std::string& message)
+    {
+        onError(connection_.get(), message.c_str());
+    }
 
     /**
      *  Method that is called when the connection was closed. This is the
@@ -158,32 +154,80 @@ public:
     virtual void onHeartbeat(AMQP::Connection* connection) override;
 
 public:
+    void connect(const AMQP::Address& address);
     bool close();
 
-    void connect(const AMQP::Address& address);
+    std::unique_ptr<AMQP::Channel> make_channel();
 
-private:
+    void set_error_callback(std::function<void(const std::string&)> callback)
+    {
+        error_callback_ = callback;
+    }
+
+protected:
     void connect(asio::ip::tcp::resolver::iterator endpoint_iterator);
-    void ssl_handshake();
     void read();
     void flush();
     void beat(const asio::error_code&);
 
-public:
-    std::unique_ptr<AMQP::Channel> make_channel();
+protected:
+    virtual void handshake(const std::string& hostname) = 0;
+    virtual asio::basic_socket<asio::ip::tcp>& underlying_socket() = 0;
 
-private:
+    virtual void async_write_some(std::function<void(std::error_code, std::size_t)> callback) = 0;
+    virtual void async_read_some(std::function<void(std::error_code, std::size_t)> callback) = 0;
+
+protected:
     std::function<void(const std::string&)> error_callback_;
     std::unique_ptr<AMQP::Connection> connection_;
     std::optional<AMQP::Address> address_;
     asio::system_timer reconnect_timer_;
     asio::system_timer heartbeat_timer_;
     std::chrono::milliseconds heartbeat_interval_;
-    asio::ssl::context ssl_context_;
     asio::ip::tcp::resolver resolver_;
-    asio::ssl::stream<asio::ip::tcp::socket> socket_;
     asio::streambuf recv_buffer_;
     QueuedBuffer send_buffers_;
     bool flush_in_progress_ = false;
+};
+
+class ConnectionHandler : public BaseConnectionHandler
+{
+public:
+    ConnectionHandler(asio::io_service& io_service);
+
+    asio::basic_socket<asio::ip::tcp>& underlying_socket() override
+    {
+        return socket_.lowest_layer();
+    }
+
+protected:
+    void async_write_some(std::function<void(std::error_code, std::size_t)> callback) override;
+    void async_read_some(std::function<void(std::error_code, std::size_t)> callback) override;
+
+    void handshake(const std::string& hostname) override;
+
+protected:
+    asio::ip::tcp::socket socket_;
+};
+
+class SSLConnectionHandler : public BaseConnectionHandler
+{
+public:
+    SSLConnectionHandler(asio::io_service& io_service);
+
+    asio::basic_socket<asio::ip::tcp>& underlying_socket() override
+    {
+        return socket_.lowest_layer();
+    }
+
+protected:
+    void async_write_some(std::function<void(std::error_code, std::size_t)> callback) override;
+    void async_read_some(std::function<void(std::error_code, std::size_t)> callback) override;
+
+    void handshake(const std::string& hostname) override;
+
+protected:
+    asio::ssl::context ssl_context_;
+    asio::ssl::stream<asio::ip::tcp::socket> socket_;
 };
 } // namespace metricq
