@@ -95,7 +95,7 @@ install:
     if [ -z "$(ls -A ${PROTOBUF_DIR})" ]; then
       wget https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOBUF_VERSION}/protobuf-all-${PROTOBUF_VERSION}.tar.gz
       tar -xf protobuf-all-${PROTOBUF_VERSION}.tar.gz
-      (cd protobuf-all-${PROTOBUF_VERSION} && ./configure --prefix=${PROTOBUF_DIR} && make -j2 install)
+      (cd protobuf-${PROTOBUF_VERSION} && ./configure --prefix=${PROTOBUF_DIR} && make -j2 install)
     fi
   - export CMAKE_PREFIX_PATH=${PROTOBUF_DIR}:${CMAKE_PREFIX_PATH}
 script:
