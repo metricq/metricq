@@ -25,50 +25,53 @@
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#pragma once
+#include <metricq/logger/nitro.hpp>
 
-#include <nitro/log/attribute/jiffy.hpp>
-#include <nitro/log/attribute/severity.hpp>
-#include <nitro/log/filter/severity_filter.hpp>
-#include <nitro/log/log.hpp>
-#include <nitro/log/sink/stdout.hpp>
+#include <metricq/logger.hpp>
 
-namespace detail
+namespace metricq::logger::nitro
 {
-using record = nitro::log::record<nitro::log::tag_attribute, nitro::log::message_attribute,
-                                  nitro::log::severity_attribute, nitro::log::jiffy_attribute>;
-
-template <typename Record>
-class log_formater
+class Logger : public metricq::Logger
 {
 public:
-    std::string format(Record& r)
+    void trace(const std::string& msg) override
     {
-        std::stringstream s;
+        Log::trace("metricq") << msg;
+    }
 
-        s << "[" << r.jiffy() << "][";
+    void debug(const std::string& msg) override
+    {
+        Log::debug("metricq") << msg;
+    }
 
-        if (!r.tag().empty())
-        {
-            s << r.tag() << "][";
-        }
+    void notice(const std::string& msg) override
+    {
+        Log::info("metricq") << msg;
+    }
 
-        s << r.severity() << "]: " << r.message() << '\n';
+    void info(const std::string& msg) override
+    {
+        Log::info("metricq") << msg;
+    }
 
-        return s.str();
+    void warn(const std::string& msg) override
+    {
+        Log::warn("metricq") << msg;
+    }
+
+    void error(const std::string& msg) override
+    {
+        Log::error("metricq") << msg;
+    }
+
+    void fatal(const std::string& msg) override
+    {
+        Log::fatal("metricq") << msg;
     }
 };
 
-template <typename Record>
-using log_filter = nitro::log::filter::severity_filter<Record>;
-} // namespace detail
-
-using Log = nitro::log::logger<detail::record, detail::log_formater, nitro::log::sink::StdOut,
-                               detail::log_filter>;
-
-inline void set_severity(nitro::log::severity_level level)
+void initialize()
 {
-    nitro::log::filter::severity_filter<detail::record>::set_severity(level);
+    metricq::make_logger<Logger>();
 }
-
-void initialize_logger();
+} // namespace metricq::logger::nitro

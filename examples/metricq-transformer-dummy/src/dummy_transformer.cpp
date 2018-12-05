@@ -27,13 +27,16 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "dummy_transformer.hpp"
-#include "log.hpp"
+
+#include <metricq/logger/nitro.hpp>
 
 #include <metricq/types.hpp>
 
 #include <chrono>
 
 #include <cmath>
+
+using Log = metricq::logger::nitro::Log;
 
 DummyTransformer::DummyTransformer(const std::string& manager_host, const std::string& token)
 : metricq::Transformer(token), signals_(io_service, SIGINT, SIGTERM)

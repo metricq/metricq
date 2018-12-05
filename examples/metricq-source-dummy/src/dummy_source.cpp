@@ -26,13 +26,16 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "dummy_source.hpp"
-#include "log.hpp"
+
+#include <metricq/logger/nitro.hpp>
 
 #include <metricq/types.hpp>
 
 #include <chrono>
 
 #include <cmath>
+
+using Log = metricq::logger::nitro::Log;
 
 DummySource::DummySource(const std::string& manager_host, const std::string& token, int interval_ms)
 : metricq::Source(token), signals_(io_service, SIGINT, SIGTERM), interval_ms(interval_ms), t(0),

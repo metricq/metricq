@@ -26,7 +26,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "dummy_sink.hpp"
-#include "log.hpp"
+
+#include <metricq/logger/nitro.hpp>
 
 #include <metricq/ostream.hpp>
 #include <metricq/types.hpp>
@@ -36,6 +37,8 @@
 using json = nlohmann::json;
 
 #include <cmath>
+
+using Log = metricq::logger::nitro::Log;
 
 DummySink::DummySink(const std::string& manager_host, const std::string& token,
                      const std::vector<std::string>& metrics)

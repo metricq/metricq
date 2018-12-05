@@ -27,22 +27,27 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "dummy_transformer.hpp"
-#include "log.hpp"
+
+#include <metricq/logger/nitro.hpp>
 
 #include <nitro/broken_options/parser.hpp>
 
 #include <iostream>
 #include <string>
 
+using Log = metricq::logger::nitro::Log;
+
 int main(int argc, char* argv[])
 {
-    set_severity(nitro::log::severity_level::info);
+    metricq::logger::nitro::set_severity(nitro::log::severity_level::info);
 
     nitro::broken_options::parser parser;
     parser.option("server", "The metricq management server to connect to.")
         .default_value("amqp://localhost")
         .short_name("s");
-    parser.option("token", "The token used for transformer authentication against the metricq manager.")
+    parser
+        .option("token",
+                "The token used for transformer authentication against the metricq manager.")
         .default_value("transformer-dummy");
     parser.toggle("verbose").short_name("v");
     parser.toggle("trace").short_name("t");
@@ -61,18 +66,18 @@ int main(int argc, char* argv[])
 
         if (options.given("trace"))
         {
-            set_severity(nitro::log::severity_level::trace);
+            metricq::logger::nitro::set_severity(nitro::log::severity_level::trace);
         }
         else if (options.given("verbose"))
         {
-            set_severity(nitro::log::severity_level::debug);
+            metricq::logger::nitro::set_severity(nitro::log::severity_level::debug);
         }
         else if (options.given("quiet"))
         {
-            set_severity(nitro::log::severity_level::warn);
+            metricq::logger::nitro::set_severity(nitro::log::severity_level::warn);
         }
 
-        initialize_logger();
+        metricq::logger::nitro::initialize();
 
         DummyTransformer transformer(options.get("server"), options.get("token"));
         Log::info() << "starting main loop.";

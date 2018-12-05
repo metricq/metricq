@@ -26,16 +26,19 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "dummy_source.hpp"
-#include "log.hpp"
+
+#include <metricq/logger/nitro.hpp>
 
 #include <nitro/broken_options/parser.hpp>
 
 #include <iostream>
 #include <string>
 
+using Log = metricq::logger::nitro::Log;
+
 int main(int argc, char* argv[])
 {
-    set_severity(nitro::log::severity_level::info);
+    metricq::logger::nitro::set_severity(nitro::log::severity_level::info);
 
     nitro::broken_options::parser parser;
     parser.option("server", "The metricq management server to connect to.")
@@ -63,18 +66,18 @@ int main(int argc, char* argv[])
 
         if (options.given("trace"))
         {
-            set_severity(nitro::log::severity_level::trace);
+            metricq::logger::nitro::set_severity(nitro::log::severity_level::trace);
         }
         else if (options.given("verbose"))
         {
-            set_severity(nitro::log::severity_level::debug);
+            metricq::logger::nitro::set_severity(nitro::log::severity_level::debug);
         }
         else if (options.given("quiet"))
         {
-            set_severity(nitro::log::severity_level::warn);
+            metricq::logger::nitro::set_severity(nitro::log::severity_level::warn);
         }
 
-        initialize_logger();
+        metricq::logger::nitro::initialize();
 
         DummySource source(options.get("server"), options.get("token"),
                            options.as<int>("interval"));
