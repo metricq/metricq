@@ -34,6 +34,7 @@ import json
 import signal
 import traceback
 import uuid
+import ssl
 
 import aio_pika
 
@@ -90,9 +91,13 @@ class Agent(RPCDispatcher):
         self._event_loop = loop
 
     async def make_connection(self, url):
-        # TODO remove that once aio_pika detects the protocol correctly
-        ssl = url.startswith("amqps")
-        connection = await aio_pika.connect_robust(url, loop=self.event_loop, reconnect_interval=5, ssl=ssl)
+        if url.startswith("amqps"):
+            ssl_options = {
+                "cert_reqs": ssl.CERT_REQUIRED,
+                "ssl_version": ssl.PROTOCOL_TLS | ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3,
+            }
+        connection = await aio_pika.connect_robust(url, loop=self.event_loop, reconnect_interval=5,
+                                                   ssl_options=ssl_options)
         # How stupid that we can't easily add the handlers *before* actually connecting.
         # We could make our own RobustConnection object, but then we loose url parsing convenience
         connection.add_reconnect_callback(self._on_reconnect)
