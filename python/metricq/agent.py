@@ -91,6 +91,7 @@ class Agent(RPCDispatcher):
         self._event_loop = loop
 
     async def make_connection(self, url):
+        ssl_options = None
         if url.startswith("amqps"):
             ssl_options = {
                 "cert_reqs": ssl.CERT_REQUIRED,
