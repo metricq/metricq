@@ -78,7 +78,7 @@ class Source(DataClient):
 
     async def declare_metrics(self, metrics):
         logger.debug('declare_metrics({})', metrics)
-        await self.rpc('source.declare_metrics', arguments={'metrics': metrics})
+        await self.rpc('source.declare_metrics', metrics=metrics)
 
     async def send(self, metric, time, value):
         """
