@@ -374,7 +374,7 @@ void BaseConnectionHandler::flush()
         {
             // we completed a send operation. Now it's time to set up the heartbeat timer.
             this->heartbeat_timer_.expires_after(this->heartbeat_interval_);
-            this->heartbeat_timer_.async_wait([this](auto error) { this->beat(error); });
+            this->heartbeat_timer_.async_wait([this](const auto& error) { this->beat(error); });
         }
 
         this->flush_in_progress_ = false;
