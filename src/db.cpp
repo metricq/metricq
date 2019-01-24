@@ -52,10 +52,18 @@ void Db::on_history(const AMQP::Message &incoming_message)
     history_request_.Clear();
     history_request_.ParseFromString(message_string);
 
+    auto begin = std::chrono::system_clock::now();
+
     auto response = on_history(metric_name, history_request_);
+
+    auto duration = std::chrono::system_clock::now() - begin;
+
+    AMQP::Table headers;
+    headers["x-request-duration"] = std::to_string(std::chrono::duration_cast<std::chrono::duration<float, std::milli>>(duration).count());
 
     std::string reply_message = response.SerializeAsString();
     AMQP::Envelope envelope(reply_message.data(), reply_message.size());
+    envelope.setHeaders(headers);
     envelope.setCorrelationID(incoming_message.correlationID());
     envelope.setContentType("application/json");
 
