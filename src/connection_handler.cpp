@@ -314,13 +314,19 @@ void BaseConnectionHandler::onClosed(AMQP::Connection* connection)
     // for a robust connection
     connection_.reset();
 
-    if (close_callback_) {
+    if (close_callback_)
+    {
         close_callback_();
     }
 }
 
+// TODO check if this return code makes any sense
 bool BaseConnectionHandler::close()
 {
+    if (!connection_)
+    {
+        return false;
+    }
     connection_->close();
     return true;
 }
@@ -331,11 +337,15 @@ void BaseConnectionHandler::read()
         if (error)
         {
             log::error("read failed: {}", error.message());
-            this->connection_->fail(error.message().c_str());
+            if (this->connection_)
+            {
+                this->connection_->fail(error.message().c_str());
+            }
             this->onError("read failed");
             return;
         }
 
+        assert(this->connection_);
         this->recv_buffer_.commit(received_bytes);
 
         if (this->recv_buffer_.size() >= connection_->expected())
@@ -366,7 +376,10 @@ void BaseConnectionHandler::flush()
         if (error)
         {
             log::error("write failed: {}", error.message());
-            this->connection_->fail(error.message().c_str());
+            if (this->connection_)
+            {
+                this->connection_->fail(error.message().c_str());
+            }
             this->onError("write failed");
             return;
         }
@@ -392,6 +405,7 @@ void ConnectionHandler::async_write_some(std::function<void(std::error_code, std
 
 void ConnectionHandler::async_read_some(std::function<void(std::error_code, std::size_t)> cb)
 {
+    assert(this->connection_);
     socket_.async_read_some(asio::buffer(recv_buffer_.prepare(connection_->maxFrame() * 32)), cb);
 }
 
@@ -402,6 +416,7 @@ void SSLConnectionHandler::async_write_some(std::function<void(std::error_code, 
 
 void SSLConnectionHandler::async_read_some(std::function<void(std::error_code, std::size_t)> cb)
 {
+    assert(this->connection_);
     socket_.async_read_some(asio::buffer(recv_buffer_.prepare(connection_->maxFrame() * 32)), cb);
 }
 
@@ -417,13 +432,17 @@ void BaseConnectionHandler::beat(const asio::error_code& error)
     {
         // something weird did happen
         log::error("heartbeat timer failed: {}", error.message());
-        connection_->fail(error.message().c_str());
+        if (this->connection_)
+        {
+            connection_->fail(error.message().c_str());
+        }
         onError("heartbeat timer failed");
 
         return;
     }
 
     log::debug("Sending heartbeat to server");
+    assert(this->connection_);
     connection_->heartbeat();
 
     // We don't need to setup the timer again, this will be done by the flush() handler triggerd by
@@ -432,6 +451,7 @@ void BaseConnectionHandler::beat(const asio::error_code& error)
 
 std::unique_ptr<AMQP::Channel> BaseConnectionHandler::make_channel()
 {
+    assert(this->connection_);
     return std::make_unique<AMQP::Channel>(connection_.get());
 }
 
