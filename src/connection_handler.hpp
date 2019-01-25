@@ -78,7 +78,17 @@ class BaseConnectionHandler : public AMQP::ConnectionHandler
 public:
     BaseConnectionHandler(asio::io_service& io_service);
 
-    ~BaseConnectionHandler() = default;
+    /**
+     *  Beware: when deriving from this class, it might be necessary to
+     *  explicitly destroy the #connection_ object before letting
+     *  BaseConnectionHandler's destructor run.  Otherwise, the onClose()
+     *  callback calls flush(), which in turn tries to use virtual functions of
+     *  the derived object -- which has already been destroyed at this point.
+     *
+     *  @phijor: This is all kinds of tangled up, I know.  Propositions of more
+     *  elegant solutions highly welcome.
+     */
+    virtual ~BaseConnectionHandler() = default;
 
     /**
      *  Method that is called by the AMQP library every time it has data
@@ -208,6 +218,14 @@ class ConnectionHandler : public BaseConnectionHandler
 public:
     ConnectionHandler(asio::io_service& io_service);
 
+    /**
+     *  @see ~BaseConnectionHandler() why this is necessary.
+     */
+    ~ConnectionHandler()
+    {
+        connection_.reset();
+    }
+
     asio::basic_socket<asio::ip::tcp>& underlying_socket() override
     {
         return socket_.lowest_layer();
@@ -227,6 +245,14 @@ class SSLConnectionHandler : public BaseConnectionHandler
 {
 public:
     SSLConnectionHandler(asio::io_service& io_service);
+
+    /**
+     *  @see ~BaseConnectionHandler() why this is necessary.
+     */
+    ~SSLConnectionHandler()
+    {
+        connection_.reset();
+    }
 
     asio::basic_socket<asio::ip::tcp>& underlying_socket() override
     {
