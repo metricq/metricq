@@ -96,6 +96,8 @@ class Agent(RPCDispatcher):
                 "cert_reqs": ssl.CERT_REQUIRED,
                 "ssl_version": ssl.PROTOCOL_TLS | ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3,
             }
+        else:
+            ssl_options = None
         connection = await aio_pika.connect_robust(url, loop=self.event_loop, reconnect_interval=5,
                                                    ssl_options=ssl_options)
         # How stupid that we can't easily add the handlers *before* actually connecting.

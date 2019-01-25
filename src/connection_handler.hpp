@@ -155,13 +155,25 @@ public:
 
 public:
     void connect(const AMQP::Address& address);
+
+    bool close(std::function<void()> callback)
+    {
+        close_callback_ = std::move(callback);
+        return close();
+    }
+
     bool close();
 
     std::unique_ptr<AMQP::Channel> make_channel();
 
+    void set_close_callback(std::function<void()> callback)
+    {
+        close_callback_ = std::move(callback);
+    }
+
     void set_error_callback(std::function<void(const std::string&)> callback)
     {
-        error_callback_ = callback;
+        error_callback_ = std::move(callback);
     }
 
 protected:
@@ -179,6 +191,7 @@ protected:
 
 protected:
     std::function<void(const std::string&)> error_callback_;
+    std::function<void()> close_callback_;
     std::unique_ptr<AMQP::Connection> connection_;
     std::optional<AMQP::Address> address_;
     asio::system_timer reconnect_timer_;

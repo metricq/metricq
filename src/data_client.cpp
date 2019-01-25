@@ -91,14 +91,17 @@ void DataClient::data_config(const metricq::json& config)
 
 void DataClient::close()
 {
-    Connection::close();
+    // Close data connection first, then let management connection throw
     if (!data_connection_)
     {
         log::debug("closing DataClient, no data_connection up yet");
+        Connection::close();
         return;
     }
-    auto alive = data_connection_->close();
-    log::info("closed data_connection: {}", alive);
+    data_connection_->close([this]() {
+        log::info("closed data_connection");
+        Connection::close();
+    });
 }
 
 void DataClient::on_data_channel_ready()

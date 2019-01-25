@@ -29,6 +29,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <metricq/connection.hpp>
+#include <metricq/exception.hpp>
 
 #include "connection_handler.hpp"
 #include "log.hpp"
@@ -226,10 +227,12 @@ void Connection::close()
     if (!management_connection_)
     {
         log::debug("closing connection, no management_connection up yet");
-        return;
+        throw ConnectionClosed();
     }
-    auto alive = management_connection_->close();
-    log::info("closed management_connection: {}", alive);
+    management_connection_->close([]() {
+        log::info("closed management_connection");
+        throw ConnectionClosed();
+    });
 }
 
 void Connection::stop()

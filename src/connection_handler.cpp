@@ -313,12 +313,15 @@ void BaseConnectionHandler::onClosed(AMQP::Connection* connection)
     // this technically invalidates all existing channel objects. Those objects are the hard part
     // for a robust connection
     connection_.reset();
+
+    if (close_callback_) {
+        close_callback_();
+    }
 }
 
 bool BaseConnectionHandler::close()
 {
     connection_->close();
-    // FIXME
     return true;
 }
 
