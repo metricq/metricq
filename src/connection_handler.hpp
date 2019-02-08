@@ -88,7 +88,10 @@ public:
      *  @phijor: This is all kinds of tangled up, I know.  Propositions of more
      *  elegant solutions highly welcome.
      */
-    virtual ~BaseConnectionHandler() = default;
+    virtual ~BaseConnectionHandler()
+    {
+        assert(!connection_); // Must be reset by instantiating class!
+    }
 
     /**
      *  Method that is called by the AMQP library every time it has data
