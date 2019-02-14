@@ -68,11 +68,11 @@ void Transformer::config(const json& config)
     {
         on_transformer_config(config["config"]);
     }
-    send_metrics_list();
+    declare_metrics();
     on_transformer_ready();
 }
 
-void Transformer::send_metrics_list()
+void Transformer::declare_metrics()
 {
     if (metrics_.empty())
     {
