@@ -29,14 +29,12 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#include <nlohmann/json.hpp>
+#include <metricq/json.hpp>
 
 #include <string>
 
 namespace metricq
 {
-using json = nlohmann::json;
-
 class Metadata
 {
 public:

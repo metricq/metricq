@@ -1,4 +1,4 @@
-// Copyright (c) 2018, ZIH,
+// Copyright (c) 2019, ZIH,
 // Technische Universitaet Dresden,
 // Federal Republic of Germany
 //
@@ -27,79 +27,11 @@
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#pragma once
 
-#include "log.hpp"
-
-#include <metricq/datachunk.pb.h>
-#include <metricq/source.hpp>
-#include <metricq/json.hpp>
-
-#include <amqpcpp.h>
-
-#include <cstdlib>
-#include <iostream>
-#include <memory>
-#include <string>
+#include <nlohmann/json_fwd.hpp>
 
 namespace metricq
 {
-
-Source::Source(const std::string& token) : DataClient(token)
-{
+    using json = nlohmann::json;
 }
-
-void Source::on_connected()
-{
-    rpc("source.register", [this](const auto& response) { config(response); });
-}
-
-void Source::send(const std::string& id, const DataChunk& dc)
-{
-    data_channel_->publish(data_exchange_, id, dc.SerializeAsString());
-}
-
-void Source::send(const std::string& id, TimeValue tv)
-{
-    // TODO evaluate optimization of string construction
-    data_channel_->publish(data_exchange_, id, DataChunk(tv).SerializeAsString());
-}
-
-void Source::config(const json& config)
-{
-    data_config(config);
-
-    if (!data_exchange_.empty() && config["dataExchange"] != data_exchange_)
-    {
-        log::fatal("changing dataExchange on the fly is not currently supported");
-        std::abort();
-    }
-
-    data_exchange_ = config["dataExchange"];
-
-    if (config.find("config") != config.end())
-    {
-        on_source_config(config["config"]);
-    }
-}
-
-void Source::on_data_channel_ready()
-{
-    on_source_ready();
-    declare_metrics();
-}
-
-void Source::declare_metrics()
-{
-    if (metrics_.empty())
-    {
-        return;
-    }
-
-    json payload;
-    for (auto& metric : metrics_)
-    {
-        payload["metrics"][metric.second.id()] = metric.second.metadata.json();
-    }
-    rpc("source.declare_metrics", [this](const auto&) { /* nothing to do */ (void)this; }, payload);
-}
-} // namespace metricq

@@ -29,11 +29,11 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
+#include <metricq/json.hpp>
+
 #include <asio/io_service.hpp>
 
 #include <amqpcpp.h>
-
-#include <nlohmann/json.hpp>
 
 #include <functional>
 #include <memory>
@@ -43,7 +43,6 @@
 
 namespace metricq
 {
-using json = nlohmann::json;
 
 class BaseConnectionHandler;
 

@@ -31,6 +31,7 @@
 #include <metricq/chrono.hpp>
 #include <metricq/data_client.hpp>
 #include <metricq/datachunk.pb.h>
+#include <metricq/json_fwd.hpp>
 #include <metricq/metric.hpp>
 #include <metricq/types.hpp>
 
@@ -70,13 +71,13 @@ protected:
     void on_data_channel_ready() override;
 
 protected:
-    virtual void on_source_config(const nlohmann::json& config) = 0;
+    virtual void on_source_config(const json& config) = 0;
     virtual void on_source_ready() = 0;
 
     void declare_metrics();
 
 private:
-    void config(const nlohmann::json& config);
+    void config(const json& config);
 
 private:
     std::string data_exchange_;

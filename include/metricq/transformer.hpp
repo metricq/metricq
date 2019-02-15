@@ -30,6 +30,7 @@
 
 #include <metricq/sink.hpp>
 #include <metricq/metric.hpp>
+#include <metricq/json_fwd.hpp>
 
 namespace metricq
 {
@@ -51,13 +52,13 @@ public:
 
 protected:
     void on_connected() override;
-    virtual void on_transformer_config(const nlohmann::json& config) = 0;
+    virtual void on_transformer_config(const json& config) = 0;
     virtual void on_transformer_ready() = 0;
 
     void declare_metrics();
 
 private:
-    void config(const nlohmann::json& config);
+    void config(const json& config);
 
 private:
     std::string data_exchange_;

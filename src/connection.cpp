@@ -30,6 +30,7 @@
 
 #include <metricq/connection.hpp>
 #include <metricq/exception.hpp>
+#include <metricq/json.hpp>
 
 #include "connection_handler.hpp"
 #include "log.hpp"
@@ -38,8 +39,6 @@
 #include <metricq/logger.hpp>
 
 #include <amqpcpp.h>
-
-#include <nlohmann/json.hpp>
 
 #include <iostream>
 #include <memory>
@@ -204,11 +203,11 @@ void Connection::handle_management_message(const AMQP::Message& incoming_message
             log::warn("message not found as rpc response or callback");
         }
     }
-    catch (nlohmann::json::parse_error& e)
+    catch (json::parse_error& e)
     {
         log::error("error in rpc response: parsing message: {}", e.what());
     }
-    catch (nlohmann::json::type_error& e)
+    catch (json::type_error& e)
     {
         log::error("error in rpc response: accessing parameter: {}", e.what());
     }

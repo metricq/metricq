@@ -30,14 +30,11 @@
 #pragma once
 
 #include <metricq/history.pb.h>
+#include <metricq/json_fwd.hpp>
 #include <metricq/sink.hpp>
-
-#include <nlohmann/json_fwd.hpp>
 
 namespace metricq
 {
-using json = nlohmann::json;
-
 class Db : public Sink
 {
 public:

@@ -30,6 +30,7 @@
 #pragma once
 
 #include <metricq/drain.hpp>
+#include <metricq/json.hpp>
 #include <metricq/ostream.hpp>
 #include <metricq/types.hpp>
 
@@ -85,5 +86,6 @@ protected:
 
 private:
     std::unordered_map<std::string, std::vector<TimeValue>> data_;
+    std::unordered_map<std::string, json> metadata_;
 };
 } // namespace metricq
