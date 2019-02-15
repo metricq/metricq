@@ -79,6 +79,71 @@ public:
         return (*this)["unit"];
     }
 
+    void rate(double r)
+    {
+        (*this)["rate"] = r;
+    }
+
+    double rate() const
+    {
+        return (*this)["rate"];
+    }
+
+    enum class Scope
+    {
+        last,
+        next,
+        point
+    };
+
+    void scope(Scope s)
+    {
+        if (s == Scope::last)
+        {
+            (*this)["scope"] = "last";
+        }
+        else if (s == Scope::next)
+        {
+            (*this)["scope"] = "next";
+        }
+        else if (s == Scope::point)
+        {
+            (*this)["scope"] = "point";
+        }
+        else
+        {
+            assert(false);
+        }
+    }
+
+    void operator()(Scope s)
+    {
+        scope(s);
+    }
+
+    Scope scope() const
+    {
+        std::string s = (*this)["scope"];
+
+        if (s == "last")
+        {
+            return Scope::last;
+        }
+        else if (s == "next")
+        {
+            return Scope::next;
+        }
+        else if (s == "point")
+        {
+            return Scope::point;
+        }
+        else
+        {
+            // tis really bad
+            assert(false);
+        }
+    }
+
 private:
     metricq::json metadata_ = metricq::json::object();
 };
