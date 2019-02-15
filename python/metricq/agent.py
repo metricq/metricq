@@ -285,6 +285,8 @@ class Agent(RPCDispatcher):
                     response = {'error': str(e)}
                 if response is None:
                     response = dict()
+                logger.info('rpc response to {}, correlation id: {}\n{}',
+                            from_token, correlation_id, response)
                 await self._management_channel.default_exchange.publish(
                     aio_pika.Message(body=json.dumps(response).encode(),
                                      correlation_id=correlation_id,
