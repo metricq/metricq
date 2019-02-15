@@ -77,6 +77,10 @@ void DummySource::on_source_config(const nlohmann::json&)
 void DummySource::on_source_ready()
 {
     Log::debug() << "DummySource::on_source_ready() called";
+    (*this)["dummy.source"].metadata.unit("kittens");
+    (*this)["dummy.source"].metadata["color"] = "pink";
+    (*this)["dummy.source"].metadata["paws"] = 4;
+
     timer_.start([this](auto err) { return this->timeout_cb(err); },
                  std::chrono::milliseconds(interval_ms));
 

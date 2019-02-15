@@ -1,4 +1,4 @@
-// Copyright (c) 2018, ZIH,
+// Copyright (c) 2019, ZIH,
 // Technische Universitaet Dresden,
 // Federal Republic of Germany
 //
@@ -29,81 +29,57 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#include <metricq/datachunk.pb.h>
-#include <metricq/metadata.hpp>
-#include <metricq/types.hpp>
+#include <nlohmann/json.hpp>
 
-#include <algorithm>
 #include <string>
 
 namespace metricq
 {
+using json = nlohmann::json;
 
-template <class Writer>
-class Metric
+class Metadata
 {
 public:
-    Metric(const std::string& id, Writer& writer) : id_(id), writer_(writer)
+    void json(const metricq::json& m)
     {
+        if (m.is_null())
+        {
+            metadata_ = metricq::json::object();
+            return;
+        }
+        assert(m.is_object());
+        metadata_ = m;
     }
 
-    void send(TimeValue tv);
-
-    const std::string& id() const
+    const metricq::json& json() const
     {
-        return id_;
+        return metadata_;
     }
 
-    /**
-     * @param n size of the chunk for automatic flushing
-     * set to 0 to do only manual flushes - use at your own risk!
-     * set to 1 to flush on every new value
+    metricq::json& operator[](const std::string& key)
+    {
+        return metadata_[key];
+    }
+
+    const metricq::json& operator[](const std::string& key) const
+    {
+        return metadata_.at(key);
+    }
+
+    /*
+     * Standardized metadata methods
      */
-    void chunk_size(size_t n)
+    void unit(const std::string& u)
     {
-        chunk_size_ = n;
+        (*this)["unit"] = u;
     }
 
-    int64_t chunk_size() const
+    std::string unit() const
     {
-        return chunk_size_;
+        return (*this)["unit"];
     }
 
-    void flush();
-
 private:
-    std::string id_;
-public:
-    Metadata metadata;
-private:
-    Writer& writer_;
-
-    int64_t chunk_size_ = 1;
-    int64_t previous_timestamp_ = 0;
-    DataChunk chunk_;
+    metricq::json metadata_ = metricq::json::object();
 };
-
-template <class Writer>
-inline void Metric<Writer>::flush()
-{
-    writer_.send(id_, chunk_);
-    chunk_.clear_time_delta();
-    chunk_.clear_value();
-    previous_timestamp_ = 0;
-}
-
-template <class Writer>
-inline void Metric<Writer>::send(TimeValue tv)
-{
-    chunk_.add_time_delta(tv.time.time_since_epoch().count() - previous_timestamp_);
-    previous_timestamp_ = tv.time.time_since_epoch().count();
-    chunk_.add_value(tv.value);
-
-    assert(chunk_.time_delta_size() == chunk_.value_size());
-    if (chunk_size_ && chunk_.time_delta_size() == chunk_size_)
-    {
-        flush();
-    }
-}
-
 } // namespace metricq

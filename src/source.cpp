@@ -99,7 +99,7 @@ void Source::declare_metrics()
     json payload;
     for (auto& metric : metrics_)
     {
-        payload["metrics"].push_back(metric.second.id());
+        payload["metrics"][metric.second.id()] = metric.second.metadata.json();
     }
     rpc("source.declare_metrics", [this](const auto&) { /* nothing to do */ (void)this; }, payload);
 }
