@@ -38,6 +38,12 @@ namespace metricq
 class Metadata
 {
 public:
+    Metadata() = default;
+
+    explicit Metadata(const metricq::json& m) : metadata_(m)
+    {
+    }
+
     void json(const metricq::json& m)
     {
         if (m.is_null())

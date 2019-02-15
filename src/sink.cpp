@@ -71,6 +71,12 @@ void Sink::sink_config(const json& config)
     data_config(config);
     data_queue_ = config.at("dataQueue");
 
+    const auto& metrics_metadata = config.at("metrics");
+    for (auto it = metrics_metadata.begin(); it != metrics_metadata.end(); ++it)
+    {
+        metadata_.emplace(it.key(), it.value());
+    }
+
     setup_data_queue([this](const std::string& name, int message_count, int consumer_count) {
         log::notice("setting up data queue, messages {}, consumers {}", message_count,
                     consumer_count);

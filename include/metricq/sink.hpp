@@ -32,6 +32,8 @@
 
 #include <metricq/data_client.hpp>
 #include <metricq/datachunk.pb.h>
+#include <metricq/json.hpp>
+#include <metricq/metadata.hpp>
 #include <metricq/types.hpp>
 
 #include <memory>
@@ -65,7 +67,7 @@ protected:
 
     void sink_config(const json& config);
 
-    void subscribe(const std::vector<std::string>& metrics, int64_t expires=0);
+    void subscribe(const std::vector<std::string>& metrics, int64_t expires = 0);
 
 private:
     // let's hope the child classes never need to deal with this and the generic callback is
@@ -76,5 +78,6 @@ protected:
     std::string data_queue_;
     // Stored permanently to avoid expensive allocations
     DataChunk data_chunk_;
+    std::unordered_map<std::string, Metadata> metadata_;
 };
 } // namespace metricq
