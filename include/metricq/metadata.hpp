@@ -80,7 +80,11 @@ public:
 
     std::string unit() const
     {
-        return (*this)["unit"];
+        if (metadata_.count("unit"))
+        {
+            return (*this)["unit"];
+        }
+        return "";
     }
 
     void rate(double r)
@@ -90,14 +94,19 @@ public:
 
     double rate() const
     {
-        return (*this)["rate"];
+        if (metadata_.count("rate"))
+        {
+            return (*this)["rate"];
+        }
+        return nan("");
     }
 
     enum class Scope
     {
         last,
         next,
-        point
+        point,
+        unknown
     };
 
     void scope(Scope s)
@@ -127,6 +136,10 @@ public:
 
     Scope scope() const
     {
+        if (0 == metadata_.count("scope"))
+        {
+            return Scope::unknown;
+        }
         std::string s = (*this)["scope"];
 
         if (s == "last")
