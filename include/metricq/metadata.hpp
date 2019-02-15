@@ -87,6 +87,20 @@ public:
         return "";
     }
 
+    void description(const std::string& d)
+    {
+        (*this)["description"] = d;
+    }
+
+    std::string description() const
+    {
+        if (metadata_.count("description"))
+        {
+            return (*this)["description"];
+        }
+        return "";
+    }
+
     void rate(double r)
     {
         (*this)["rate"] = r;
