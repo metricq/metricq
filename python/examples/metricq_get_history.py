@@ -29,6 +29,7 @@
 
 import asyncio
 import logging
+import pprint
 import time
 
 import click
@@ -48,12 +49,22 @@ logger.handlers[0].formatter = logging.Formatter(fmt='%(asctime)s [%(levelname)-
 click_completion.init()
 
 
-async def aget_history(server, token, metric):
+async def aget_history(server, token, metric, list_metrics, list_metadata):
     client = metricq.HistoryClient(token=token, management_url=server,
                                    event_loop=asyncio.get_running_loop())
     await client.connect()
-    mms = await client.history_metric_list()
-    click.echo(click.style('known metrics: {}'.format(mms), fg='bright_blue'))
+    if list_metrics:
+        metrics = await client.history_metric_list(metric)
+        click.echo(click.style('metrics matching {}:\n{}'.format(metric, metrics),
+                               fg='bright_blue'))
+        return
+    if list_metadata:
+        metadata = await client.history_metric_metadata(metric)
+        pp = pprint.PrettyPrinter(indent=4)
+        click.echo(click.style('metrics matching {}:\n{}'.format(metric, pprint.pformat(metadata)),
+                               fg='bright_blue'))
+        return
+
     start = int((time.time() - 100) * 1e9)
     end = int((time.time()) * 1e9)
     history = await client.history_data_request(metric=metric,
@@ -67,10 +78,14 @@ async def aget_history(server, token, metric):
 @click.command()
 @click.option('--server', default='amqp://localhost/')
 @click.option('--token', default='history-py-dummy')
-@click.option('--metric', default='dummy')
+@click.option('--metric', default=None)
+@click.option('--list-metrics', is_flag=True)
+@click.option('--list-metadata', is_flag=True)
 @click_log.simple_verbosity_option(logger)
-def get_history(server, token, metric):
-    asyncio.run(aget_history(server, token, metric))
+def get_history(server, token, metric, list_metrics, list_metadata):
+    if not (list_metrics or list_metadata) and metric is None:
+        metric = 'dummy'
+    asyncio.run(aget_history(server, token, metric, list_metrics, list_metadata))
 
 
 if __name__ == '__main__':

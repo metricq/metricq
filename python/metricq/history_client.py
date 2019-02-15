@@ -106,6 +106,13 @@ class HistoryClient(Client):
         result = await self.rpc('history.get_metrics', **arguments)
         return result["metrics"]
 
+    async def history_metric_metadata(self, selector=None):
+        arguments = {'format': 'object'}
+        if selector:
+            arguments['selector'] = selector
+        result = await self.rpc('history.get_metrics', **arguments)
+        return result["metrics"]
+
     @rpc_handler('config')
     async def _history_config(self, **kwargs):
         logger.info('received config {}', kwargs)
