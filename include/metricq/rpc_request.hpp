@@ -1,4 +1,4 @@
-// Copyright (c) 2018, ZIH,
+// Copyright (c) 2019, ZIH,
 // Technische Universitaet Dresden,
 // Federal Republic of Germany
 //
@@ -29,30 +29,43 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#include <metricq/metadata.hpp>
-#include <metricq/types.hpp>
+#include <metricq/connection.hpp>
+#include <metricq/json.hpp>
 
+#include <chrono>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 namespace metricq
 {
-std::string subscribe(const std::string& url, const std::string& token,
-                      const std::vector<std::string>& metrics, std::chrono::seconds timeout);
-std::string subscribe(const std::string& url, const std::string& token, const std::string& metric,
-                      std::chrono::seconds timeout);
+class RpcRequest : public Connection
+{
+public:
+    explicit RpcRequest(const std::string& token, const std::string& function, const json& payload,
+                        bool add_uuid = true)
+    : Connection(token, add_uuid), function_(function), payload_(payload)
+    {
+    }
 
-std::unordered_map<std::string, std::vector<TimeValue>>
-drain(const std::string& url, const std::string& token, const std::vector<std::string>& metrics,
-      const std::string& queue);
-std::vector<TimeValue> drain(const std::string& url, const std::string& token,
-                             const std::string& metric, const std::string& queue);
+    const json& response() const
+    {
+        return response_;
+    }
 
-std::vector<std::string> get_metrics(const std::string& url, const std::string& token,
-                                     const std::string& selector = std::string(""));
+protected:
+    void on_connected() override
+    {
+        rpc(function_,
+            [this](const json& response) {
+                response_ = response;
+                stop();
+            },
+            payload_);
+    }
 
-std::unordered_map<std::string, Metadata>
-get_metadata(const std::string& url, const std::string& token,
-             const std::string& selector = std::string(""));
+protected:
+    std::string function_;
+    json payload_;
+    json response_;
+};
 } // namespace metricq

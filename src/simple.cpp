@@ -30,6 +30,7 @@
 #include <metricq/simple.hpp>
 
 #include <metricq/drain.hpp>
+#include <metricq/rpc_request.hpp>
 #include <metricq/simple_drain.hpp>
 #include <metricq/subscriber.hpp>
 
@@ -73,5 +74,46 @@ std::vector<TimeValue> drain(const std::string& url, const std::string& token,
     drain.connect(url);
     drain.main_loop();
     return std::move(drain.at(metric));
+}
+
+std::vector<std::string> get_metrics(const std::string& url, const std::string& token,
+                                     const std::string& selector)
+{
+    json payload = json::object();
+    payload["format"] = "array";
+    if (!selector.empty())
+    {
+        payload["selector"] = selector;
+    }
+    RpcRequest request(token, "history.get_metrics", payload);
+    request.connect(url);
+    request.main_loop();
+    std::vector<std::string> response;
+    for (const auto& metric : request.response().at("metrics"))
+    {
+        response.push_back(metric.get<std::string>());
+    }
+    return response;
+}
+
+std::unordered_map<std::string, Metadata>
+get_metadata(const std::string& url, const std::string& token, const std::string& selector)
+{
+    json payload = json::object();
+    payload["format"] = "object";
+    if (!selector.empty())
+    {
+        payload["selector"] = selector;
+    }
+    RpcRequest request(token, "history.get_metrics", payload);
+    request.connect(url);
+    request.main_loop();
+    std::unordered_map<std::string, Metadata> response;
+    const auto& metrics_metadata = request.response().at("metrics");
+    for (auto it = metrics_metadata.begin(); it != metrics_metadata.end(); ++it)
+    {
+        response.emplace(it.key(), it.value());
+    }
+    return response;
 }
 } // namespace metricq
