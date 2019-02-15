@@ -89,5 +89,4 @@ def get_history(server, token, metric, list_metrics, list_metadata):
 
 
 if __name__ == '__main__':
-    print("HALLO WELT")
     get_history()
