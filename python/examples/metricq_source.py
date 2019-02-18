@@ -57,7 +57,7 @@ class DummySource(metricq.IntervalSource):
     @metricq.rpc_handler('config')
     async def _on_config(self, **config):
         logger.info('DummySource config: {}', config)
-        rate = config['frequency']
+        rate = config['rate']
         self.period = 1 / rate
         meta = {
             'rate': rate,
