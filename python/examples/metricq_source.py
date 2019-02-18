@@ -50,7 +50,7 @@ click_completion.init()
 
 class DummySource(metricq.IntervalSource):
     def __init__(self, *args, **kwargs):
-        logger.info("initializing DummySourece")
+        logger.info("initializing DummySource")
         super().__init__(*args, **kwargs)
         self.period = None
 
