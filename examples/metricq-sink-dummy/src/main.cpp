@@ -41,19 +41,16 @@ int main(int argc, char* argv[])
     metricq::logger::nitro::set_severity(nitro::log::severity_level::info);
 
     nitro::broken_options::parser parser;
-    parser.option("server", "The metricq management server to connect to.")
+    parser.option("server", "The MetricQ server to connect to.")
         .default_value("amqp://localhost")
         .short_name("s");
-    parser.option("token", "The token used for source authentication against the metricq manager.")
+    parser.option("token", "The token used for source authentication.")
         .default_value("dummySource");
-    parser.multi_option("metrics", "MetricQ metrics!").short_name("m");
+    parser.multi_option("metrics", "metrics to read").short_name("m");
     parser.toggle("verbose").short_name("v");
     parser.toggle("trace").short_name("t");
     parser.toggle("quiet").short_name("q");
     parser.toggle("help").short_name("h");
-    parser.option("interval", "Interval to generate data in milliseconds.")
-        .short_name("i")
-        .default_value("100");
 
     try
     {
