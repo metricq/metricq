@@ -48,6 +48,10 @@ public:
     DummyTransformer(const std::string& manager_host, const std::string& token);
     ~DummyTransformer();
 
+protected:
+    void on_error(const std::string& message) override;
+    void on_closed() override;
+
 private:
     void on_transformer_config(const metricq::json& config) override;
     void on_transformer_ready() override;

@@ -41,9 +41,8 @@ public:
     DummySource(const std::string& manager_host, const std::string& token, int interval_ms);
     ~DummySource();
 
-    void on_error(const char* message) override;
-    void on_lost() override;
-    void on_detached() override;
+    void on_error(const std::string& message) override;
+    void on_closed() override;
 
 private:
     void on_source_config(const nlohmann::json& config) override;

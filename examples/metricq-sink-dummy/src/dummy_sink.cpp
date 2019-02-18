@@ -64,12 +64,26 @@ void DummySink::on_connected()
     start_time_ = metricq::Clock::now();
 }
 
-void DummySink::on_data_channel_ready() {
+void DummySink::on_data_channel_ready()
+{
     Log::info() << "DummySink data channel is ready! Metric metadata:";
     for (const auto& elem : metadata_)
     {
         Log::info() << elem.first << elem.second.json().dump(4);
     }
+}
+
+void DummySink::on_error(const std::string& message)
+{
+    Log::debug() << "DummySink::on_error() called";
+    Log::error() << "Shit hits the fan: " << message;
+    signals_.cancel();
+}
+
+void DummySink::on_closed()
+{
+    Log::debug() << "DummySink::on_closed() called";
+    signals_.cancel();
 }
 
 void DummySink::on_data(const AMQP::Message& message, uint64_t delivery_tag, bool redelivered)

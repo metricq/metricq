@@ -62,26 +62,17 @@ protected:
 public:
     void connect(const std::string& server_address);
 
-public:
-    virtual void on_error(const char* message)
-    {
-        (void)message;
-    }
-
-    virtual void on_lost()
-    {
-    }
-
-    virtual void on_detached()
-    {
-    }
-
 protected:
-    virtual void on_connected() = 0;
     virtual void on_error(const std::string& message)
     {
         (void)message;
     }
+
+    virtual void on_closed()
+    {
+    }
+
+    virtual void on_connected() = 0;
 
     void rpc(const std::string& function, ManagementResponseCallback callback,
              json payload = json({}));

@@ -57,6 +57,19 @@ DummyTransformer::~DummyTransformer()
 {
 }
 
+void DummyTransformer::on_error(const std::string& message)
+{
+    Log::debug() << "DummyTransformer::on_error() called";
+    Log::error() << "Shit hits the fan: " << message;
+    signals_.cancel();
+}
+
+void DummyTransformer::on_closed()
+{
+    Log::debug() << "DummyTransformer::on_closed() called";
+    signals_.cancel();
+}
+
 void DummyTransformer::on_transformer_config(const metricq::json& config)
 {
     for (const auto& metric : config["metrics"])

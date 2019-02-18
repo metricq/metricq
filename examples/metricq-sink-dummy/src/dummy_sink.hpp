@@ -40,6 +40,10 @@ public:
     DummySink(const std::string& manager_host, const std::string& token,
               const std::vector<std::string>& metrics);
 
+protected:
+    void on_error(const std::string& message) override;
+    void on_closed() override;
+
 private:
     using metricq::Sink::on_data;
 

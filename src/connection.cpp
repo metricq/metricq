@@ -29,7 +29,6 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <metricq/connection.hpp>
-#include <metricq/exception.hpp>
 #include <metricq/json.hpp>
 
 #include "connection_handler.hpp"
@@ -86,6 +85,8 @@ void Connection::connect(const std::string& server_address)
     }
     management_connection_->set_error_callback(
         [this](const auto& message) { this->on_error(message); });
+    management_connection_->set_close_callback([this]() { this->on_closed(); });
+
     management_connection_->connect(*management_address_);
     management_channel_ = management_connection_->make_channel();
     management_channel_->onReady(debug_success_cb("management channel ready"));
@@ -226,12 +227,10 @@ void Connection::close()
     if (!management_connection_)
     {
         log::debug("closing connection, no management_connection up yet");
-        throw ConnectionClosed();
+        on_closed();
+        return;
     }
-    management_connection_->close([]() {
-        log::info("closed management_connection");
-        throw ConnectionClosed();
-    });
+    management_connection_->close();
 }
 
 void Connection::stop()

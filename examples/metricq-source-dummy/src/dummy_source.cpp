@@ -87,7 +87,7 @@ void DummySource::on_source_ready()
     running_ = true;
 }
 
-void DummySource::on_error(const char* message)
+void DummySource::on_error(const std::string& message)
 {
     Log::debug() << "DummySource::on_error() called";
     Log::error() << "Shit hits the fan: " << message;
@@ -95,14 +95,11 @@ void DummySource::on_error(const char* message)
     timer_.cancel();
 }
 
-void DummySource::on_lost()
+void DummySource::on_closed()
 {
-    Log::debug() << "DummySource::on_lost() called";
-}
-
-void DummySource::on_detached()
-{
-    Log::debug() << "DummySource::on_detached() called";
+    Log::debug() << "DummySource::on_closed() called";
+    signals_.cancel();
+    timer_.cancel();
 }
 
 metricq::Timer::TimerResult DummySource::timeout_cb(std::error_code)

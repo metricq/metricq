@@ -91,13 +91,16 @@ void DataClient::data_config(const metricq::json& config)
 
 void DataClient::close()
 {
-    // Close data connection first, then let management connection throw
+    // Close data connection first, then close the management connection
     if (!data_connection_)
     {
         log::debug("closing DataClient, no data_connection up yet");
         Connection::close();
         return;
     }
+
+    // don't let the data_connection::close() call the on_closed() of this class, the close of the
+    // management connection shall call on_closed().
     data_connection_->close([this]() {
         log::info("closed data_connection");
         Connection::close();
