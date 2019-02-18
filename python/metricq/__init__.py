@@ -37,3 +37,4 @@ from .source import Source
 from .sink import Sink
 from .synchronous_source import SynchronousSource
 from .rpc import rpc_handler
+from .types import Timestamp, Timedelta

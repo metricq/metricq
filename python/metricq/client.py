@@ -28,13 +28,12 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import asyncio
-from time import time
+from datetime import datetime
 
 from .agent import Agent
 from .logging import get_logger
 from .rpc import rpc_handler
-from .types import to_timestamp
+from .types import Timestamp, Timedelta
 
 logger = get_logger(__name__)
 
@@ -43,7 +42,7 @@ class Client(Agent):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.starting_time = time()
+        self.starting_time = datetime.now()
 
     @property
     def name(self):
@@ -69,9 +68,9 @@ class Client(Agent):
     @rpc_handler('discover')
     async def _on_discover(self, **kwargs):
         logger.info('responding to discover')
-        t = time()
+        t = datetime.now()
         return {
             'alive': True,
-            'uptime': to_timestamp(t - self.starting_time),
-            'time': to_timestamp(t),
+            'uptime': Timedelta(t - self.starting_time).ns,
+            'time': Timestamp.from_datetime(t).posix_ns,
         }

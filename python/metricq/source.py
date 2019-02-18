@@ -37,6 +37,7 @@ from .rpc import rpc_handler
 from .data_client import DataClient
 from .datachunk_pb2 import DataChunk
 from .source_metric import SourceMetric
+from .types import Timestamp
 
 logger = get_logger(__name__)
 
@@ -80,7 +81,7 @@ class Source(DataClient):
         logger.debug('declare_metrics({})', metrics)
         await self.rpc('source.declare_metrics', metrics=metrics)
 
-    async def send(self, metric, time, value):
+    async def send(self, metric, time: Timestamp, value):
         """
         Logical send.
         Dispatches to the SourceMetric for chunking

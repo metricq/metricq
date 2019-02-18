@@ -32,6 +32,7 @@ from abc import abstractmethod
 from .logging import get_logger
 from .data_client import DataClient
 from .datachunk_pb2 import DataChunk
+from .types import Timestamp
 
 logger = get_logger(__name__)
 
@@ -82,7 +83,7 @@ class Sink(DataClient):
         zipped_tv = zip(data_chunk.time_delta, data_chunk.value)
         for time_delta, value in zipped_tv:
             last_timed += time_delta
-            await self.on_data(metric, last_timed, value)
+            await self.on_data(metric, Timestamp(last_timed), value)
 
     @abstractmethod
     async def on_data(self, metric, timestamp, value):

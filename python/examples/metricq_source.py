@@ -28,7 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import logging
-from time import time
+import random
 
 import click
 import click_log
@@ -57,10 +57,17 @@ class DummySource(metricq.IntervalSource):
     @metricq.rpc_handler('config')
     async def _on_config(self, **config):
         logger.info('DummySource config: {}', config)
-        self.period = 1 / config['frequency']
+        rate = config['frequency']
+        self.period = 1 / rate
+        meta = {
+            'rate': rate,
+            'description': 'A simple dummy metric from python',
+            'unit': 'm',
+        }
+        await self.declare_metrics({'test.py.dummy': meta})
 
     async def update(self):
-        await self['dummyMetric'].send(time(), 42)
+        await self['test.py.dummy'].send(metricq.Timestamp.now(), random.random())
 
 
 @click.command()
@@ -74,4 +81,3 @@ def source(server, token):
 
 if __name__ == '__main__':
     source()
-

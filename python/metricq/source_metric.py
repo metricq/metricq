@@ -28,7 +28,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from .datachunk_pb2 import DataChunk
-from .types import to_timestamp
+from .types import Timestamp
 
 
 class SourceMetric:
@@ -40,8 +40,8 @@ class SourceMetric:
         self.previous_timestamp = 0
         self.chunk = DataChunk()
 
-    async def send(self, time, value):
-        timestamp = to_timestamp(time)
+    async def send(self, time: Timestamp, value):
+        timestamp = time.posix_ns
         self.chunk.time_delta.append(timestamp - self.previous_timestamp)
         self.previous_timestamp = timestamp
         self.chunk.value.append(value)

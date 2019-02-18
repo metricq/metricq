@@ -27,8 +27,80 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-def to_timestamp(something):
-    if isinstance(something, float):
-        return int(something * 1e9)
-    # TODO other stuff
-    raise TypeError("Unknown timestamp thingy {} ({})".format(something, type(something)))
+
+from datetime import datetime, timedelta, timezone
+
+
+class Timedelta:
+    @classmethod
+    def from_timedelta(cls, delta):
+        seconds = (delta.days * 24) + delta.seconds
+        microseconds = seconds * 1000000 + delta.microseconds
+        return Timedelta(microseconds * 1000)
+
+    def __init__(self, value: int):
+        """
+        :param value: integer duration in nanoseconds
+        """
+        self._value = value
+
+    @property
+    def ns(self):
+        return self._value
+
+    @property
+    def timedelta(self):
+        microseconds = self._value // 1000
+        return timedelta(microseconds=microseconds)
+
+
+class Timestamp:
+    _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
+
+    @classmethod
+    def from_posix_seconds(cls, seconds):
+        return Timestamp(int(seconds * 1e9))
+
+    @classmethod
+    def from_datetime(cls, dt: datetime):
+        """
+        :param dt: Must be an aware datetime object
+        :return:
+        """
+        delta = dt - Timestamp._EPOCH
+        seconds = (delta.days * 24 * 3600) + delta.seconds
+        microseconds = seconds * 1000000 + delta.microseconds
+        return Timestamp(microseconds * 1000)
+
+    @classmethod
+    def now(cls):
+        return cls.from_datetime(datetime.now(timezone.utc))
+
+    def __init__(self, value: int):
+        """
+        :param value: integer posix timestamp in nanoseconds
+        """
+        self._value = value
+
+    @property
+    def posix_ns(self):
+        return self._value
+
+    @property
+    def datetime(self):
+        """
+        This creates an aware UTC datetime object.
+        We know in MetricQ that timestamps are POSIX timestamps, hence UTC.
+        """
+        # We use timedelta in the hope that this doesn't break
+        # on non-POSIX systems, where fromtimestamp apparently may omit leap seconds
+        # but our MetricQ timestamps are true UNIX timestamps without leap seconds
+        microseconds = self._value // 1000
+        return Timestamp._EPOCH + timedelta(microseconds=microseconds)
+
+    def __str__(self):
+        # Note we convert to local timezone with astimezone for printing
+        return "[{}] {}".format(self.posix_ns, str(self.datetime.astimezone()))
+
+    def __repr__(self):
+        return str(self.posix_ns)
