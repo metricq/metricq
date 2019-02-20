@@ -32,15 +32,33 @@
 #include "log.hpp"
 
 #include <chrono>
+#include <iomanip>
+#include <random>
+#include <sstream>
 #include <string>
 
 namespace metricq
 {
-inline std::string uuid(const std::string& prefix)
+namespace detail
 {
-    // TODO make something nice... /dev/urandom and such
-    return prefix + "." +
-           std::to_string(std::chrono::system_clock::now().time_since_epoch().count());
+    inline int random_char()
+    {
+        static std::random_device rd;
+        static std::mt19937 gen(rd());
+        static std::uniform_int_distribution<> dis(0, 255);
+        return dis(gen);
+    }
+} // namespace detail
+
+inline std::string uuid()
+{
+    std::stringstream ss;
+    ss << std::setbase(16) << std::setfill('0');
+    for (std::size_t i = 0; i < 16; i++)
+    {
+        ss << std::setw(2) << detail::random_char();
+    }
+    return ss.str();
 }
 
 inline auto debug_error_cb(const std::string& prefix)
@@ -52,4 +70,4 @@ inline auto debug_success_cb(const std::string& prefix)
 {
     return [prefix]() { log::debug("{}", prefix); };
 }
-}
+} // namespace metricq
