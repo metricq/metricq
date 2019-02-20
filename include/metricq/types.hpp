@@ -31,6 +31,7 @@
 
 #include <metricq/chrono.hpp>
 #include <metricq/datachunk.pb.h>
+#include <metricq/history.pb.h>
 
 namespace metricq
 {
@@ -40,7 +41,10 @@ struct TimeValue
 {
     TimeValue() = default;
 
-    constexpr TimeValue(TimePoint t, Value v) : time(t), value(v){};
+    constexpr TimeValue(TimePoint t, Value v) : time(t), value(v)
+    {
+    }
+
     TimePoint time;
     Value value;
 
@@ -51,6 +55,21 @@ struct TimeValue
         dc.add_value(value);
         return dc;
     }
+};
+
+struct TimeValueAggregate
+{
+    TimeValueAggregate() = default;
+
+    constexpr TimeValueAggregate(TimePoint t, Value min, Value max, Value avg)
+    : time(t), min(min), max(max), avg(avg)
+    {
+    }
+
+    TimePoint time;
+    Value min;
+    Value max;
+    Value avg;
 };
 
 template <typename T>
@@ -108,5 +127,59 @@ inline DataChunkIter begin(const DataChunk& dc)
 inline DataChunkIter end(const DataChunk& dc)
 {
     return { dc.time_delta().end(), dc.value().end() };
+}
+
+class HistoryRepsonseIter
+{
+public:
+    HistoryRepsonseIter(
+        google::protobuf::RepeatedField<const google::protobuf::int64>::iterator iter_time,
+        google::protobuf::RepeatedField<const double>::iterator iter_value_min,
+        google::protobuf::RepeatedField<const double>::iterator iter_value_max,
+        google::protobuf::RepeatedField<const double>::iterator iter_value_avg)
+    : iter_time(iter_time), iter_value_min(iter_value_min), iter_value_max(iter_value_max),
+      iter_value_avg(iter_value_avg)
+    {
+    }
+
+    metricq::TimeValueAggregate operator*() const
+    {
+        return { metricq::TimePoint(metricq::Duration(timestamp + *iter_time)), *iter_value_min,
+                 *iter_value_max, *iter_value_avg };
+    }
+
+    HistoryRepsonseIter& operator++()
+    {
+        timestamp += *iter_time;
+        iter_time++;
+        iter_value_min++;
+        iter_value_max++;
+        iter_value_avg++;
+        return *this;
+    }
+
+    bool operator!=(const HistoryRepsonseIter& other)
+    {
+        return iter_time != other.iter_time;
+    }
+
+private:
+    google::protobuf::RepeatedField<const google::protobuf::int64>::iterator iter_time;
+    google::protobuf::RepeatedField<const double>::iterator iter_value_min;
+    google::protobuf::RepeatedField<const double>::iterator iter_value_max;
+    google::protobuf::RepeatedField<const double>::iterator iter_value_avg;
+    int64_t timestamp = 0;
+};
+
+inline HistoryRepsonseIter begin(const HistoryResponse& hr)
+{
+    return { hr.time_delta().begin(), hr.value_min().begin(), hr.value_max().begin(),
+             hr.value_avg().begin() };
+}
+
+inline HistoryRepsonseIter end(const HistoryResponse& hr)
+{
+    return { hr.time_delta().end(), hr.value_min().end(), hr.value_max().end(),
+             hr.value_avg().end() };
 }
 } // namespace metricq

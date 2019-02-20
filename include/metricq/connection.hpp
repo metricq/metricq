@@ -62,6 +62,11 @@ protected:
 public:
     void connect(const std::string& server_address);
 
+    const std::string token() const
+    {
+        return connection_token_;
+    }
+
 protected:
     virtual void on_error(const std::string& message)
     {
