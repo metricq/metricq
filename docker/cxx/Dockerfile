@@ -1,0 +1,18 @@
+FROM rikorose/gcc-cmake:gcc-8
+LABEL maintainer="mario.bielert@tu-dresden.de"
+
+RUN useradd -m metricq
+RUN apt-get update && apt-get install -y git libprotobuf-dev protobuf-compiler build-essential libssl-dev
+
+USER metricq
+
+WORKDIR /home/metricq
+RUN git clone https://github.com/metricq/metricq.git
+WORKDIR /home/metricq/metricq
+RUN mkdir build
+
+WORKDIR /home/metricq/metricq/build
+RUN cmake -DCMAKE_BUILD_TYPE=Release .. && make -j 2
+USER root
+RUN make install
+USER metricq

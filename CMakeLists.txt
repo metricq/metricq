@@ -216,6 +216,27 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 
     include(CTest)
     add_subdirectory(tests)
+
+    # build docker image
+    find_program(DOCKER_CMD docker DOC "docker executable used to build the docker image")
+    if(DOCKER_CMD)
+        message(STATUS "Docker found. Build metricq images with 'make docker'.")
+
+        add_custom_target(docker-python
+            COMMAND docker build -t metricq-python ${CMAKE_SOURCE_DIR}/docker/python
+            COMMENT "Building metricq-python docker image"
+        )
+
+        add_custom_target(docker-cxx
+            COMMAND docker build -t metricq-cxx ${CMAKE_SOURCE_DIR}/docker/cxx
+            COMMENT "Building metricq-cxx docker image"
+        )
+
+
+        add_custom_target(docker DEPENDS docker-python docker-cxx)
+    else()
+        message(STATUS "Docker not found. SKIPPING.")
+    endif()
 else()
     set_target_properties(metricq-core PROPERTIES EXCLUDE_FROM_ALL TRUE)
     set_target_properties(metricq-source PROPERTIES EXCLUDE_FROM_ALL TRUE)
