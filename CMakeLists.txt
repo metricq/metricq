@@ -59,7 +59,7 @@ target_link_libraries(metricq-core
         json::json
         metricq::messages
     PRIVATE
-        fmt::fmt
+        fmt::fmt-header-only
 )
 
 set_target_properties(metricq-core PROPERTIES
@@ -73,7 +73,7 @@ target_link_libraries(metricq-source
     PUBLIC
         metricq-core
     PRIVATE
-        fmt::fmt
+        fmt::fmt-header-only
 )
 set_target_properties(metricq-source PROPERTIES
     POSITION_INDEPENDENT_CODE ${METRICQ_POSITION_INDEPENDENT_CODE}
@@ -84,7 +84,7 @@ target_link_libraries(metricq-sink
     PUBLIC
         metricq-core
     PRIVATE
-        fmt::fmt
+        fmt::fmt-header-only
 )
 set_target_properties(metricq-sink PROPERTIES
     POSITION_INDEPENDENT_CODE ${METRICQ_POSITION_INDEPENDENT_CODE}
@@ -95,7 +95,7 @@ target_link_libraries(metricq-history
     PUBLIC
         metricq-core
     PRIVATE
-        fmt::fmt
+        fmt::fmt-header-only
 )
 set_target_properties(metricq-history PROPERTIES
     POSITION_INDEPENDENT_CODE ${METRICQ_POSITION_INDEPENDENT_CODE}
@@ -107,7 +107,7 @@ target_link_libraries(metricq-transformer
         metricq-core
         metricq-sink
     PRIVATE
-        fmt::fmt
+        fmt::fmt-header-only
 )
 set_target_properties(metricq-transformer PROPERTIES
         POSITION_INDEPENDENT_CODE ${METRICQ_POSITION_INDEPENDENT_CODE}
@@ -119,7 +119,7 @@ target_link_libraries(metricq-db
         metricq-core
         metricq-sink
     PRIVATE
-        fmt::fmt
+        fmt::fmt-header-only
 )
 set_target_properties(metricq-db PROPERTIES
     POSITION_INDEPENDENT_CODE ${METRICQ_POSITION_INDEPENDENT_CODE}

@@ -4,13 +4,8 @@ include(GNUInstallDirs)
 
 # BEGIN fmt
 
-# TODO Maybe revert this with CMP0077 some time in the future
-set(FMT_INSTALL ON CACHE BOOL "If you can read this, something is wrong with CMake.")
-add_subdirectory(fmt)
-
-set_target_properties(fmt PROPERTIES
-    POSITION_INDEPENDENT_CODE ${METRICQ_POSITION_INDEPENDENT_CODE}
-)
+# set(FMT_INSTALL ON CACHE BOOL "If you can read this, something is wrong with CMake.")
+add_subdirectory(fmt EXCLUDE_FROM_ALL)
 
 # END fmt
 # BEGIN amqpcpp
