@@ -4,7 +4,8 @@ include(GNUInstallDirs)
 
 # BEGIN fmt
 
-# set(FMT_INSTALL ON CACHE BOOL "If you can read this, something is wrong with CMake.")
+# TODO Maybe revert this with CMP0077 some time in the future
+set(FMT_INSTALL ON CACHE BOOL "If you can read this, something is wrong with CMake.")
 add_subdirectory(fmt EXCLUDE_FROM_ALL)
 
 # END fmt
