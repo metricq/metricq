@@ -129,7 +129,7 @@ class HistoryClient(Client):
             with message.process(requeue=True):
                 body = message.body
                 from_token = message.app_id
-                correlation_id = message.correlation_id.decode()
+                correlation_id = message.correlation_id
 
                 logger.info('received message from {}, correlation id: {}, reply_to: {}',
                             from_token, correlation_id, message.reply_to)
