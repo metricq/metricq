@@ -78,7 +78,7 @@ protected:
     void close() override;
 
 private:
-    std::optional<AMQP::Address> history_server_address_;
+    std::optional<AMQP::Address> data_server_address_;
     std::unique_ptr<BaseConnectionHandler> history_connection_;
 
 protected:

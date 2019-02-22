@@ -136,25 +136,25 @@ void HistoryClient::on_history_channel_ready()
 
 void HistoryClient::history_config(const json& config)
 {
-    AMQP::Address new_history_server_address =
-        add_credentials(config["historyServerAddress"].get<std::string>());
+    AMQP::Address new_data_server_address =
+        add_credentials(config["dataServerAddress"].get<std::string>());
     log::debug("start parsing history config");
     if (history_connection_)
     {
         log::debug("history connection already exists");
-        if (new_history_server_address != history_server_address_)
+        if (new_data_server_address != data_server_address_)
         {
-            log::fatal("changing historyServerAddress on the fly is not currently supported");
+            log::fatal("changing dataServerAddress on the fly is not currently supported");
             std::abort();
         }
         // We should be fine, connection and channel is already setup and the same
         return;
     }
 
-    history_server_address_ = new_history_server_address;
+    data_server_address_ = new_data_server_address;
 
-    log::debug("opening history connection to {}", *history_server_address_);
-    if (history_server_address_->secure())
+    log::debug("opening history connection to {}", *data_server_address_);
+    if (data_server_address_->secure())
     {
         history_connection_ = std::make_unique<SSLConnectionHandler>(io_service);
     }
@@ -163,7 +163,7 @@ void HistoryClient::history_config(const json& config)
         history_connection_ = std::make_unique<ConnectionHandler>(io_service);
     }
 
-    history_connection_->connect(*history_server_address_);
+    history_connection_->connect(*data_server_address_);
     history_channel_ = history_connection_->make_channel();
     history_channel_->onReady([this]() {
         log::debug("history_channel ready");

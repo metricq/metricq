@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
         source.main_loop();
         Log::info() << "exiting main loop.";
     }
-    catch (nitro::broken_options::parser_error& e)
+    catch (nitro::broken_options::parsing_error& e)
     {
         Log::warn() << e.what();
         parser.usage();
