@@ -142,7 +142,7 @@ class HistoryClient(Client):
                 try:
                     future = self._request_futures[correlation_id]
                     future.set_result(history_response)
-                except KeyError, asyncio.InvalidStateError:
+                except (KeyError, asyncio.InvalidStateError):
                     logger.error('received history response with unknown correlation id {} '
                                  'from {}', correlation_id, from_token)
                     return
