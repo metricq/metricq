@@ -95,8 +95,10 @@ class HistoryClient(Client):
         self._request_futures[correlation_id] = asyncio.Future(loop=self.event_loop)
         await self.history_exchange.publish(msg, metric)
 
-        result = await asyncio.wait_for(self._request_futures[correlation_id], timeout=timeout)
-        del self._request_futures[correlation_id]
+        try:
+            result = await asyncio.wait_for(self._request_futures[correlation_id], timeout=timeout)
+        finally:
+            del self._request_futures[correlation_id]
         return result
 
     async def history_metric_list(self, selector=None):
@@ -139,11 +141,8 @@ class HistoryClient(Client):
                 logger.debug('message is an history response')
                 try:
                     future = self._request_futures[correlation_id]
-                except KeyError:
+                    future.set_result(history_response)
+                except KeyError, asyncio.InvalidStateError:
                     logger.error('received history response with unknown correlation id {} '
                                  'from {}', correlation_id, from_token)
                     return
-
-                future.set_result(history_response)
-
-                del self._request_futures[correlation_id]
