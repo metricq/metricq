@@ -55,8 +55,6 @@ void Transformer::send(const std::string& id, TimeValue tv)
 
 void Transformer::config(const json& config)
 {
-    sink_config(config);
-
     if (!data_exchange_.empty() && config["dataExchange"] != data_exchange_)
     {
         log::fatal("changing dataExchange on the fly is not currently supported");
@@ -69,19 +67,38 @@ void Transformer::config(const json& config)
     {
         on_transformer_config(config["config"]);
     }
+
+    if (input_metrics.empty())
+    {
+        log::fatal("required input metrics not set");
+        std::abort();
+    }
+    rpc("transformer.subscribe",
+        [this](const json& response) {
+            if (this->data_queue_.empty())
+            {
+                this->sink_config(response);
+            }
+            if (this->data_queue_ != response.at("dataQueue"))
+            {
+                throw std::runtime_error("inconsistent sink dataQueue setting after subscription");
+            }
+        },
+        { { "metrics", input_metrics } });
+
     declare_metrics();
     on_transformer_ready();
 }
 
 void Transformer::declare_metrics()
 {
-    if (metrics_.empty())
+    if (output_metrics_.empty())
     {
         return;
     }
 
     json payload;
-    for (auto& metric : metrics_)
+    for (auto& metric : output_metrics_)
     {
         payload["metrics"][metric.second.id()] = metric.second.metadata.json();
     }

@@ -28,9 +28,12 @@
 
 #pragma once
 
-#include <metricq/sink.hpp>
-#include <metricq/metric.hpp>
 #include <metricq/json_fwd.hpp>
+#include <metricq/metric.hpp>
+#include <metricq/sink.hpp>
+
+#include <unordered_map>
+#include <vector>
 
 namespace metricq
 {
@@ -46,12 +49,15 @@ public:
 
     Metric& operator[](const std::string& id)
     {
-        auto ret = metrics_.try_emplace(id, id, *this);
+        auto ret = output_metrics_.try_emplace(id, id, *this);
         return ret.first->second;
     }
 
 protected:
     void on_connected() override;
+    /**
+     * Implementations of this function must add all required input_metrics
+     */
     virtual void on_transformer_config(const json& config) = 0;
     virtual void on_transformer_ready() = 0;
 
@@ -62,6 +68,9 @@ private:
 
 private:
     std::string data_exchange_;
-    std::unordered_map<std::string, Metric> metrics_;
+    std::unordered_map<std::string, Metric> output_metrics_;
+
+protected:
+    std::vector<std::string> input_metrics;
 };
 } // namespace metricq

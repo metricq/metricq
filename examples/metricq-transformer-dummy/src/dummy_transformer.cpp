@@ -74,12 +74,13 @@ void DummyTransformer::on_transformer_config(const metricq::json& config)
 {
     for (const auto& metric : config["metrics"])
     {
-        const auto& out_id = metric["out_id"].get<std::string>();
-        const auto& in_id = metric["in_id"].get<std::string>();
+        const auto& out_id = metric["output"].get<std::string>();
+        const auto& in_id = metric["input"].get<std::string>();
         const auto& factor = metric["factor"].get<double>();
 
         Log::info() << "Transforming " << in_id << " to " << out_id << " with factor " << factor;
 
+        input_metrics.push_back(in_id);
         metric_info[in_id] = { out_id, factor };
         (*this)[out_id];
     }
