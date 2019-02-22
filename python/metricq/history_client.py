@@ -43,7 +43,7 @@ class HistoryClient(Client):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.history_server_address = None
+        self.data_server_address = None
         self.history_connection = None
         self.history_channel = None
         self.history_exchange = None
@@ -55,8 +55,8 @@ class HistoryClient(Client):
         response = await self.rpc('history.register')
         logger.info('register response: {}', response)
 
-        self.history_server_address = self.add_credentials(response['historyServerAddress'])
-        self.history_connection = await self.make_connection(self.history_server_address)
+        self.data_server_address = self.add_credentials(response['dataServerAddress'])
+        self.history_connection = await self.make_connection(self.data_server_address)
         self.history_channel = await self.history_connection.channel()
         self.history_exchange = await self.history_channel.declare_exchange(name=response['historyExchange'], passive=True)
         self.history_response_queue = await self.history_channel.declare_queue(name=response['historyQueue'], passive=True)
@@ -78,7 +78,7 @@ class HistoryClient(Client):
         await super().stop()
 
     # TODO refactor return type (namedtuple) and input times
-    # caller should not need to know anythinga bout the protobuf representation
+    # caller should not need to know anything about the protobuf representation
     async def history_data_request(self, metric: str, start_time_ns, end_time_ns, interval_ns, timeout=60):
         logger.info('running history request for {} ({}-{},{})', metric, start_time_ns, end_time_ns, interval_ns)
         if not metric:
