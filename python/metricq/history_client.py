@@ -145,3 +145,5 @@ class HistoryClient(Client):
                     return
 
                 future.set_result(history_response)
+
+                del self._request_futures[correlation_id]
