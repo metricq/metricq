@@ -63,7 +63,7 @@ void Sink::subscribe(const std::vector<std::string>& metrics, int64_t expires)
                 throw std::runtime_error("inconsistent sink dataQueue setting after subscription");
             }
         },
-        { { "metrics", metrics }, { "expires", expires } });
+        { { "metrics", metrics }, { "expires", expires }, { "metadata", true } });
 }
 
 void Sink::sink_config(const json& config)
