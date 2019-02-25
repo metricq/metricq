@@ -97,7 +97,7 @@ class Source(DataClient):
         don't call from anywhere other than SourceMetric
         """
         msg = aio_pika.Message(data_chunk.SerializeToString())
-        await self.data_exchange.publish(msg, routing_key=metric)
+        await self.data_exchange.publish(msg, routing_key=metric, mandatory=False)
 
     @rpc_handler('config')
     async def _source_config(self, **kwargs):
