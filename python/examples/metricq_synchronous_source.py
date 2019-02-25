@@ -37,6 +37,7 @@ import click_log
 import click_completion
 
 from metricq import SynchronousSource, get_logger
+from metricq.types import Timestamp
 
 logger = get_logger()
 
@@ -58,7 +59,7 @@ def run_source(ssource):
     })
     try:
         while True:
-            ssource.send('dummy.time', time.time(), time.time())
+            ssource.send('dummy.time', Timestamp.now(), time.time())
             time.sleep(0.1)
     except KeyboardInterrupt:
         logger.info("stopping SynchronousSource")
