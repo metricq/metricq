@@ -59,7 +59,8 @@ class DataClient(Client):
             logger.info('setting up data connection to {}', URL(dataServerAddress).with_password('***'))
             self.data_server_address = dataServerAddress
             self.data_connection = await self.make_connection(self.data_server_address)
-            self.data_channel = await self.data_connection.channel()
+            # publisher confirms seem to be buggy, disable for now
+            self.data_channel = await self.data_connection.channel(publisher_confirms=False)
 
     async def stop(self):
         logger.info('closing data channel and connection.')
