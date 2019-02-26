@@ -150,10 +150,11 @@ public:
 
     Scope scope() const
     {
-        if (0 == metadata_.count("scope"))
+        if (!metadata_.count("scope"))
         {
             return Scope::unknown;
         }
+
         std::string s = (*this)["scope"];
 
         if (s == "last")
@@ -168,11 +169,10 @@ public:
         {
             return Scope::point;
         }
-        else
-        {
-            // tis really bad
-            assert(false);
-        }
+
+        // tis really bad
+        assert(false);
+        return Scope::unknown;
     }
 
 private:
