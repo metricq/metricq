@@ -40,80 +40,26 @@ class Metadata
 public:
     Metadata() = default;
 
-    explicit Metadata(const metricq::json& m) : metadata_(m)
-    {
-    }
+    explicit Metadata(const metricq::json& m);
 
-    void json(const metricq::json& m)
-    {
-        if (m.is_null())
-        {
-            metadata_ = metricq::json::object();
-            return;
-        }
-        assert(m.is_object());
-        metadata_ = m;
-    }
+    void json(const metricq::json& m);
+    const metricq::json& json() const;
 
-    const metricq::json& json() const
-    {
-        return metadata_;
-    }
+    metricq::json& operator[](const std::string& key);
+    const metricq::json& operator[](const std::string& key) const;
 
-    metricq::json& operator[](const std::string& key)
-    {
-        return metadata_[key];
-    }
-
-    const metricq::json& operator[](const std::string& key) const
-    {
-        return metadata_.at(key);
-    }
-
+public:
     /*
      * Standardized metadata methods
      */
-    void unit(const std::string& u)
-    {
-        (*this)["unit"] = u;
-    }
+    void unit(const std::string& u);
+    std::string unit() const;
 
-    std::string unit() const
-    {
-        if (metadata_.count("unit"))
-        {
-            return (*this)["unit"];
-        }
-        return "";
-    }
+    void description(const std::string& d);
+    std::string description() const;
 
-    void description(const std::string& d)
-    {
-        (*this)["description"] = d;
-    }
-
-    std::string description() const
-    {
-        if (metadata_.count("description"))
-        {
-            return (*this)["description"];
-        }
-        return "";
-    }
-
-    void rate(double r)
-    {
-        (*this)["rate"] = r;
-    }
-
-    double rate() const
-    {
-        if (metadata_.count("rate"))
-        {
-            return (*this)["rate"];
-        }
-        return nan("");
-    }
+    void rate(double r);
+    double rate() const;
 
     enum class Scope
     {
@@ -123,57 +69,9 @@ public:
         unknown
     };
 
-    void scope(Scope s)
-    {
-        if (s == Scope::last)
-        {
-            (*this)["scope"] = "last";
-        }
-        else if (s == Scope::next)
-        {
-            (*this)["scope"] = "next";
-        }
-        else if (s == Scope::point)
-        {
-            (*this)["scope"] = "point";
-        }
-        else
-        {
-            assert(false);
-        }
-    }
-
-    void operator()(Scope s)
-    {
-        scope(s);
-    }
-
-    Scope scope() const
-    {
-        if (!metadata_.count("scope"))
-        {
-            return Scope::unknown;
-        }
-
-        std::string s = (*this)["scope"];
-
-        if (s == "last")
-        {
-            return Scope::last;
-        }
-        else if (s == "next")
-        {
-            return Scope::next;
-        }
-        else if (s == "point")
-        {
-            return Scope::point;
-        }
-
-        // tis really bad
-        assert(false);
-        return Scope::unknown;
-    }
+    void scope(Scope s);
+    void operator()(Scope s);
+    Scope scope() const;
 
 private:
     metricq::json metadata_ = metricq::json::object();

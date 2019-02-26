@@ -38,7 +38,15 @@ set_target_properties(metricq-messages PROPERTIES
 )
 target_compile_features(metricq-messages PRIVATE cxx_std_14)
 
-set(CORE_SRCS src/chrono.cpp src/connection.cpp src/connection_handler.cpp src/log.cpp src/data_client.cpp)
+set(CORE_SRCS
+    src/chrono.cpp
+    src/connection.cpp
+    src/connection_handler.cpp
+    src/log.cpp
+    src/data_client.cpp
+    src/metadata.cpp
+)
+
 set(SOURCE_SRCS src/source.cpp)
 set(SINK_SRCS src/sink.cpp src/drain.cpp src/subscriber.cpp src/simple.cpp)
 set(TRANSFORMER_SRCS src/transformer.cpp)
