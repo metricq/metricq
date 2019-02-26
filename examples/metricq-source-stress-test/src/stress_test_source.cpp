@@ -68,18 +68,21 @@ StressTestSource::~StressTestSource()
 {
 }
 
-void StressTestSource::on_source_config(const nlohmann::json&)
+void StressTestSource::on_source_config(const nlohmann::json& config)
 {
     Log::debug() << "StressTestSource::on_source_config() called";
-    (*this)["stress.source"];
+
+    metric_ = config.at("metric");
+
+    (*this)[metric_];
 }
 
 void StressTestSource::on_source_ready()
 {
     Log::debug() << "StressTestSource::on_source_ready() called";
-    (*this)["stress.source"].metadata.unit("kittens");
-    (*this)["stress.source"].metadata["color"] = "pink";
-    (*this)["stress.source"].metadata["paws"] = 4;
+    (*this)[metric_].metadata.unit("kittens");
+    (*this)[metric_].metadata["color"] = "pink";
+    (*this)[metric_].metadata["paws"] = 4;
 
     timer_.start([this](auto err) { return this->timeout_cb(err); },
                  std::chrono::milliseconds(interval_ms));
@@ -113,7 +116,7 @@ metricq::Timer::TimerResult StressTestSource::timeout_cb(std::error_code)
     Log::debug() << "sending metrics...";
     auto current_time = metricq::Clock::now();
     const auto r = 1000000;
-    auto& metric = (*this)["stress.source"];
+    auto& metric = (*this)[metric_];
     metric.chunk_size(0);
     for (int i = 0; i < r; i++)
     {
