@@ -84,7 +84,7 @@ void StressTestSource::on_source_ready()
     (*this)[metric_].metadata["color"] = "pink";
     (*this)[metric_].metadata["paws"] = 4;
 
-    auto current_time = metricq::Clock::now();
+    current_time_ = metricq::Clock::now();
 
     timer_.start([this](auto err) { return this->timeout_cb(err); },
                  std::chrono::milliseconds(interval_ms));
@@ -122,8 +122,8 @@ metricq::Timer::TimerResult StressTestSource::timeout_cb(std::error_code)
     for (int i = 0; i < r; i++)
     {
         double value = 2 * M_PI * (t + (double)i / r) / interval_ms;
-        metric.send({ current_time, value });
-        current_time +=
+        metric.send({ current_time_, value });
+        current_time_ +=
             std::chrono::duration_cast<metricq::Duration>(std::chrono::milliseconds(interval_ms)) /
             (r + 1);
     }

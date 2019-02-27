@@ -56,7 +56,7 @@ private:
     std::atomic<bool> stop_requested_ = false;
     bool running_ = false;
 
-    metricq::TimePoint current_time;
+    metricq::TimePoint current_time_;
 
     std::string metric_;
 
