@@ -84,6 +84,8 @@ void StressTestSource::on_source_ready()
     (*this)[metric_].metadata["color"] = "pink";
     (*this)[metric_].metadata["paws"] = 4;
 
+    auto current_time = metricq::Clock::now();
+
     timer_.start([this](auto err) { return this->timeout_cb(err); },
                  std::chrono::milliseconds(interval_ms));
 
@@ -114,17 +116,16 @@ metricq::Timer::TimerResult StressTestSource::timeout_cb(std::error_code)
         return metricq::Timer::TimerResult::cancel;
     }
     Log::debug() << "sending metrics...";
-    auto current_time = metricq::Clock::now();
-    const auto r = 1000000;
+    const auto r = 100000;
     auto& metric = (*this)[metric_];
     metric.chunk_size(0);
     for (int i = 0; i < r; i++)
     {
-        double value = sin((2 * M_PI * (t + i * 0.1)) / interval_ms);
+        double value = 2 * M_PI * (t + (double)i / r) / interval_ms;
         metric.send({ current_time, value });
         current_time +=
             std::chrono::duration_cast<metricq::Duration>(std::chrono::milliseconds(interval_ms)) /
-            r;
+            (r + 1);
     }
     metric.flush();
     t++;

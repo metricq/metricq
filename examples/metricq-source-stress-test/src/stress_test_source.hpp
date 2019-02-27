@@ -56,6 +56,8 @@ private:
     std::atomic<bool> stop_requested_ = false;
     bool running_ = false;
 
+    metricq::TimePoint current_time;
+
     std::string metric_;
 
     metricq::Timer::TimerResult timeout_cb(std::error_code);
