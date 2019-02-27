@@ -69,7 +69,6 @@ public:
 
 private:
     std::queue<std::vector<char>> buffers_;
-    std::queue<std::vector<char>> empty_buffers_;
     std::size_t offset_ = 0;
 };
 

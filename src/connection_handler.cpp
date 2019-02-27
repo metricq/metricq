@@ -42,25 +42,7 @@ namespace metricq
 void QueuedBuffer::emplace(const char* ptr, std::size_t size)
 {
     // check if this fits at the back of the last queued buffer
-    if (!empty() && buffers_.back().size() + size <= buffers_.back().capacity())
-    {
-        std::copy(ptr, ptr + size, std::back_inserter(buffers_.back()));
-    }
-    else
-    {
-        if (empty_buffers_.empty() || empty_buffers_.front().capacity() < size)
-        {
-            buffers_.emplace();
-            buffers_.back().reserve(std::max<std::size_t>(size, 4096));
-        }
-        else
-        {
-            buffers_.emplace(std::move(empty_buffers_.front()));
-            empty_buffers_.pop();
-        }
-
-        std::copy(ptr, ptr + size, std::back_inserter(buffers_.back()));
-    }
+    buffers_.emplace(ptr, ptr + size);
 }
 
 void QueuedBuffer::consume(std::size_t consumed_bytes)
@@ -70,8 +52,6 @@ void QueuedBuffer::consume(std::size_t consumed_bytes)
     if (buffers_.front().size() == offset_ + consumed_bytes)
     {
         offset_ = 0;
-        buffers_.front().resize(0);
-        empty_buffers_.emplace(std::move(buffers_.front()));
         buffers_.pop();
     }
     else
