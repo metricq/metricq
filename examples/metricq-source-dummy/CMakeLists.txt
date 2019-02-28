@@ -11,7 +11,7 @@ target_compile_options(metricq-source-dummy PRIVATE -Wall -Wextra -pedantic)
 target_link_libraries(metricq-source-dummy
     PRIVATE
         metricq::source
-        Nitro::nitro-core
+        Nitro::core
         metricq-logger-nitro
 )
 

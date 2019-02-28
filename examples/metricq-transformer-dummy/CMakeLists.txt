@@ -15,7 +15,7 @@ target_compile_options(metricq-transformer-dummy PRIVATE -Wall -Wextra -pedantic
 target_link_libraries(metricq-transformer-dummy
     PRIVATE
         metricq::transformer
-        Nitro::nitro-core
+        Nitro::core
         metricq-logger-nitro
 )
 

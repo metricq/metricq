@@ -11,7 +11,7 @@ target_compile_options(metricq-history-dummy PRIVATE -Wall -Wextra -pedantic)
 target_link_libraries(metricq-history-dummy
     PRIVATE
         metricq::history
-        Nitro::nitro-core
+        Nitro::core
         metricq-logger-nitro
 )
 

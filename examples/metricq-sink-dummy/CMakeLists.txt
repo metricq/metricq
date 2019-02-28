@@ -11,7 +11,7 @@ target_compile_options(metricq-sink-dummy PRIVATE -Wall -Wextra -pedantic)
 target_link_libraries(metricq-sink-dummy
     PRIVATE
         metricq::sink
-        Nitro::nitro-core
+        Nitro::core
         metricq-logger-nitro
 )
 

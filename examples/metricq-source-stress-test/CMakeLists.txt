@@ -11,7 +11,7 @@ target_compile_options(metricq-source-stress-test PRIVATE -Wall -Wextra -pedanti
 target_link_libraries(metricq-source-stress-test
     PRIVATE
         metricq::source
-        Nitro::nitro-core
+        Nitro::core
         metricq-logger-nitro
 )
 

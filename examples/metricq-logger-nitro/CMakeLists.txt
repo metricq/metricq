@@ -16,9 +16,9 @@ target_link_libraries(metricq-logger-nitro
     PRIVATE
         metricq::core
     PUBLIC
-        Nitro::nitro-log
-        Nitro::nitro-env
-        Nitro::nitro-jiffy
+        Nitro::log
+        Nitro::env
+        Nitro::jiffy
 )
 
 install(TARGETS metricq-logger-nitro

@@ -159,6 +159,11 @@ target_compile_options(metricq-core
         -Wall -Wextra -pedantic -Wsign-compare
 )
 
+if(TARGET Nitro::log)
+    add_subdirectory(examples/metricq-logger-nitro)
+    add_library(metricq::logger-nitro ALIAS metricq-logger-nitro)
+endif()
+
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     include(GNUInstallDirs)
 
