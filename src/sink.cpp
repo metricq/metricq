@@ -119,8 +119,10 @@ void Sink::on_data(const AMQP::Message& message, uint64_t delivery_tag, bool red
     data_chunk_.ParseFromString(message_string);
     try
     {
-        on_data(metric_name, data_chunk_);
-        data_channel_->ack(delivery_tag);
+        if (on_data(metric_name, std::move(data_chunk_), delivery_tag))
+        {
+            data_channel_->ack(delivery_tag);
+        }
     }
     catch (std::exception& ex)
     {
@@ -129,18 +131,9 @@ void Sink::on_data(const AMQP::Message& message, uint64_t delivery_tag, bool red
     }
 }
 
-void Sink::on_data(const std::string& id, const DataChunk& data_chunk)
+void Sink::data_confirm(uint64_t delivery_tag)
 {
-    for (auto tv : data_chunk)
-    {
-        on_data(id, tv);
-    }
-}
-
-void Sink::on_data(const std::string&, TimeValue)
-{
-    log::fatal("unhandled TimeValue data, implementation error.");
-    std::abort();
+    data_channel_->ack(delivery_tag);
 }
 
 } // namespace metricq

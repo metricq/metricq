@@ -44,7 +44,7 @@ void Db::setup_history_queue(const AMQP::QueueCallback& callback)
     data_channel_->declareQueue(history_queue_, AMQP::passive).onSuccess(callback);
 }
 
-void Db::on_history(const AMQP::Message &incoming_message)
+void Db::on_history(const AMQP::Message& incoming_message)
 {
     const auto& metric_name = incoming_message.routingkey();
     auto message_string = std::string(incoming_message.body(), incoming_message.bodySize());
@@ -52,14 +52,24 @@ void Db::on_history(const AMQP::Message &incoming_message)
     history_request_.Clear();
     history_request_.ParseFromString(message_string);
 
-    auto response = on_history(metric_name, history_request_);
+    auto correlation_id = incoming_message.correlationID();
+    auto reply_to = incoming_message.replyTo();
+    // believe it or not, auto doesn't work here
+    // no I don't understand why there is
+    // no known conversion for argument 3 from
+    // ‘metricq::Db::on_history(const AMQP::Message&)
+    // ::<lambda(const metricq::HistoryResponse&)>’
+    // to ‘std::function<void(const metricq::HistoryResponse&)>&’
+    std::function<void(const metricq::HistoryResponse&)> respond =
+        [this, correlation_id, reply_to](const HistoryResponse& response) {
+            std::string reply_message = response.SerializeAsString();
+            AMQP::Envelope envelope(reply_message.data(), reply_message.size());
+            envelope.setCorrelationID(correlation_id);
+            envelope.setContentType("application/json");
 
-    std::string reply_message = response.SerializeAsString();
-    AMQP::Envelope envelope(reply_message.data(), reply_message.size());
-    envelope.setCorrelationID(incoming_message.correlationID());
-    envelope.setContentType("application/json");
-
-    data_channel_->publish("", incoming_message.replyTo(), envelope);
+            data_channel_->publish("", reply_to, envelope);
+        };
+    on_history(metric_name, history_request_, respond);
 }
 
 void Db::on_connected()
@@ -76,7 +86,10 @@ void Db::config(const json& config)
     history_queue_ = config["historyQueue"];
 
     on_db_config(config["config"]);
+}
 
+void Db::setup_history_queue()
+{
     setup_history_queue([this](const std::string& name, int message_count, int consumer_count) {
         log::notice("setting up history queue, messages {}, consumers {}", message_count,
                     consumer_count);

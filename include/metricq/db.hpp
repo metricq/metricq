@@ -33,6 +33,8 @@
 #include <metricq/json_fwd.hpp>
 #include <metricq/sink.hpp>
 
+#include <functional>
+
 namespace metricq
 {
 class Db : public Sink
@@ -41,7 +43,8 @@ public:
     Db(const std::string& token);
 
 protected:
-    virtual HistoryResponse on_history(const std::string& id, const HistoryRequest& content) = 0;
+    virtual void on_history(const std::string& id, const HistoryRequest& content,
+                            std::function<void(const HistoryResponse&)>& respond) = 0;
     virtual void on_db_config(const json& config) = 0;
     virtual void on_db_ready() = 0;
 
@@ -49,6 +52,11 @@ private:
     void on_history(const AMQP::Message&);
 
 protected:
+    /**
+     * Call this after your configuration is complete
+     * TODO find good name
+     */
+    void setup_history_queue();
     void setup_history_queue(const AMQP::QueueCallback& callback);
     void config(const json& config);
     void on_connected() override;

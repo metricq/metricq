@@ -36,6 +36,7 @@
 #include <metricq/metadata.hpp>
 #include <metricq/types.hpp>
 
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
@@ -58,12 +59,17 @@ protected:
     /**
      * override this to handle chunks efficiently
      * if you do, you don't need to override data_callback(std::string, TimeValue)
+     * return true if confirm immedeately
+     * return false if you call data_confirm(delivery_tag) later
      */
-    virtual void on_data(const std::string& id, const DataChunk& chunk);
+    virtual bool on_data(const std::string& id, const DataChunk& chunk, uint64_t delivery_tag) = 0;
     /**
+     * Disabled for now due to confirm callbacks being a huge pain with this
      * override this to handle individual values
      */
-    virtual void on_data(const std::string& id, TimeValue tv);
+    // virtual void on_data(const std::string& id, TimeValue tv);
+
+    void data_confirm(uint64_t delivery_tag);
 
     void sink_config(const json& config);
 
