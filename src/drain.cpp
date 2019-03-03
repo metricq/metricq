@@ -50,6 +50,7 @@ void Drain::unsubscribe_complete(const json& response)
     assert(!data_queue_.empty());
 
     sink_config(response);
+    setup_data_queue();
 }
 
 void Drain::on_data(const AMQP::Message &message, uint64_t delivery_tag, bool redelivered)

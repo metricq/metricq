@@ -57,6 +57,7 @@ void Sink::subscribe(const std::vector<std::string>& metrics, int64_t expires)
             if (this->data_queue_.empty())
             {
                 this->sink_config(response);
+                this->setup_data_queue();
             }
             if (this->data_queue_ != response.at("dataQueue"))
             {
@@ -79,7 +80,10 @@ void Sink::sink_config(const json& config)
             metadata_.emplace(it.key(), it.value());
         }
     }
+}
 
+void Sink::setup_data_queue()
+{
     setup_data_queue([this](const std::string& name, int message_count, int consumer_count) {
         log::notice("setting up data queue, messages {}, consumers {}", message_count,
                     consumer_count);

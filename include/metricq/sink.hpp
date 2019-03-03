@@ -74,6 +74,8 @@ protected:
 
     void subscribe(const std::vector<std::string>& metrics, int64_t expires = 0);
 
+    void setup_data_queue();
+
 private:
     // let's hope the child classes never need to deal with this and the generic callback is
     // sufficient
