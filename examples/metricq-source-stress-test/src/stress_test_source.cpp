@@ -72,17 +72,27 @@ void StressTestSource::on_source_config(const nlohmann::json& config)
 {
     Log::debug() << "StressTestSource::on_source_config() called";
 
-    metric_ = config.at("metric");
+    std::string prefix = config.at("prefix");
+    int num_metrics = config.at("num_metrics");
+    for (int i = 0; i < num_metrics; i++)
+    {
+        auto name = prefix + "." + std::to_string(i);
+        metrics_.emplace_back(name);
+        (*this)[name];
+        (*this)[name].metadata.unit("kittens");
+        (*this)[name].metadata["color"] = "pink";
+        (*this)[name].metadata["sibling"] = i;
+    }
 
-    (*this)[metric_];
+    double rate = config.at("rate");
+    batch_size_ = config.at("batch_size");
+    interval_ = std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::nanoseconds(1000000000ll) / (rate / batch_size_));
 }
 
 void StressTestSource::on_source_ready()
 {
     Log::debug() << "StressTestSource::on_source_ready() called";
-    (*this)[metric_].metadata.unit("kittens");
-    (*this)[metric_].metadata["color"] = "pink";
-    (*this)[metric_].metadata["paws"] = 4;
 
     current_time_ = metricq::Clock::now();
 
@@ -116,18 +126,19 @@ metricq::Timer::TimerResult StressTestSource::timeout_cb(std::error_code)
         return metricq::Timer::TimerResult::cancel;
     }
     Log::debug() << "sending metrics...";
-    const auto r = 100000;
-    auto& metric = (*this)[metric_];
-    metric.chunk_size(0);
-    for (int i = 0; i < r; i++)
+    auto base_time = metricq::Clock::now();
+    for (const auto& name : metrics_)
     {
-        double value = 2 * M_PI * (t + (double)i / r) / interval_ms;
-        metric.send({ current_time_, value });
-        current_time_ +=
-            std::chrono::duration_cast<metricq::Duration>(std::chrono::milliseconds(interval_ms)) /
-            (r + 1);
+        auto& metric = (*this)[name];
+        metric.chunk_size(0);
+        for (uint64_t i = 0; i < batch_size_; i++)
+        {
+            auto time = base_time + i * (interval_ / batch_size_);
+            double value = time.time_since_epoch().count();
+            metric.send({ time, value });
+        }
+        metric.flush();
+        t++;
     }
-    metric.flush();
-    t++;
     return metricq::Timer::TimerResult::repeat;
 }

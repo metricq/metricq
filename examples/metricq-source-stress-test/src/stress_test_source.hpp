@@ -52,13 +52,15 @@ private:
 
     int interval_ms;
     int t;
+    uint64_t batch_size_;
     metricq::Timer timer_;
     std::atomic<bool> stop_requested_ = false;
     bool running_ = false;
+    std::chrono::nanoseconds interval_;
 
     metricq::TimePoint current_time_;
 
-    std::string metric_;
+    std::vector<std::string> metrics_;
 
     metricq::Timer::TimerResult timeout_cb(std::error_code);
 };
