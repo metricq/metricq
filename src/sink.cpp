@@ -131,6 +131,22 @@ void Sink::on_data(const AMQP::Message& message, uint64_t delivery_tag, bool red
     }
 }
 
+bool Sink::on_data(const std::string& id, const DataChunk& data_chunk, uint64_t delivery_tag)
+{
+    (void)delivery_tag;
+    for (auto tv : data_chunk)
+    {
+        on_data(id, tv);
+    }
+    return true;
+}
+
+void Sink::on_data(const std::string&, TimeValue)
+{
+    log::fatal("unhandled TimeValue data, implementation error.");
+    std::abort();
+}
+
 void Sink::data_confirm(uint64_t delivery_tag)
 {
     data_channel_->ack(delivery_tag);

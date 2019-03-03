@@ -62,12 +62,11 @@ protected:
      * return true if confirm immedeately
      * return false if you call data_confirm(delivery_tag) later
      */
-    virtual bool on_data(const std::string& id, const DataChunk& chunk, uint64_t delivery_tag) = 0;
+    virtual bool on_data(const std::string& id, const DataChunk& chunk, uint64_t delivery_tag);
     /**
-     * Disabled for now due to confirm callbacks being a huge pain with this
-     * override this to handle individual values
+     * override this to handle individual values with auto acknowledgement
      */
-    // virtual void on_data(const std::string& id, TimeValue tv);
+    virtual void on_data(const std::string& id, TimeValue tv);
 
     void data_confirm(uint64_t delivery_tag);
 
