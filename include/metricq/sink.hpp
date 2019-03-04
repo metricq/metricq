@@ -51,24 +51,43 @@ public:
     virtual ~Sink() = 0;
 
 protected:
+    class DataCompletion
+    {
+        friend class Sink;
+
+    private:
+        DataCompletion(Sink& self, uint64_t delivery_tag) : self(self), delivery_tag(delivery_tag)
+        {
+        }
+
+    public:
+        void operator()();
+
+    private:
+        Sink& self;
+        uint64_t delivery_tag;
+    };
+
     /**
      * override this only in special cases where you manually handle acknowledgements
      * or do something after acks
      */
     virtual void on_data(const AMQP::Message& message, uint64_t delivery_tag, bool redelivered);
+
     /**
      * override this to handle chunks efficiently
-     * if you do, you don't need to override data_callback(std::string, TimeValue)
-     * return true if confirm immedeately
-     * return false if you call data_confirm(delivery_tag) later
      */
-    virtual bool on_data(const std::string& id, const DataChunk& chunk, uint64_t delivery_tag);
+    virtual void on_data(const std::string& id, const DataChunk& chunk);
+
     /**
-     * override this to handle individual values with auto acknowledgement
+     * must call complete in this context after you are finished handling the data
+     */
+    virtual void on_data(const std::string& id, const DataChunk& chunk, DataCompletion complete);
+
+    /**
+     * override this to handle individual values with immediate auto acknowledgement
      */
     virtual void on_data(const std::string& id, TimeValue tv);
-
-    void data_confirm(uint64_t delivery_tag);
 
     void sink_config(const json& config);
 

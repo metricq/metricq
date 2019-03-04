@@ -28,6 +28,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <metricq/db.hpp>
+#include <metricq/json.hpp>
 
 #include "log.hpp"
 #include "util.hpp"
@@ -44,6 +45,24 @@ void Db::setup_history_queue(const AMQP::QueueCallback& callback)
     data_channel_->declareQueue(history_queue_, AMQP::passive).onSuccess(callback);
 }
 
+void Db::on_db_config(const metricq::json&)
+{
+    log::fatal("unhandled DataChunk, implementation error.");
+    std::abort();
+}
+
+void Db::on_db_config(const metricq::json& config, metricq::Db::ConfigCompletion complete)
+{
+    on_db_config(config);
+    complete();
+}
+
+void Db::ConfigCompletion::operator()()
+{
+    self.setup_data_queue();
+    self.setup_history_queue();
+}
+
 void Db::on_history(const AMQP::Message& incoming_message)
 {
     const auto& metric_name = incoming_message.routingkey();
@@ -52,24 +71,31 @@ void Db::on_history(const AMQP::Message& incoming_message)
     history_request_.Clear();
     history_request_.ParseFromString(message_string);
 
-    auto correlation_id = incoming_message.correlationID();
-    auto reply_to = incoming_message.replyTo();
-    // believe it or not, auto doesn't work here
-    // no I don't understand why there is
-    // no known conversion for argument 3 from
-    // ‘metricq::Db::on_history(const AMQP::Message&)
-    // ::<lambda(const metricq::HistoryResponse&)>’
-    // to ‘std::function<void(const metricq::HistoryResponse&)>&’
-    std::function<void(const metricq::HistoryResponse&)> respond =
-        [this, correlation_id, reply_to](const HistoryResponse& response) {
-            std::string reply_message = response.SerializeAsString();
-            AMQP::Envelope envelope(reply_message.data(), reply_message.size());
-            envelope.setCorrelationID(correlation_id);
-            envelope.setContentType("application/json");
+    on_history(
+        metric_name, history_request_,
+        HistoryCompletion(*this, incoming_message.correlationID(), incoming_message.replyTo()));
+}
 
-            data_channel_->publish("", reply_to, envelope);
-        };
-    on_history(metric_name, history_request_, respond);
+HistoryResponse Db::on_history(const std::string&, const metricq::HistoryRequest&)
+{
+    log::fatal("unhandled Db::on_history, implementation error.");
+    std::abort();
+}
+
+void Db::on_history(const std::string& id, const metricq::HistoryRequest& content,
+                    metricq::Db::HistoryCompletion complete)
+{
+    complete(on_history(id, content));
+}
+
+void Db::HistoryCompletion::operator()(metricq::HistoryResponse response)
+{
+    std::string reply_message = response.SerializeAsString();
+    AMQP::Envelope envelope(reply_message.data(), reply_message.size());
+    envelope.setCorrelationID(correlation_id);
+    envelope.setContentType("application/json");
+
+    self.data_channel_->publish("", reply_to, envelope);
 }
 
 void Db::on_connected()
@@ -85,7 +111,7 @@ void Db::config(const json& config)
 
     history_queue_ = config["historyQueue"];
 
-    on_db_config(config["config"]);
+    on_db_config(config["config"], ConfigCompletion(*this));
 }
 
 void Db::setup_history_queue()

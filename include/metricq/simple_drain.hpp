@@ -48,15 +48,13 @@ public:
 
     using Drain::on_data;
 
-    bool on_data(const std::string& id, const metricq::DataChunk& chunk, uint64_t) override
+    void on_data(const std::string& id, const metricq::DataChunk& chunk) override
     {
         auto& d = data_.at(id);
         for (const auto& tv : chunk)
         {
             d.emplace_back(tv);
         }
-        // confirm right now, ignore delivery tag
-        return true;
     }
 
     /**

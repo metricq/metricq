@@ -43,9 +43,49 @@ public:
     Db(const std::string& token);
 
 protected:
+    class ConfigCompletion
+    {
+        friend class Db;
+
+    private:
+        ConfigCompletion(Db& self) : self(self)
+        {
+        }
+
+    public:
+        void operator()();
+
+    private:
+        Db& self;
+    };
+
+    class HistoryCompletion
+    {
+        friend class Db;
+
+    private:
+        HistoryCompletion(Db& self, std::string correlation_id, std::string reply_to)
+        : self(self), correlation_id(std::move(correlation_id)), reply_to(std::move(reply_to))
+        {
+        }
+
+    public:
+        void operator()(HistoryResponse response);
+
+    private:
+        Db& self;
+        std::string correlation_id;
+        std::string reply_to;
+    };
+
+protected:
+    virtual void on_db_config(const json& config, ConfigCompletion complete);
+    virtual void on_db_config(const json& config);
+
     virtual void on_history(const std::string& id, const HistoryRequest& content,
-                            std::function<void(const HistoryResponse&)>& respond) = 0;
-    virtual void on_db_config(const json& config) = 0;
+                            HistoryCompletion complete);
+    virtual HistoryResponse on_history(const std::string& id, const HistoryRequest& content);
+
     virtual void on_db_ready() = 0;
 
 private:

@@ -123,10 +123,7 @@ void Sink::on_data(const AMQP::Message& message, uint64_t delivery_tag, bool red
     data_chunk_.ParseFromString(message_string);
     try
     {
-        if (on_data(metric_name, std::move(data_chunk_), delivery_tag))
-        {
-            data_channel_->ack(delivery_tag);
-        }
+        on_data(metric_name, std::move(data_chunk_), DataCompletion(*this, delivery_tag));
     }
     catch (std::exception& ex)
     {
@@ -135,14 +132,19 @@ void Sink::on_data(const AMQP::Message& message, uint64_t delivery_tag, bool red
     }
 }
 
-bool Sink::on_data(const std::string& id, const DataChunk& data_chunk, uint64_t delivery_tag)
+// Default implementation with immediate completion
+void Sink::on_data(const std::string& id, const DataChunk& data_chunk, DataCompletion complete)
 {
-    (void)delivery_tag;
+    on_data(id, data_chunk);
+    complete();
+}
+
+void Sink::on_data(const std::string& id, const DataChunk& data_chunk)
+{
     for (auto tv : data_chunk)
     {
         on_data(id, tv);
     }
-    return true;
 }
 
 void Sink::on_data(const std::string&, TimeValue)
@@ -151,9 +153,8 @@ void Sink::on_data(const std::string&, TimeValue)
     std::abort();
 }
 
-void Sink::data_confirm(uint64_t delivery_tag)
+void Sink::DataCompletion::operator()()
 {
-    data_channel_->ack(delivery_tag);
+    self.data_channel_->ack(delivery_tag);
 }
-
 } // namespace metricq
