@@ -119,13 +119,10 @@ protected:
 private:
     void on_history(const AMQP::Message&);
 
-protected:
-    /**
-     * Call this after your configuration is complete
-     * TODO find good name
-     */
     void setup_history_queue();
     void setup_history_queue(const AMQP::QueueCallback& callback);
+
+protected:
     void config(const json& config);
     void on_connected() override;
 
