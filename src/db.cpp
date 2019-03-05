@@ -27,11 +27,14 @@
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#include <metricq/db.hpp>
-#include <metricq/json.hpp>
 
 #include "log.hpp"
 #include "util.hpp"
+
+#include <metricq/db.hpp>
+#include <metricq/json.hpp>
+
+#include <asio/dispatch.hpp>
 
 namespace metricq
 {
@@ -59,8 +62,11 @@ void Db::on_db_config(const metricq::json& config, metricq::Db::ConfigCompletion
 
 void Db::ConfigCompletion::operator()()
 {
-    self.setup_data_queue();
-    self.setup_history_queue();
+    auto run = [& self = this->self]() {
+        self.setup_data_queue();
+        self.setup_history_queue();
+    };
+    asio::dispatch(self.io_service, run);
 }
 
 void Db::on_history(const AMQP::Message& incoming_message)
@@ -88,14 +94,18 @@ void Db::on_history(const std::string& id, const metricq::HistoryRequest& conten
     complete(on_history(id, content));
 }
 
-void Db::HistoryCompletion::operator()(metricq::HistoryResponse response)
+void Db::HistoryCompletion::operator()(const metricq::HistoryResponse& response)
 {
     std::string reply_message = response.SerializeAsString();
-    AMQP::Envelope envelope(reply_message.data(), reply_message.size());
-    envelope.setCorrelationID(correlation_id);
-    envelope.setContentType("application/json");
-
-    self.data_channel_->publish("", reply_to, envelope);
+    auto run = [reply_message = std::move(reply_message),
+                correlation_id = std::move(correlation_id), reply_to = std::move(reply_to),
+                &self = this->self]() {
+        AMQP::Envelope envelope(reply_message.data(), reply_message.size());
+        envelope.setCorrelationID(correlation_id);
+        envelope.setContentType("application/json");
+        self.data_channel_->publish("", reply_to, envelope);
+    };
+    asio::dispatch(self.io_service, run);
 }
 
 void Db::on_connected()

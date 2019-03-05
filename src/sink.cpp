@@ -35,6 +35,8 @@
 #include "log.hpp"
 #include "util.hpp"
 
+#include <asio/dispatch.hpp>
+
 #include <amqpcpp.h>
 
 #include <exception>
@@ -155,6 +157,9 @@ void Sink::on_data(const std::string&, TimeValue)
 
 void Sink::DataCompletion::operator()()
 {
-    self.data_channel_->ack(delivery_tag);
+    auto run = [& self = this->self, delivery_tag = this->delivery_tag]() {
+        self.data_channel_->ack(delivery_tag);
+    };
+    asio::dispatch(self.io_service, run);
 }
 } // namespace metricq

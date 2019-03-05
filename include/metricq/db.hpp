@@ -52,6 +52,11 @@ protected:
         {
         }
 
+        ConfigCompletion(const ConfigCompletion&) = delete;
+        ConfigCompletion(ConfigCompletion&&) = default;
+        ConfigCompletion& operator=(const ConfigCompletion&) = delete;
+        ConfigCompletion& operator=(ConfigCompletion&&) = default;
+
     public:
         void operator()();
 
@@ -69,8 +74,13 @@ protected:
         {
         }
 
+        HistoryCompletion(const HistoryCompletion&) = delete;
+        HistoryCompletion(HistoryCompletion&&) = default;
+        HistoryCompletion& operator=(const HistoryCompletion&) = delete;
+        HistoryCompletion& operator=(HistoryCompletion&&) = default;
+
     public:
-        void operator()(HistoryResponse response);
+        void operator()(const HistoryResponse& response);
 
     private:
         Db& self;
@@ -79,6 +89,13 @@ protected:
     };
 
 protected:
+    /**
+     * The completion handler should be called eventually.
+     * The completion handler can be called from any context,
+     * it will dispatch to the right io_context internally.
+     * The completion handler must be cleaned up before the Db object dies.
+     * This can be enforced e.g. by owning all threads in the subclass of Db.
+     */
     virtual void on_db_config(const json& config, ConfigCompletion complete);
     virtual void on_db_config(const json& config);
 
