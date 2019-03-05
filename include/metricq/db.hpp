@@ -37,6 +37,17 @@
 
 namespace metricq
 {
+
+/**
+ * This is the base class for "database agents" in MetricQ
+ *
+ * any subclass must implement the following virtual methods:
+ * (at least) one of the two on_db_config
+ * (at least) one of the two on_history
+ * (at least) one of the four on_data (from Sink)
+ *
+ * All requirements from DataClient apply
+ */
 class Db : public Sink
 {
 public:
