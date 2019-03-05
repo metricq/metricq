@@ -63,12 +63,12 @@ protected:
         {
         }
 
+    public:
         ConfigCompletion(const ConfigCompletion&) = delete;
         ConfigCompletion(ConfigCompletion&&) = default;
         ConfigCompletion& operator=(const ConfigCompletion&) = delete;
         ConfigCompletion& operator=(ConfigCompletion&&) = default;
 
-    public:
         void operator()();
 
     private:
@@ -85,12 +85,12 @@ protected:
         {
         }
 
+    public:
         HistoryCompletion(const HistoryCompletion&) = delete;
         HistoryCompletion(HistoryCompletion&&) = default;
         HistoryCompletion& operator=(const HistoryCompletion&) = delete;
         HistoryCompletion& operator=(HistoryCompletion&&) = default;
 
-    public:
         void operator()(const HistoryResponse& response);
 
     private:

@@ -55,17 +55,17 @@ protected:
     {
         friend class Sink;
 
-        DataCompletion(const DataCompletion&) = delete;
-        DataCompletion(DataCompletion&&) = default;
-        DataCompletion& operator=(const DataCompletion&) = delete;
-        DataCompletion& operator=(DataCompletion&&) = default;
-
     private:
         DataCompletion(Sink& self, uint64_t delivery_tag) : self(self), delivery_tag(delivery_tag)
         {
         }
 
     public:
+        DataCompletion(const DataCompletion&) = delete;
+        DataCompletion(DataCompletion&&) = default;
+        DataCompletion& operator=(const DataCompletion&) = delete;
+        DataCompletion& operator=(DataCompletion&&) = default;
+
         void operator()();
 
     private:
