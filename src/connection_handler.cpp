@@ -247,6 +247,18 @@ void BaseConnectionHandler::onError(AMQP::Connection* connection, const char* me
     throw std::runtime_error(std::string("ConnectionHandler::onError: ") + message);
 
     // TODO actually implement reconnect
+    /* NOTE to the poor soul, who will implement a robust connection:
+     * Please be aware that there exists the possible situation that a close is requested, but after
+     * that someone tries to still send a message over the soon to be closed connection (Think of
+     * a async handler on another thread or some shit like that). This means that in the onClosed()
+     * member function, there wil be the situation that send_buffers_ aren't empty. As the send task
+     * is asynchronously dispatched, I can't do shit about it. But because the socket will be closed
+     * the flush handler will error out and thus is going to come here. In the end, you could
+     * trigger a reconnect AFTER the connection was asked to close itself! *Wierd* இ௰இ)
+     *
+     * ps: My condolences that you ended up implementing this.
+     */
+
     // reconnect_timer_.expires_from_now(std::chrono::seconds(3));
     // reconnect_timer_.async_wait([this](const auto& error) {
     //     if (error)
@@ -288,7 +300,20 @@ void BaseConnectionHandler::onClosed(AMQP::Connection* connection)
 
     // check if send_buffers are empty, this would be strange, because that means that AMQP-CPP
     // tried to sent something, after it sent the close frame.
-    assert(send_buffers_.empty());
+    if (!send_buffers_.empty())
+    {
+        // Coming here means, we still have dispatched tasks somewhere, which will soon try to write
+        // something on the socket. However, that socket was closed from us a few lines above.
+
+        // we can't clear that buffer now, someone else will try to send it over the closed socket.
+        // (With someone else I mean future-me). But this will end up in the error handler, which
+        // will throw. Good luck with that. Better try not to create this situation in the first
+        // place
+
+        // I can't do shit here:
+        log::warn("During the close of the connection, there is still data to send in the buffers. "
+                  "This will blow up soon. I told ya so.");
+    }
 
     // this technically invalidates all existing channel objects. Those objects are the hard part
     // for a robust connection
