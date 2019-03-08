@@ -29,6 +29,7 @@
 
 #include <metricq/chrono.hpp>
 #include <metricq/sink.hpp>
+#include <metricq/timer.hpp>
 
 #include <asio/signal_set.hpp>
 
@@ -61,6 +62,8 @@ private:
     std::size_t message_count_last_step_ = 0;
     metricq::TimePoint start_time_;
     metricq::TimePoint step_time_;
+
+    metricq::Timer timer_;
 
     std::atomic<bool> stop_requested_ = false;
 };
