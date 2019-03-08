@@ -36,9 +36,8 @@
 
 using Log = metricq::logger::nitro::Log;
 
-StressTestSource::StressTestSource(const std::string& manager_host, const std::string& token,
-                                   int interval_ms)
-: metricq::Source(token), signals_(io_service, SIGINT, SIGTERM), interval_ms(interval_ms), t(0),
+StressTestSource::StressTestSource(const std::string& manager_host, const std::string& token)
+: metricq::Source(token), signals_(io_service, SIGINT, SIGTERM), t(0),
   timer_(io_service)
 {
     Log::debug() << "StressTestSource::StressTestSource() called";
@@ -88,6 +87,10 @@ void StressTestSource::on_source_config(const nlohmann::json& config)
     batch_size_ = config.at("batch_size");
     interval_ = std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::nanoseconds(1000000000ll) / (rate / batch_size_));
+
+    Log::info() << "Rate: " << rate;
+    Log::info() << "Batch Size: " << batch_size_;
+    Log::info() << "Interval: " << interval_.count() << "ns";
 }
 
 void StressTestSource::on_source_ready()
@@ -96,8 +99,7 @@ void StressTestSource::on_source_ready()
 
     current_time_ = metricq::Clock::now();
 
-    timer_.start([this](auto err) { return this->timeout_cb(err); },
-                 std::chrono::milliseconds(interval_ms));
+    timer_.start([this](auto err) { return this->timeout_cb(err); }, interval_);
 
     running_ = true;
 }

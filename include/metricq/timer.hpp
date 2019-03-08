@@ -54,7 +54,8 @@ public:
     {
     }
 
-    void start(std::chrono::microseconds interval)
+    template <typename Duration>
+    void start(Duration interval)
     {
         interval_ = interval;
         canceled_ = false;
@@ -63,7 +64,8 @@ public:
         timer_.async_wait([this](auto error) { this->timer_callback(error); });
     }
 
-    void start(Callback callback, std::chrono::microseconds interval)
+    template <typename Duration>
+    void start(Callback callback, Duration interval)
     {
         callback_ = callback;
         start(interval);
@@ -100,7 +102,7 @@ private:
 private:
     asio::basic_waitable_timer<std::chrono::system_clock> timer_;
     Callback callback_;
-    std::chrono::microseconds interval_;
+    metricq::Duration interval_;
     bool canceled_ = false;
     bool running_ = false;
 };

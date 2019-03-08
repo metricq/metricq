@@ -38,7 +38,7 @@
 class StressTestSource : public metricq::Source
 {
 public:
-    StressTestSource(const std::string& manager_host, const std::string& token, int interval_ms);
+    StressTestSource(const std::string& manager_host, const std::string& token);
     ~StressTestSource();
 
     void on_error(const std::string& message) override;
@@ -50,7 +50,6 @@ private:
 
     asio::signal_set signals_;
 
-    int interval_ms;
     int t;
     uint64_t batch_size_;
     metricq::Timer timer_;

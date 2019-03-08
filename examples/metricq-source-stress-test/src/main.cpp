@@ -50,9 +50,6 @@ int main(int argc, char* argv[])
     parser.toggle("trace").short_name("t");
     parser.toggle("quiet").short_name("q");
     parser.toggle("help").short_name("h");
-    parser.option("interval", "Interval to generate data in milliseconds.")
-        .short_name("i")
-        .default_value("100");
 
     try
     {
@@ -79,8 +76,8 @@ int main(int argc, char* argv[])
 
         metricq::logger::nitro::initialize();
 
-        StressTestSource source(options.get("server"), options.get("token"),
-                                options.as<int>("interval"));
+        StressTestSource source(options.get("server"), options.get("token"));
+        
         Log::info() << "starting main loop.";
         source.main_loop();
         Log::info() << "exiting main loop.";
