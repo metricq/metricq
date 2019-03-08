@@ -63,9 +63,20 @@ Summary Summary::calculate(std::vector<metricq::TimeValue>&& tv_pairs)
         return tv1.value < tv2.value;
     });
 
-    summary.quart25 = tv_pairs[summary.num_timepoints / 4].value;
-    summary.quart50 = tv_pairs[summary.num_timepoints / 2].value;
-    summary.quart75 = tv_pairs[(summary.num_timepoints * 3) / 4].value;
+    std::size_t n = summary.num_timepoints;
+    if (n % 2 != 0)
+    {
+        // odd amount of values, use central value as median
+        summary.quart50 = tv_pairs[n / 2 + 1].value;
+    }
+    else
+    {
+        // even amount of values, use average of the two central values
+        summary.quart50 = 0.5 * (tv_pairs[n / 2].value + tv_pairs[n / 2 + 1].value);
+    }
+
+    summary.quart25 = tv_pairs[n / 4].value;
+    summary.quart75 = tv_pairs[(n * 3) / 4].value;
 
     summary.minimum = tv_pairs.front().value;
     summary.maximum = tv_pairs.back().value;
