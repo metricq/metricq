@@ -228,6 +228,7 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
         DESTINATION ${METRICQ_CMAKE_DIR}
     )
 
+    # Setup tests
     include(CTest)
     add_subdirectory(tests)
 
@@ -237,12 +238,12 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
         message(STATUS "Docker found. Build metricq images with 'make docker'.")
 
         add_custom_target(docker-python
-            COMMAND docker build -t metricq-python ${CMAKE_SOURCE_DIR}/docker/python
+            COMMAND docker build -t metricq-python -f ${CMAKE_SOURCE_DIR}/Dockerfile-python ${CMAKE_SOURCE_DIR}
             COMMENT "Building metricq-python docker image"
         )
 
         add_custom_target(docker-cxx
-            COMMAND docker build -t metricq-cxx ${CMAKE_SOURCE_DIR}/docker/cxx
+            COMMAND docker build -t metricq-cxx -f ${CMAKE_SOURCE_DIR}/Dockerfile-cxx ${CMAKE_SOURCE_DIR}
             COMMENT "Building metricq-cxx docker image"
         )
 
