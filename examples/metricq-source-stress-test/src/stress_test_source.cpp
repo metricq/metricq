@@ -201,7 +201,7 @@ metricq::Timer::TimerResult StressTestSource::timeout_cb(std::error_code)
         metric.chunk_size(0);
         for (uint64_t chunk_index = 0; chunk_index < chunk_size_; chunk_index++)
         {
-            auto time = previous_time_ + metricq::duration_cast(chunk_index * actual_interval);
+            auto time = previous_time_ + metricq::duration_cast(chunk_index * actual_interval / chunk_size_);
             assert(time < current_time);
             auto value = **fake_value_iter_iter;
             if (++(*fake_value_iter_iter) == fake_values_.end())
