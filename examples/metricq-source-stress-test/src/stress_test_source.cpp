@@ -101,19 +101,23 @@ void StressTestSource::on_source_config(const nlohmann::json& config)
     {
         std::ifstream file;
         file.exceptions(std::ifstream::badbit);
-        file.open(config.at("value_file"));
+        std::string filename = config.at("value_file");
+        file.open(filename);
         file.seekg(0, std::fstream::end);
         auto size_bytes = file.tellg();
         if (size_bytes == 0 || size_bytes % sizeof(metricq::Value))
         {
             throw std::runtime_error("file size empty or not a multiple of sizeof metricq::Value");
         }
+        Log::info() << "Loading: " << size_bytes / sizeof(metricq::Value) << " values from  "
+                    << filename;
         fake_values_.resize(size_bytes / sizeof(metricq::Value));
         file.seekg(0);
         file.read(reinterpret_cast<char*>(fake_values_.data()), size_bytes);
     }
     else // prepare some fake values ourselves
     {
+        Log::info() << "Generating 4096 fake values mean 100, stddev 10";
         std::normal_distribution<metricq::Value> distribution(100, 10);
         fake_values_.reserve(4096);
         for (int i = 0; i < 4096; i++)

@@ -52,6 +52,8 @@ private:
     asio::signal_set signals_;
 
     uint64_t batch_size_;
+    int64_t remaining_values;
+
     metricq::Timer timer_;
     std::atomic<bool> stop_requested_ = false;
     bool running_ = false;
