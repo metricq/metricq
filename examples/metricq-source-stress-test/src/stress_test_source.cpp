@@ -34,12 +34,15 @@
 
 #include <chrono>
 #include <cmath>
+#include <exception>
+#include <fstream>
+
+#include "pcg_random.hpp"
 
 using Log = metricq::logger::nitro::Log;
 
 StressTestSource::StressTestSource(const std::string& manager_host, const std::string& token)
-: metricq::Source(token), signals_(io_service, SIGINT, SIGTERM), t(0),
-  timer_(io_service)
+: metricq::Source(token), signals_(io_service, SIGINT, SIGTERM), timer_(io_service)
 {
     Log::debug() << "StressTestSource::StressTestSource() called";
 
@@ -92,6 +95,39 @@ void StressTestSource::on_source_config(const nlohmann::json& config)
     Log::info() << "Rate: " << rate;
     Log::info() << "Batch Size: " << batch_size_;
     Log::info() << "Interval: " << interval_.count() << "ns";
+
+    pcg64 random;
+    if (config.count("value_file")) // fake value delivery!
+    {
+        std::ifstream file;
+        file.exceptions(std::ifstream::badbit);
+        file.open(config.at("value_file"));
+        file.seekg(0, std::fstream::end);
+        auto size_bytes = file.tellg();
+        if (size_bytes == 0 || size_bytes % sizeof(metricq::Value))
+        {
+            throw std::runtime_error("file size empty or not a multiple of sizeof metricq::Value");
+        }
+        fake_values_.resize(size_bytes / sizeof(metricq::Value));
+        file.seekg(0);
+        file.read(reinterpret_cast<char*>(fake_values_.data()), size_bytes);
+    }
+    else // prepare some fake values ourselves
+    {
+        std::normal_distribution<metricq::Value> distribution(100, 10);
+        fake_values_.reserve(4096);
+        for (int i = 0; i < 4096; i++)
+        {
+            fake_values_.push_back(distribution(random));
+        }
+    }
+
+    // let all threads start at random positions
+    std::uniform_int_distribution<size_t> distribution(0, fake_values_.size() - 1);
+    for (int i = 0; i < num_metrics; i++)
+    {
+        fake_value_iter_.push_back(fake_values_.begin() + distribution(random));
+    }
 }
 
 void StressTestSource::on_source_ready()
@@ -135,19 +171,25 @@ metricq::Timer::TimerResult StressTestSource::timeout_cb(std::error_code)
     auto actual_interval =
         std::chrono::duration_cast<std::chrono::duration<double>>(current_time - previous_time_);
 
+    auto fake_value_iter_iter = fake_value_iter_.begin(); // HAHAHA gotcha
     for (const auto& name : metrics_)
     {
         auto& metric = (*this)[name];
         metric.chunk_size(0);
-        for (uint64_t i = 0; i < batch_size_; i++)
+        for (uint64_t chunk_index = 0; chunk_index < batch_size_; chunk_index++)
         {
-            auto time = previous_time_ + metricq::duration_cast(i * actual_interval);
+            auto time = previous_time_ + metricq::duration_cast(chunk_index * actual_interval);
             assert(time < current_time);
-            double value = time.time_since_epoch().count();
+            auto value = **fake_value_iter_iter;
+            if (++(*fake_value_iter_iter) == fake_values_.end())
+            {
+                *fake_value_iter_iter = fake_values_.begin();
+            }
+
             metric.send({ time, value });
         }
         metric.flush();
-        t++;
+        fake_value_iter_iter++;
     }
     return metricq::Timer::TimerResult::repeat;
 }

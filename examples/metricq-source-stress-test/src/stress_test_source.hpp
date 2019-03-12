@@ -33,6 +33,7 @@
 #include <asio/signal_set.hpp>
 
 #include <atomic>
+#include <random>
 #include <system_error>
 
 class StressTestSource : public metricq::Source
@@ -50,7 +51,6 @@ private:
 
     asio::signal_set signals_;
 
-    int t;
     uint64_t batch_size_;
     metricq::Timer timer_;
     std::atomic<bool> stop_requested_ = false;
@@ -60,6 +60,9 @@ private:
     metricq::TimePoint previous_time_;
 
     std::vector<std::string> metrics_;
+
+    std::vector<metricq::Value> fake_values_;
+    std::vector<std::vector<metricq::Value>::iterator> fake_value_iter_;
 
     metricq::Timer::TimerResult timeout_cb(std::error_code);
 };
