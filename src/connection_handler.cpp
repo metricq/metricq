@@ -355,9 +355,12 @@ void BaseConnectionHandler::read()
 
         if (this->recv_buffer_.size() >= connection_->expected())
         {
-            std::vector<char> data(asio::buffers_begin(this->recv_buffer_.data()),
-                                   asio::buffers_end(this->recv_buffer_.data()));
-            auto consumed = connection_->parse(data.data(), data.size());
+            static_assert(sizeof(this->recv_buffer_::char_type) == 1, "LUL rest in pepperonies.");
+
+            auto begin = this->recv_buffer_.gptr();
+            auto size = this->recv_buffer_.egptr() - begin;
+
+            auto consumed = connection_->parse(begin, size);
             this->recv_buffer_.consume(consumed);
         }
 
