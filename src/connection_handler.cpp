@@ -362,7 +362,7 @@ void BaseConnectionHandler::read()
             // This should not happen™
             assert(i + 1 == bufs.end());
 
-            auto begin = asio::buffer_cast<char*>(buf);
+            auto begin = asio::buffer_cast<const char*>(buf);
             auto size = asio::buffer_size(buf);
 
             auto consumed = connection_->parse(begin, size);
