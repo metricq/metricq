@@ -103,7 +103,7 @@ void Sink::setup_data_queue()
             .onReceived(message_cb)
             .onSuccess(debug_success_cb("sink data queue consume success"))
             .onError(debug_error_cb("sink data queue consume error"))
-            .onFinalize([]() { log::info("sink data queue consume finalize"); });
+            .onFinalize([]() { log::debug("sink data queue consume finalize"); });
     });
 }
 

@@ -101,6 +101,7 @@ void DummySink::on_data(const std::string&, metricq::TimeValue)
 {
     if (message_count == 0)
     {
+        Log::info() << "received first timevalue";
         first_metric_time = metricq::Clock::now();
     }
     message_count++;

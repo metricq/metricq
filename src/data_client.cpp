@@ -102,7 +102,7 @@ void DataClient::close()
     // don't let the data_connection::close() call the on_closed() of this class, the close of the
     // management connection shall call on_closed().
     data_connection_->close([this]() {
-        log::info("closed data_connection");
+        log::debug("closed data_connection");
         Connection::close();
     });
 }
