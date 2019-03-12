@@ -67,7 +67,5 @@ private:
     metricq::TimePoint start_time_;
     metricq::TimePoint step_time_;
 
-    metricq::Timer timer_;
-
     std::atomic<bool> stop_requested_ = false;
 };

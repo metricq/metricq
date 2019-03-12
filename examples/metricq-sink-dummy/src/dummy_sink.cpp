@@ -69,35 +69,6 @@ void DummySink::on_connected()
 void DummySink::on_data_channel_ready()
 {
     Log::info() << "DummySink data channel is ready! Metric metadata:";
-    for (const auto& elem : metadata_)
-    {
-        Log::info() << elem.first << elem.second.json().dump(4);
-    }
-
-    timer_.start(
-        [this](std::error_code) {
-            auto now = metricq::Clock::now();
-
-            auto message_rate =
-                this->message_count /
-                (double)std::chrono::duration_cast<std::chrono::seconds>(now - this->start_time_)
-                    .count();
-
-            auto step_message_rate =
-                (this->message_count - this->message_count_last_step_) /
-                (double)std::chrono::duration_cast<std::chrono::seconds>(now - this->step_time_)
-                    .count();
-
-            Log::info() << "Overall message rate is " << std::fixed << std::setprecision(2)
-                        << message_rate << " msg/s! Current step: " << step_message_rate
-                        << " msg/s";
-
-            this->message_count_last_step_ = this->message_count;
-            this->step_time_ = metricq::Clock::now();
-
-            return metricq::Timer::TimerResult::repeat;
-        },
-        std::chrono::seconds(10));
 }
 
 void DummySink::on_error(const std::string& message)
