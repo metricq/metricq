@@ -42,7 +42,8 @@ using Log = metricq::logger::nitro::Log;
 
 DummySink::DummySink(const std::string& manager_host, const std::string& token,
                      const std::vector<std::string>& metrics)
-: metricq::Sink(token, true), signals_(io_service, SIGINT, SIGTERM), metrics_(metrics)
+: metricq::Sink(token, true), signals_(io_service, SIGINT, SIGTERM), metrics_(metrics),
+  timer_(io_service)
 {
     connect(manager_host);
 
@@ -55,6 +56,7 @@ DummySink::DummySink(const std::string& manager_host, const std::string& token,
         Log::info() << "Caught signal " << signal << ". Shutdown.";
         rpc("sink.unsubscribe", [this](const auto&) { (void)this; },
             { { "dataQueue", data_queue_ }, { "metrics", metrics_ } });
+        timer_.cancel();
     });
 }
 
@@ -71,6 +73,31 @@ void DummySink::on_data_channel_ready()
     {
         Log::info() << elem.first << elem.second.json().dump(4);
     }
+
+    timer_.start(
+        [this](std::error_code) {
+            auto now = metricq::Clock::now();
+
+            auto message_rate =
+                this->message_count_ /
+                (double)std::chrono::duration_cast<std::chrono::seconds>(now - this->start_time_)
+                    .count();
+
+            auto step_message_rate =
+                (this->message_count_ - this->message_count_last_step_) /
+                (double)std::chrono::duration_cast<std::chrono::seconds>(now - this->step_time_)
+                    .count();
+
+            Log::info() << "Overall message rate is " << std::fixed << std::setprecision(2)
+                        << message_rate << " msg/s! Current step: " << step_message_rate
+                        << " msg/s";
+
+            this->message_count_last_step_ = this->message_count_;
+            this->step_time_ = metricq::Clock::now();
+
+            return metricq::Timer::TimerResult::repeat;
+        },
+        std::chrono::seconds(10));
 }
 
 void DummySink::on_error(const std::string& message)
@@ -78,12 +105,14 @@ void DummySink::on_error(const std::string& message)
     Log::debug() << "DummySink::on_error() called";
     Log::error() << "Shit hits the fan: " << message;
     signals_.cancel();
+    timer_.cancel();
 }
 
 void DummySink::on_closed()
 {
     Log::debug() << "DummySink::on_closed() called";
     signals_.cancel();
+    timer_.cancel();
 }
 
 void DummySink::on_data(const AMQP::Message& message, uint64_t delivery_tag, bool redelivered)
@@ -101,30 +130,7 @@ void DummySink::on_data(const AMQP::Message& message, uint64_t delivery_tag, boo
     Sink::on_data(message, delivery_tag, redelivered);
 }
 
-void DummySink::on_data(const std::string& id, metricq::TimeValue tv)
+void DummySink::on_data(const std::string&, metricq::TimeValue)
 {
-    Log::info() << id << ": " << tv.value << "@" << tv.time;
-
     message_count_++;
-
-    auto now = metricq::Clock::now();
-
-    auto time_since_last = now - step_time_;
-
-    if (time_since_last > std::chrono::seconds(10))
-    {
-        auto message_rate =
-            message_count_ /
-            (double)std::chrono::duration_cast<std::chrono::seconds>(now - start_time_).count();
-
-        auto step_message_rate =
-            (message_count_ - message_count_last_step_) /
-            (double)std::chrono::duration_cast<std::chrono::seconds>(now - step_time_).count();
-
-        Log::info() << "Overall message rate is " << std::fixed << std::setprecision(2)
-                    << message_rate << " msg/s! Current step: " << step_message_rate << " msg/s";
-
-        message_count_last_step_ = message_count_;
-        step_time_ = metricq::Clock::now();
-    }
 }
