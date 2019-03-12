@@ -42,8 +42,7 @@ using Log = metricq::logger::nitro::Log;
 
 DummySink::DummySink(const std::string& manager_host, const std::string& token,
                      const std::vector<std::string>& metrics)
-: metricq::Sink(token, true), signals_(io_service, SIGINT, SIGTERM), metrics_(metrics),
-  timer_(io_service)
+: metricq::Sink(token, true), signals_(io_service, SIGINT, SIGTERM), metrics_(metrics)
 {
     connect(manager_host);
 
@@ -56,7 +55,6 @@ DummySink::DummySink(const std::string& manager_host, const std::string& token,
         Log::info() << "Caught signal " << signal << ". Shutdown.";
         rpc("sink.unsubscribe", [this](const auto&) { (void)this; },
             { { "dataQueue", data_queue_ }, { "metrics", metrics_ } });
-        timer_.cancel();
     });
 }
 
@@ -76,14 +74,12 @@ void DummySink::on_error(const std::string& message)
     Log::debug() << "DummySink::on_error() called";
     Log::error() << "Shit hits the fan: " << message;
     signals_.cancel();
-    timer_.cancel();
 }
 
 void DummySink::on_closed()
 {
     Log::debug() << "DummySink::on_closed() called";
     signals_.cancel();
-    timer_.cancel();
 }
 
 void DummySink::on_data(const AMQP::Message& message, uint64_t delivery_tag, bool redelivered)
