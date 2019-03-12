@@ -101,7 +101,7 @@ void StressTestSource::on_source_config(const nlohmann::json& config)
     {
         auto duration = metricq::Duration(config.at("duration")); // of course in nanoseconds
         remaining_batches_ = duration / interval_;
-        Log::info() << "Limiting execution to " << duration << " / " << remaining_batches_
+        Log::info() << "limiting execution to " << duration << " ns, " << remaining_batches_
                     << " batches.";
     }
 
@@ -118,7 +118,7 @@ void StressTestSource::on_source_config(const nlohmann::json& config)
         {
             throw std::runtime_error("file size empty or not a multiple of sizeof metricq::Value");
         }
-        Log::info() << "Loading: " << size_bytes / sizeof(metricq::Value) << " values from  "
+        Log::info() << "Loading: " << size_bytes / sizeof(metricq::Value) << " values from "
                     << filename;
         fake_values_.resize(size_bytes / sizeof(metricq::Value));
         file.seekg(0);
