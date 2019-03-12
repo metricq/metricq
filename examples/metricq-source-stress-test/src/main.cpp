@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
         // Use begin time after connection
         // But wait for connection all send buffers to empty and connection to close at the end
         auto seconds =
-            std::chrono::duration_cast<std::chrono::duration<double>>(end - source.start_time_)
+            std::chrono::duration_cast<std::chrono::duration<double>>(end - source.first_time_)
                 .count();
         Log::info() << "publised " << source.total_values << " values total " << seconds << ": "
                     << (source.total_values / seconds) << " values/s";

@@ -147,8 +147,7 @@ void StressTestSource::on_source_ready()
 {
     Log::debug() << "StressTestSource::on_source_ready() called";
 
-    start_time_ = metricq::Clock::now();
-    previous_time_ = start_time_;
+    previous_time_ = metricq::Clock::now();
 
     timer_.start([this](auto err) { return this->timeout_cb(err); }, interval_);
 
@@ -180,6 +179,11 @@ metricq::Timer::TimerResult StressTestSource::timeout_cb(std::error_code)
     }
     Log::debug() << "sending metrics...";
     auto current_time = metricq::Clock::now();
+
+    if (first_time_.time_since_epoch().count() == 0) {
+        Log::info() << "first timer";
+        first_time_ = current_time;
+    }
 
     // Use double to get good precision with very short intervals
     auto actual_interval =

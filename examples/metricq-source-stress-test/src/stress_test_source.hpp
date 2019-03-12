@@ -59,7 +59,7 @@ private:
 
 public:
     uint64_t total_values = 0;
-    metricq::TimePoint start_time_;
+    metricq::TimePoint first_time_;
 
 private:
     metricq::Timer timer_;
