@@ -33,6 +33,7 @@
 #include <asio/signal_set.hpp>
 
 #include <atomic>
+#include <limits>
 #include <random>
 #include <system_error>
 
@@ -49,16 +50,23 @@ private:
     void on_source_config(const nlohmann::json& config) override;
     void on_source_ready() override;
 
+private:
     asio::signal_set signals_;
 
-    uint64_t batch_size_;
-    int64_t remaining_values;
+    uint64_t chunk_size_;
+    // per metric
+    uint64_t remaining_batches_ = std::numeric_limits<uint64_t>::max();
 
+public:
+    uint64_t total_values_ = 0;
+
+private:
     metricq::Timer timer_;
     std::atomic<bool> stop_requested_ = false;
     bool running_ = false;
     std::chrono::nanoseconds interval_;
 
+    metricq::TimePoint start_time_;
     metricq::TimePoint previous_time_;
 
     std::vector<std::string> metrics_;

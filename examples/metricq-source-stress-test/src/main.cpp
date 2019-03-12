@@ -31,6 +31,7 @@
 
 #include <nitro/broken_options/parser.hpp>
 
+#include <chrono>
 #include <iostream>
 #include <string>
 
@@ -77,10 +78,16 @@ int main(int argc, char* argv[])
         metricq::logger::nitro::initialize();
 
         StressTestSource source(options.get("server"), options.get("token"));
-        
+
         Log::info() << "starting main loop.";
+        auto begin = std::chrono::system_clock::now();
         source.main_loop();
+        auto end = std::chrono::system_clock::now();
         Log::info() << "exiting main loop.";
+        auto seconds =
+            std::chrono::duration_cast<std::chrono::duration<double>>(end - begin).count();
+        Log::info() << "publised " << source.total_values_ << " values total " << seconds << ": "
+                    << (source.total_values_ / seconds) << " values/s";
     }
     catch (nitro::broken_options::parsing_error& e)
     {

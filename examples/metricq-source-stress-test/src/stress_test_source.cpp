@@ -30,6 +30,7 @@
 #include <metricq/logger/nitro.hpp>
 
 #include <metricq/chrono.hpp>
+#include <metricq/ostream.hpp>
 #include <metricq/types.hpp>
 
 #include <chrono>
@@ -88,13 +89,21 @@ void StressTestSource::on_source_config(const nlohmann::json& config)
     }
 
     double rate = config.at("rate");
-    batch_size_ = config.at("batch_size");
+    chunk_size_ = config.at("batch_size");
     interval_ = std::chrono::duration_cast<std::chrono::nanoseconds>(
-        std::chrono::nanoseconds(1000000000ll) / (rate / batch_size_));
+        std::chrono::nanoseconds(1000000000ll) / (rate / chunk_size_));
 
     Log::info() << "Rate: " << rate;
-    Log::info() << "Batch Size: " << batch_size_;
+    Log::info() << "Chunk size: " << chunk_size_;
     Log::info() << "Interval: " << interval_.count() << "ns";
+
+    if (config.count("duration"))
+    {
+        auto duration = metricq::Duration(config.at("duration")); // of course in nanoseconds
+        remaining_batches_ = duration / interval_;
+        Log::info() << "Limiting execution to " << duration << " / " << remaining_batches_
+                    << " batches.";
+    }
 
     pcg64 random;
     if (config.count("value_file")) // fake value delivery!
@@ -138,7 +147,8 @@ void StressTestSource::on_source_ready()
 {
     Log::debug() << "StressTestSource::on_source_ready() called";
 
-    previous_time_ = metricq::Clock::now();
+    start_time_ = metricq::Clock::now();
+    previous_time_ = start_time_;
 
     timer_.start([this](auto err) { return this->timeout_cb(err); }, interval_);
 
@@ -180,7 +190,7 @@ metricq::Timer::TimerResult StressTestSource::timeout_cb(std::error_code)
     {
         auto& metric = (*this)[name];
         metric.chunk_size(0);
-        for (uint64_t chunk_index = 0; chunk_index < batch_size_; chunk_index++)
+        for (uint64_t chunk_index = 0; chunk_index < chunk_size_; chunk_index++)
         {
             auto time = previous_time_ + metricq::duration_cast(chunk_index * actual_interval);
             assert(time < current_time);
@@ -191,9 +201,17 @@ metricq::Timer::TimerResult StressTestSource::timeout_cb(std::error_code)
             }
 
             metric.send({ time, value });
+            total_values_++;
         }
         metric.flush();
         fake_value_iter_iter++;
     }
+
+    if (--remaining_batches_ == 0)
+    {
+        Log::info() << "final batch completed";
+        return metricq::Timer::TimerResult::cancel;
+    }
+
     return metricq::Timer::TimerResult::repeat;
 }
