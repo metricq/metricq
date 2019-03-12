@@ -210,6 +210,7 @@ metricq::Timer::TimerResult StressTestSource::timeout_cb(std::error_code)
     if (--remaining_batches_ == 0)
     {
         Log::info() << "final batch completed";
+        stop();
         return metricq::Timer::TimerResult::cancel;
     }
 
