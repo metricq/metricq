@@ -79,10 +79,10 @@ int main(int argc, char* argv[])
 
         StressTestSource source(options.get("server"), options.get("token"));
 
-        Log::info() << "starting main loop.";
+        Log::debug() << "starting main loop.";
         source.main_loop();
         auto end = metricq::Clock::now();
-        Log::info() << "exiting main loop.";
+        Log::debug() << "exiting main loop.";
         // Use begin time after connection
         // But wait for connection all send buffers to empty and connection to close at the end
         auto seconds =

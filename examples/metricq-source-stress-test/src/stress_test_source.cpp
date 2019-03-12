@@ -93,9 +93,7 @@ void StressTestSource::on_source_config(const nlohmann::json& config)
     interval_ = std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::nanoseconds(1000000000ll) / (rate / chunk_size_));
 
-    Log::info() << "Rate: " << rate;
-    Log::info() << "Chunk size: " << chunk_size_;
-    Log::info() << "Interval: " << interval_.count() << "ns";
+    Log::info() << "Rate: " << rate << " chunk size: " << chunk_size_ << " timer interval: " << interval_.count() << "ns";
 
     if (config.count("duration"))
     {
@@ -106,6 +104,13 @@ void StressTestSource::on_source_config(const nlohmann::json& config)
     }
 
     pcg64 random;
+
+    if (config.count("random_seed"))
+    {
+        int seed = config.count("random_seed");
+        random.seed(seed);
+    }
+
     if (config.count("value_file")) // fake value delivery!
     {
         std::ifstream file;
