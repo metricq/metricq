@@ -27,6 +27,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import asyncio
+from collections import namedtuple
 import uuid
 
 import aio_pika
@@ -34,10 +35,11 @@ import aio_pika
 from .logging import get_logger
 from .rpc import rpc_handler
 from .client import Client
-from .history_pb2 import HistoryRequest, HistoryResponse
+from .history_pb2 import HistoryRequest as HistoryRequest_pb, HistoryResponse as HistoryResponse_pb
 
 logger = get_logger(__name__)
 
+HistoryResponse = namedtuple('HistoryResponse', ['time_delta', 'value_min', 'value_max', 'value_avg', 'request_duration'])
 
 class HistoryClient(Client):
     def __init__(self, *args, **kwargs):
@@ -77,14 +79,14 @@ class HistoryClient(Client):
         self.history_exchange = None
         await super().stop()
 
-    # TODO refactor return type (namedtuple) and input times
+    # TODO refactor input times
     # caller should not need to know anything about the protobuf representation
     async def history_data_request(self, metric: str, start_time_ns, end_time_ns, interval_ns, timeout=60):
         logger.info('running history request for {} ({}-{},{})', metric, start_time_ns, end_time_ns, interval_ns)
         if not metric:
             raise ValueError('metric must be a non-empty string')
         correlation_id = 'mq-history-py-{}-{}'.format(self.token, uuid.uuid4().hex)
-        request = HistoryRequest()
+        request = HistoryRequest_pb()
         request.start_time = start_time_ns
         request.end_time = end_time_ns
         request.interval_ns = interval_ns
@@ -132,11 +134,14 @@ class HistoryClient(Client):
                 body = message.body
                 from_token = message.app_id
                 correlation_id = message.correlation_id
+                request_duration = message.headers.get("x-request-duration", "-1")
 
                 logger.info('received message from {}, correlation id: {}, reply_to: {}',
                             from_token, correlation_id, message.reply_to)
-                history_response = HistoryResponse()
-                history_response.ParseFromString(body)
+                history_response_pb = HistoryResponse_pb()
+                history_response_pb.ParseFromString(body)
+
+                history_response = HistoryResponse(history_response_pb.time_delta, history_response_pb.value_min, history_response_pb.value_max, history_response_pb.value_avg, request_duration)
 
                 logger.debug('message is an history response')
                 try:
