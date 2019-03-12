@@ -57,7 +57,7 @@ private:
     bool running_ = false;
     std::chrono::nanoseconds interval_;
 
-    metricq::TimePoint current_time_;
+    metricq::TimePoint previous_time_;
 
     std::vector<std::string> metrics_;
 

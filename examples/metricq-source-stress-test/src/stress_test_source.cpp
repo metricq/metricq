@@ -32,6 +32,7 @@
 #include <metricq/chrono.hpp>
 #include <metricq/types.hpp>
 
+#include <chrono>
 #include <cmath>
 
 using Log = metricq::logger::nitro::Log;
@@ -97,7 +98,7 @@ void StressTestSource::on_source_ready()
 {
     Log::debug() << "StressTestSource::on_source_ready() called";
 
-    current_time_ = metricq::Clock::now();
+    previous_time_ = metricq::Clock::now();
 
     timer_.start([this](auto err) { return this->timeout_cb(err); }, interval_);
 
@@ -128,14 +129,20 @@ metricq::Timer::TimerResult StressTestSource::timeout_cb(std::error_code)
         return metricq::Timer::TimerResult::cancel;
     }
     Log::debug() << "sending metrics...";
-    auto base_time = metricq::Clock::now();
+    auto current_time = metricq::Clock::now();
+
+    // Use double to get good precision with very short intervals
+    auto actual_interval =
+        std::chrono::duration_cast<std::chrono::duration<double>>(current_time - previous_time_);
+
     for (const auto& name : metrics_)
     {
         auto& metric = (*this)[name];
         metric.chunk_size(0);
         for (uint64_t i = 0; i < batch_size_; i++)
         {
-            auto time = base_time + i * (interval_ / batch_size_);
+            auto time = previous_time_ + metricq::duration_cast(i * actual_interval);
+            assert(time < current_time);
             double value = time.time_since_epoch().count();
             metric.send({ time, value });
         }
