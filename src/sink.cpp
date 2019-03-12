@@ -87,7 +87,7 @@ void Sink::sink_config(const json& config)
 void Sink::setup_data_queue()
 {
     setup_data_queue([this](const std::string& name, int message_count, int consumer_count) {
-        log::notice("setting up data queue, messages {}, consumers {}", message_count,
+        log::debug("setting up data queue, messages {}, consumers {}", message_count,
                     consumer_count);
         // we do not tolerate other consumers
         if (consumer_count != 0)

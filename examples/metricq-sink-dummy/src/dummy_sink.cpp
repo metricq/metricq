@@ -66,7 +66,7 @@ void DummySink::on_connected()
 
 void DummySink::on_data_channel_ready()
 {
-    Log::info() << "DummySink data channel is ready! Metric metadata:";
+    Log::debug() << "DummySink data channel is ready! Metric metadata:";
 }
 
 void DummySink::on_error(const std::string& message)

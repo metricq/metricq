@@ -73,7 +73,7 @@ void Connection::connect(const std::string& server_address)
 {
     management_address_ = server_address;
 
-    log::info("connecting to management server: {}", *management_address_);
+    log::debug("connecting to management server: {}", *management_address_);
 
     if (server_address.substr(0, 5) == "amqps")
     {
