@@ -79,7 +79,7 @@ protected:
 private:
     void config(const json& config);
 
-private:
+protected:
     std::string data_exchange_;
     std::unordered_map<std::string, Metric> metrics_;
 };

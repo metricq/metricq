@@ -58,7 +58,11 @@ private:
 
     std::vector<std::string> metrics_;
 
-    std::size_t message_count_ = 0;
+public:
+    metricq::TimePoint first_metric_time;
+    std::size_t message_count = 0;
+
+private:
     std::size_t message_count_last_step_ = 0;
     metricq::TimePoint start_time_;
     metricq::TimePoint step_time_;

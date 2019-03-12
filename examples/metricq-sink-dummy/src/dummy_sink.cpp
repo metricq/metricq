@@ -79,12 +79,12 @@ void DummySink::on_data_channel_ready()
             auto now = metricq::Clock::now();
 
             auto message_rate =
-                this->message_count_ /
+                this->message_count /
                 (double)std::chrono::duration_cast<std::chrono::seconds>(now - this->start_time_)
                     .count();
 
             auto step_message_rate =
-                (this->message_count_ - this->message_count_last_step_) /
+                (this->message_count - this->message_count_last_step_) /
                 (double)std::chrono::duration_cast<std::chrono::seconds>(now - this->step_time_)
                     .count();
 
@@ -92,7 +92,7 @@ void DummySink::on_data_channel_ready()
                         << message_rate << " msg/s! Current step: " << step_message_rate
                         << " msg/s";
 
-            this->message_count_last_step_ = this->message_count_;
+            this->message_count_last_step_ = this->message_count;
             this->step_time_ = metricq::Clock::now();
 
             return metricq::Timer::TimerResult::repeat;
@@ -120,7 +120,7 @@ void DummySink::on_data(const AMQP::Message& message, uint64_t delivery_tag, boo
     if (message.typeName() == "end")
     {
         data_channel_->ack(delivery_tag);
-        Log::debug() << "received end message";
+        Log::info() << "received end message, requesting release and stop";
         // We used to close the data connection here, but this should not be necessary.
         // It will be closed implicitly from the response callback.
         rpc("sink.release", [this](const auto&) { close(); }, { { "dataQueue", data_queue_ } });
@@ -132,5 +132,9 @@ void DummySink::on_data(const AMQP::Message& message, uint64_t delivery_tag, boo
 
 void DummySink::on_data(const std::string&, metricq::TimeValue)
 {
-    message_count_++;
+    if (message_count == 0)
+    {
+        first_metric_time = metricq::Clock::now();
+    }
+    message_count++;
 }

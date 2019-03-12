@@ -83,9 +83,15 @@ int main(int argc, char* argv[])
             metrics.push_back(options.get("metrics", i));
         }
         DummySink sink(options.get("server"), options.get("token"), metrics);
-        Log::info() << "starting main loop.";
+        Log::debug() << "starting main loop.";
         sink.main_loop();
-        Log::info() << "exiting main loop.";
+        auto end = metricq::Clock::now();
+        Log::debug() << "exiting main loop.";
+        auto seconds =
+            std::chrono::duration_cast<std::chrono::duration<double>>(end - sink.first_metric_time)
+                .count();
+        Log::info() << "received " << sink.message_count << " values total " << seconds << ": "
+                    << (sink.message_count / seconds) << " values/s";
     }
     catch (nitro::broken_options::parsing_error& e)
     {

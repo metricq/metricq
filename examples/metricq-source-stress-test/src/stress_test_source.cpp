@@ -219,6 +219,11 @@ metricq::Timer::TimerResult StressTestSource::timeout_cb(std::error_code)
     if (--remaining_batches_ == 0)
     {
         Log::info() << "final batch completed";
+
+        AMQP::Envelope envelope(nullptr, 0);
+        envelope.setTypeName("end");
+        data_channel_->publish(data_exchange_, this->metrics_.front(), envelope);
+
         stop();
         return metricq::Timer::TimerResult::cancel;
     }

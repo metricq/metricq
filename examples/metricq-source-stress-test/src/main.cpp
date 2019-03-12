@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
         auto seconds =
             std::chrono::duration_cast<std::chrono::duration<double>>(end - source.first_time_)
                 .count();
-        Log::info() << "publised " << source.total_values << " values total " << seconds << ": "
+        Log::info() << "published " << source.total_values << " values total " << seconds << ": "
                     << (source.total_values / seconds) << " values/s";
     }
     catch (nitro::broken_options::parsing_error& e)
