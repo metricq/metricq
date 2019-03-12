@@ -355,15 +355,15 @@ void BaseConnectionHandler::read()
 
         if (this->recv_buffer_.size() >= connection_->expected())
         {
-            const_buffers_type bufs = this->recv_buffer_.data();
-            const_buffers_type::const_iterator i = bufs.begin();
-            const_buffer buf(*i);
+            auto bufs = this->recv_buffer_.data();
+            auto i = bufs.begin();
+            auto buf(*i);
 
             // This should not happen™
             assert(i + 1 == bufs.end());
 
             auto begin = asio::buffer_cast<char*>(buf);
-            auto size = buffer_size(buf);
+            auto size = asio::buffer_size(buf);
 
             auto consumed = connection_->parse(begin, size);
             this->recv_buffer_.consume(consumed);
