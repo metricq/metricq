@@ -355,10 +355,15 @@ void BaseConnectionHandler::read()
 
         if (this->recv_buffer_.size() >= connection_->expected())
         {
-            static_assert(sizeof(this->recv_buffer_::char_type) == 1, "LUL rest in pepperonies.");
+            const_buffers_type bufs = this->recv_buffer_.data();
+            const_buffers_type::const_iterator i = bufs.begin();
+            const_buffer buf(*i);
 
-            auto begin = this->recv_buffer_.gptr();
-            auto size = this->recv_buffer_.egptr() - begin;
+            // This should not happen™
+            assert(i + 1 == bufs.end());
+
+            auto begin = asio::buffer_cast<char*>(buf);
+            auto size = buffer_size(buf);
 
             auto consumed = connection_->parse(begin, size);
             this->recv_buffer_.consume(consumed);
