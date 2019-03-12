@@ -80,14 +80,16 @@ int main(int argc, char* argv[])
         StressTestSource source(options.get("server"), options.get("token"));
 
         Log::info() << "starting main loop.";
-        auto begin = std::chrono::system_clock::now();
         source.main_loop();
-        auto end = std::chrono::system_clock::now();
+        auto end = metricq::Clock::now();
         Log::info() << "exiting main loop.";
+        // Use begin time after connection
+        // But wait for connection all send buffers to empty and connection to close at the end
         auto seconds =
-            std::chrono::duration_cast<std::chrono::duration<double>>(end - begin).count();
-        Log::info() << "publised " << source.total_values_ << " values total " << seconds << ": "
-                    << (source.total_values_ / seconds) << " values/s";
+            std::chrono::duration_cast<std::chrono::duration<double>>(end - source.start_time_)
+                .count();
+        Log::info() << "publised " << source.total_values << " values total " << seconds << ": "
+                    << (source.total_values / seconds) << " values/s";
     }
     catch (nitro::broken_options::parsing_error& e)
     {

@@ -58,7 +58,8 @@ private:
     uint64_t remaining_batches_ = std::numeric_limits<uint64_t>::max();
 
 public:
-    uint64_t total_values_ = 0;
+    uint64_t total_values = 0;
+    metricq::TimePoint start_time_;
 
 private:
     metricq::Timer timer_;
@@ -66,7 +67,6 @@ private:
     bool running_ = false;
     std::chrono::nanoseconds interval_;
 
-    metricq::TimePoint start_time_;
     metricq::TimePoint previous_time_;
 
     std::vector<std::string> metrics_;

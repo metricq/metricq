@@ -201,7 +201,7 @@ metricq::Timer::TimerResult StressTestSource::timeout_cb(std::error_code)
             }
 
             metric.send({ time, value });
-            total_values_++;
+            total_values++;
         }
         metric.flush();
         fake_value_iter_iter++;
