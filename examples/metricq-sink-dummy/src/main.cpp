@@ -91,7 +91,8 @@ int main(int argc, char* argv[])
             std::chrono::duration_cast<std::chrono::duration<double>>(end - sink.first_metric_time)
                 .count();
         Log::info() << "received " << sink.message_count << " values total " << seconds << ": "
-                    << (sink.message_count / seconds) << " values/s";
+                    << (sink.message_count / seconds) << " values/s "
+                    << end.time_since_epoch().count();
     }
     catch (nitro::broken_options::parsing_error& e)
     {

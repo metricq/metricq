@@ -89,7 +89,8 @@ int main(int argc, char* argv[])
             std::chrono::duration_cast<std::chrono::duration<double>>(end - source.first_time_)
                 .count();
         Log::info() << "published " << source.total_values << " values total " << seconds << ": "
-                    << (source.total_values / seconds) << " values/s";
+                    << (source.total_values / seconds) << " values/s "
+                    << end.time_since_epoch().count();
     }
     catch (nitro::broken_options::parsing_error& e)
     {
