@@ -63,7 +63,6 @@ public:
     std::size_t message_count = 0;
 
 private:
-    std::size_t message_count_last_step_ = 0;
     metricq::TimePoint start_time_;
     metricq::TimePoint step_time_;
 
