@@ -1,6 +1,4 @@
-// Copyright (c) 2018, ZIH,
-// Technische Universitaet Dresden,
-// Federal Republic of Germany
+// Copyright (c) 2018, ZIH, Technische Universitaet Dresden, Federal Republic of Germany
 //
 // All rights reserved.
 //
@@ -27,43 +25,14 @@
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#include <metricq/drain.hpp>
+#pragma once
 
-#include "log.hpp"
-#include "util.hpp"
+#ifndef RUN_COMMAND_H
+#define RUN_COMMAND_H
 
-namespace metricq
-{
-Drain::~Drain()
-{
-}
+#include <string>
+#include <vector>
 
-void Drain::on_connected()
-{
-    assert(!metrics_.empty());
-    rpc("sink.unsubscribe", [this](const auto& response) { unsubscribe_complete(response); },
-        { { "dataQueue", data_queue_ }, { "metrics", metrics_ } });
-}
+int run_command(const std::vector<std::string>& cmdline);
 
-void Drain::unsubscribe_complete(const json& response)
-{
-    assert(!data_queue_.empty());
-
-    sink_config(response);
-}
-
-void Drain::on_data(const AMQP::Message& message, uint64_t delivery_tag, bool redelivered)
-{
-    if (message.typeName() == "end")
-    {
-        data_channel_->ack(delivery_tag);
-        log::debug("received end message");
-        // We used to close the data connection here, but this should not be necessary.
-        // It will be closed implicitly from the response callback.
-        rpc("sink.release", [this](const auto&) { close(); }, { { "dataQueue", data_queue_ } });
-        return;
-    }
-
-    Sink::on_data(message, delivery_tag, redelivered);
-}
-} // namespace metricq
+#endif // ----- #ifndef RUN_COMMAND_H -----

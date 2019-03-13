@@ -1,6 +1,4 @@
-// Copyright (c) 2018, ZIH,
-// Technische Universitaet Dresden,
-// Federal Republic of Germany
+// Copyright (c) 2018, ZIH, Technische Universitaet Dresden, Federal Republic of Germany
 //
 // All rights reserved.
 //
@@ -27,43 +25,36 @@
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#include <metricq/drain.hpp>
 
-#include "log.hpp"
-#include "util.hpp"
+#pragma once
 
-namespace metricq
+#ifndef SUMMARY_H
+#define SUMMARY_H
+
+#include <cstdint>
+#include <iosfwd>
+
+#include <metricq/chrono.hpp>
+#include <metricq/types.hpp>
+
+struct Summary
 {
-Drain::~Drain()
-{
-}
+    std::size_t num_timepoints;
+    metricq::Duration duration;
 
-void Drain::on_connected()
-{
-    assert(!metrics_.empty());
-    rpc("sink.unsubscribe", [this](const auto& response) { unsubscribe_complete(response); },
-        { { "dataQueue", data_queue_ }, { "metrics", metrics_ } });
-}
+    double average;
+    double stddev;
+    double absdev;
 
-void Drain::unsubscribe_complete(const json& response)
-{
-    assert(!data_queue_.empty());
+    double quart25;
+    double quart50;
+    double quart75;
 
-    sink_config(response);
-}
+    double minimum;
+    double maximum;
+    double range;
 
-void Drain::on_data(const AMQP::Message& message, uint64_t delivery_tag, bool redelivered)
-{
-    if (message.typeName() == "end")
-    {
-        data_channel_->ack(delivery_tag);
-        log::debug("received end message");
-        // We used to close the data connection here, but this should not be necessary.
-        // It will be closed implicitly from the response callback.
-        rpc("sink.release", [this](const auto&) { close(); }, { { "dataQueue", data_queue_ } });
-        return;
-    }
+    static Summary calculate(std::vector<metricq::TimeValue>&& tv_pairs);
+};
 
-    Sink::on_data(message, delivery_tag, redelivered);
-}
-} // namespace metricq
+#endif // ----- #ifndef SUMMARY_H -----
