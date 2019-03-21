@@ -81,15 +81,27 @@ protected:
 
     private:
         HistoryCompletion(Db& self, std::string correlation_id, std::string reply_to)
-        : self(self), correlation_id(std::move(correlation_id)), reply_to(std::move(reply_to))
+        : self(self), correlation_id(std::move(correlation_id)), reply_to(std::move(reply_to)),
+          begin_handling_(Clock::now()), begin_processing_(begin_handling_)
         {
         }
 
+        /* Timeline:
+         * begin_handling (ctor)
+         * begin_processing() -- if not called, defaults to begin_handling
+         * end_processing (local in operator())
+         * end_handling (local in operator()'s handler)
+         */
     public:
         HistoryCompletion(const HistoryCompletion&) = delete;
         HistoryCompletion(HistoryCompletion&&) = default;
         HistoryCompletion& operator=(const HistoryCompletion&) = delete;
         HistoryCompletion& operator=(HistoryCompletion&&) = default;
+
+        void begin_processing()
+        {
+            begin_processing_ = Clock::now();
+        }
 
         void operator()(const HistoryResponse& response);
 
@@ -97,6 +109,8 @@ protected:
         Db& self;
         std::string correlation_id;
         std::string reply_to;
+        TimePoint begin_handling_;
+        TimePoint begin_processing_;
     };
 
 protected:

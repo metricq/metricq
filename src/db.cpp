@@ -97,12 +97,21 @@ void Db::on_history(const std::string& id, const metricq::HistoryRequest& conten
 void Db::HistoryCompletion::operator()(const metricq::HistoryResponse& response)
 {
     std::string reply_message = response.SerializeAsString();
-    auto run = [reply_message = std::move(reply_message),
+    auto processing_duration = Clock::now() - begin_processing_;
+    auto run = [processing_duration, begin_handling = this->begin_handling_,
+                reply_message = std::move(reply_message),
                 correlation_id = std::move(correlation_id), reply_to = std::move(reply_to),
                 &self = this->self]() {
+        auto handling_duration = Clock::now() - begin_handling;
+        AMQP::Table headers;
         AMQP::Envelope envelope(reply_message.data(), reply_message.size());
         envelope.setCorrelationID(correlation_id);
         envelope.setContentType("application/json");
+        headers["x-request-duration"] = std::to_string(
+            std::chrono::duration_cast<std::chrono::duration<double>>(handling_duration).count());
+        headers["x-processing-duration"] = std::to_string(
+            std::chrono::duration_cast<std::chrono::duration<double>>(processing_duration).count());
+        envelope.setHeaders(headers);
         self.data_channel_->publish("", reply_to, envelope);
     };
     asio::dispatch(self.io_service, run);
