@@ -5,9 +5,8 @@ RUN useradd -m metricq
 RUN apt-get update && apt-get install -y git libprotobuf-dev protobuf-compiler build-essential libssl-dev
 
 USER metricq
+COPY --chown=metricq:metricq . /home/metricq/metricq
 
-WORKDIR /home/metricq
-RUN git clone https://github.com/metricq/metricq.git
 WORKDIR /home/metricq/metricq
 RUN mkdir build
 

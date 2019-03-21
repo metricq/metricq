@@ -33,5 +33,5 @@
 
 namespace metricq
 {
-    using json = nlohmann::json;
+using json = nlohmann::json;
 }
