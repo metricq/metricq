@@ -39,7 +39,9 @@ from .history_pb2 import HistoryRequest as HistoryRequest_pb, HistoryResponse as
 
 logger = get_logger(__name__)
 
-HistoryResponse = namedtuple('HistoryResponse', ['time_delta', 'value_min', 'value_max', 'value_avg', 'request_duration'])
+HistoryResponse = namedtuple('HistoryResponse', ['time_delta', 'value_min', 'value_max', 'value_avg',
+                                                 'request_duration', 'processing_duration'])
+
 
 class HistoryClient(Client):
     def __init__(self, *args, **kwargs):
@@ -134,14 +136,17 @@ class HistoryClient(Client):
                 body = message.body
                 from_token = message.app_id
                 correlation_id = message.correlation_id
-                request_duration = message.headers.get("x-request-duration", "-1")
+                request_duration = float(message.headers.get("x-request-duration", "0"))
+                processing_duration = float(message.headers.get("x-processing-duration", "0"))
 
                 logger.info('received message from {}, correlation id: {}, reply_to: {}',
                             from_token, correlation_id, message.reply_to)
                 history_response_pb = HistoryResponse_pb()
                 history_response_pb.ParseFromString(body)
 
-                history_response = HistoryResponse(history_response_pb.time_delta, history_response_pb.value_min, history_response_pb.value_max, history_response_pb.value_avg, request_duration)
+                history_response = HistoryResponse(history_response_pb.time_delta, history_response_pb.value_min,
+                                                   history_response_pb.value_max, history_response_pb.value_avg,
+                                                   request_duration, processing_duration)
 
                 logger.debug('message is an history response')
                 try:
