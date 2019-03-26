@@ -61,6 +61,7 @@ private:
 public:
     metricq::TimePoint first_metric_time;
     std::size_t message_count = 0;
+    int ongoing_streams = 1;
 
 private:
     metricq::TimePoint start_time_;

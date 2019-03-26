@@ -51,6 +51,7 @@ int main(int argc, char* argv[])
     parser.toggle("trace").short_name("t");
     parser.toggle("quiet").short_name("q");
     parser.toggle("help").short_name("h");
+    parser.toggle("streams");
 
     try
     {
@@ -83,6 +84,7 @@ int main(int argc, char* argv[])
             metrics.push_back(options.get("metrics", i));
         }
         DummySink sink(options.get("server"), options.get("token"), metrics);
+        sink.ongoing_streams = stoi(options.get("streams"));
         Log::debug() << "starting main loop.";
         sink.main_loop();
         auto end = metricq::Clock::now();
