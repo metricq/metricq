@@ -46,12 +46,12 @@ int main(int argc, char* argv[])
         .short_name("s");
     parser.option("token", "The token used for source authentication.")
         .default_value("dummySource");
+    parser.option("streams", "BENCHMARK ONLY");
     parser.multi_option("metrics", "metrics to read").short_name("m");
     parser.toggle("verbose").short_name("v");
     parser.toggle("trace").short_name("t");
     parser.toggle("quiet").short_name("q");
     parser.toggle("help").short_name("h");
-    parser.toggle("streams");
 
     try
     {
@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
             metrics.push_back(options.get("metrics", i));
         }
         DummySink sink(options.get("server"), options.get("token"), metrics);
-        sink.ongoing_streams = stoi(options.get("streams"));
+        sink.ongoing_streams = std::stoi(options.get("streams"));
         Log::debug() << "starting main loop.";
         sink.main_loop();
         auto end = metricq::Clock::now();
