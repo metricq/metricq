@@ -103,7 +103,7 @@ int main(int argc, char* argv[])
         auto total = 0;
         for (const auto& elem : result)
         {
-            Log::info() << elem.first << ": " << elem.second.size();
+            Log::debug() << elem.first << ": " << elem.second.size();
             total += elem.second.size();
         }
 
