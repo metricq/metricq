@@ -218,8 +218,9 @@ void Connection::handle_management_message(const AMQP::Message& incoming_message
         return;
     }
 
-    if (auto it = management_callbacks_.find(content.at("function"));
-        it != management_callbacks_.end())
+    auto function = std::string{ content.at("function") };
+
+    if (auto it = management_callbacks_.find(function); it != management_callbacks_.end())
     {
         log::debug("management rpc call received: {}", content_str);
         // incoming message is a RPC-call
@@ -239,23 +240,22 @@ void Connection::handle_management_message(const AMQP::Message& incoming_message
         }
         catch (json::parse_error& e)
         {
-            log::error("error in rpc response handling {}: parsing message: {}\n{}",
-                       incoming_message.correlationID(), e.what(), content_str);
+            log::error("error in rpc handling {}: parsing message: {}\n{}", function, e.what(),
+                       content_str);
         }
         catch (json::type_error& e)
         {
-            log::error("error in rpc response handling {}: accessing parameter: {}\n{}",
-                       incoming_message.correlationID(), e.what(), content_str);
+            log::error("error in rpc handling {}: accessing parameter: {}\n{}", function, e.what(),
+                       content_str);
         }
         catch (std::exception& e)
         {
-            log::error("error in rpc response handling {}: {}\n{}",
-                       incoming_message.correlationID(), e.what(), content_str);
+            log::error("error in rpc handling {}: {}\n{}", function, e.what(), content_str);
         }
         return;
     }
 
-    log::warn("message not found as rpc response or callback");
+    log::warn("no rpc callback registered for function: {}\n{}", function, content_str);
 }
 
 AMQP::Address Connection::add_credentials(const AMQP::Address& address)
