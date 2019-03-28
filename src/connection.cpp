@@ -157,6 +157,8 @@ void Connection::rpc(const std::string& function, ManagementResponseCallback res
 void Connection::handle_management_message(const AMQP::Message& incoming_message,
                                            uint64_t deliveryTag, [[maybe_unused]] bool redelivered)
 {
+    static std::vector<std::string> previous_correlation_ids;
+
     const std::string content_str(incoming_message.body(),
                                   static_cast<size_t>(incoming_message.bodySize()));
     log::debug("management rpc response received: {}", content_str);
@@ -207,6 +209,7 @@ void Connection::handle_management_message(const AMQP::Message& incoming_message
                        incoming_message.correlationID());
             return;
         }
+        previous_correlation_ids.push_back(incoming_message.correlationID());
         management_rpc_response_callbacks_.erase(it);
         return;
     }
@@ -218,6 +221,10 @@ void Connection::handle_management_message(const AMQP::Message& incoming_message
         for (const auto& elem : management_rpc_response_callbacks_)
         {
             log::error(" > known response callback {}", elem.first);
+        }
+        for (const auto& elem : previous_correlation_ids)
+        {
+            log::error(" * previously handled {}", elem);
         }
         return;
     }

@@ -173,7 +173,7 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 
     target_compile_options(metricq-core
         PUBLIC
-            -Wall -Wextra -pedantic -Wsign-compare -Werror
+            -Wall -Wextra -pedantic -Wsign-compare
     )
 
     install(DIRECTORY
