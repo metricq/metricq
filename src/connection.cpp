@@ -205,6 +205,7 @@ void Connection::handle_management_message(const AMQP::Message& incoming_message
         {
             log::error("error in rpc response handling {}: response callback vanished",
                        incoming_message.correlationID());
+            return;
         }
         management_rpc_response_callbacks_.erase(it);
         return;
