@@ -26,6 +26,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include "count_drain.hpp"
+
 #include <metricq/logger/nitro.hpp>
 #include <metricq/simple.hpp>
 
@@ -97,14 +99,19 @@ int main(int argc, char* argv[])
 
         auto begin = metricq::Clock::now();
         Log::info() << "begin drain";
-        auto result = metricq::drain(url, token, metrics, queue);
+
+        CountDrain drain(token, queue);
+        drain.add(metrics);
+        drain.connect(url);
+        drain.main_loop();
+
         auto end = metricq::Clock::now();
 
         int64_t total = 0;
-        for (const auto& elem : result)
+        for (const auto& elem : drain.counts)
         {
-            Log::debug() << elem.first << ": " << elem.second.size();
-            total += elem.second.size();
+            Log::debug() << elem.first << ": " << elem.second;
+            total += elem.second;
         }
 
         auto seconds =
