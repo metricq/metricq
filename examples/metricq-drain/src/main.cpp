@@ -100,7 +100,7 @@ int main(int argc, char* argv[])
         auto result = metricq::drain(url, token, metrics, queue);
         auto end = metricq::Clock::now();
 
-        auto total = 0;
+        int64_t total = 0;
         for (const auto& elem : result)
         {
             Log::debug() << elem.first << ": " << elem.second.size();
