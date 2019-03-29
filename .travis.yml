@@ -1,5 +1,11 @@
 language: generic
 
+# blocklist
+branches:
+  except:
+    # uses MPI and I REALLY don't want to make travis work with that
+    - experimental-benchmark
+
 dist: xenial
 
 matrix:
