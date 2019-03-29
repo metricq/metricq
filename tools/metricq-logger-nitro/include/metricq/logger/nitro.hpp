@@ -31,7 +31,9 @@
 #include <nitro/log/attribute/severity.hpp>
 #include <nitro/log/filter/severity_filter.hpp>
 #include <nitro/log/log.hpp>
+#include <nitro/log/sink/stderr.hpp>
 #include <nitro/log/sink/stdout.hpp>
+#include <nitro/log/sink/syslog.hpp>
 
 namespace metricq::logger::nitro
 {
@@ -48,15 +50,22 @@ namespace detail
         std::string format(Record& r)
         {
             std::stringstream s;
+#ifdef LOGGER_NITRO_SINK_SYSLOG
+            if (!r.tag().empty())
+            {
+                s << "[" << r.tag() << "] ";
+            }
 
+            s << r.message() << '\n';
+#else
             s << "[" << r.jiffy() << "][";
-
             if (!r.tag().empty())
             {
                 s << r.tag() << "][";
             }
 
             s << r.severity() << "]: " << r.message() << '\n';
+#endif
 
             return s.str();
         }
@@ -66,8 +75,8 @@ namespace detail
     using log_filter = ::nitro::log::filter::severity_filter<Record>;
 } // namespace detail
 
-using Log = ::nitro::log::logger<detail::record, detail::log_formater, ::nitro::log::sink::StdOut,
-                                 detail::log_filter>;
+using Log = ::nitro::log::logger<detail::record, detail::log_formater,
+                                 ::nitro::log::sink::LOGGER_NITRO_SINK, detail::log_filter>;
 
 inline void set_severity(::nitro::log::severity_level level)
 {

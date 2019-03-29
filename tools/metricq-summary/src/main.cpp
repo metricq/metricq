@@ -105,27 +105,21 @@ Config::Config(int argc, const char* argv[])
         }
         catch (const std::logic_error&)
         {
-            Log::fatal() << "Invalid timeout: " << options.get("timeout");
+            std::cerr << "Invalid timeout: " << options.get("timeout") << '\n';
             std::exit(EXIT_FAILURE);
         }
 
         cmdline = options.positionals();
         if (cmdline.size() == 0)
         {
-            Log::error() << "No command specified";
+            std::cerr << "No command specified" << '\n';
             parser.usage();
             std::exit(EXIT_FAILURE);
         }
     }
-    catch (nitro::broken_options::parser_error& e)
-    {
-        Log::warn() << "Error parsing options: " << e.what();
-        parser.usage();
-        std::exit(EXIT_FAILURE);
-    }
     catch (nitro::broken_options::parsing_error& e)
     {
-        Log::warn() << "Error parsing options: " << e.what();
+        std::cerr << "Error parsing arguments: " << e.what() << '\n';
         parser.usage();
         std::exit(EXIT_FAILURE);
     }

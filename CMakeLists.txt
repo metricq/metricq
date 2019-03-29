@@ -159,16 +159,23 @@ target_compile_options(metricq-core
         -Wall -Wextra -pedantic -Wsign-compare
 )
 
-if(TARGET Nitro::log)
-    add_subdirectory(examples/metricq-logger-nitro)
-    add_library(metricq::logger-nitro ALIAS metricq-logger-nitro)
-    set_target_properties(metricq-logger-nitro PROPERTIES EXCLUDE_FROM_ALL TRUE)
+if(NOT TARGET Nitro::log)
+    add_subdirectory(lib/nitro)
+endif()
+
+add_subdirectory(tools/metricq-logger-nitro)
+add_library(metricq::logger-nitro ALIAS metricq-logger-nitro)
+set(METRICQ_LOGGER_NITRO_SINK "StdOut" CACHE STRING "Select the sink for the Nitro logger.")
+set_property(CACHE METRICQ_LOGGER_NITRO_SINK PROPERTY STRINGS "StdOut" "StdErr" "Syslog")
+target_compile_definitions(metricq-logger-nitro PUBLIC LOGGER_NITRO_SINK=${METRICQ_LOGGER_NITRO_SINK})
+
+if(${METRICQ_LOGGER_NITRO_SINK} STREQUAL "Syslog")
+    target_compile_definitions(metricq-logger-nitro PUBLIC LOGGER_NITRO_SINK_SYSLOG)
 endif()
 
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     include(GNUInstallDirs)
 
-    add_subdirectory(lib/nitro)
     add_subdirectory(examples)
     add_subdirectory(tools/metricq-summary)
 
