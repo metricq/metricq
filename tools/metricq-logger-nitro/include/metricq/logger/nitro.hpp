@@ -51,6 +51,8 @@ namespace detail
         {
             std::stringstream s;
 #ifdef LOGGER_NITRO_SINK_SYSLOG
+            s << "<" << r.severity() << "> ";
+
             if (!r.tag().empty())
             {
                 s << "[" << r.tag() << "] ";
