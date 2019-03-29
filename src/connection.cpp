@@ -218,7 +218,7 @@ void Connection::handle_management_message(const AMQP::Message& incoming_message
         return;
     }
 
-    auto function = std::string{ content.at("function") };
+    auto function = content.at("function").get<std::string>();
 
     if (auto it = management_callbacks_.find(function); it != management_callbacks_.end())
     {
