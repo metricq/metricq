@@ -54,7 +54,7 @@ public:
     {
     }
 
-    void start(metricq::Duration interval)
+    void start(Duration interval)
     {
         interval_ = std::chrono::duration_cast<std::chrono::microseconds>(interval);
 
@@ -73,7 +73,7 @@ public:
         timer_.async_wait([this](auto error) { this->timer_callback(error); });
     }
 
-    void start(Callback callback, metricq::Duration interval)
+    void start(Callback callback, Duration interval)
     {
         callback_ = callback;
         start(interval);
