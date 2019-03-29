@@ -195,7 +195,7 @@ void BaseConnectionHandler::onHeartbeat(AMQP::Connection* connection)
 {
     (void)connection;
 
-    log::debug("Received heartbeat from server");
+    log::trace("Received heartbeat from server");
 }
 
 /**
@@ -454,7 +454,7 @@ void BaseConnectionHandler::beat(const asio::error_code& error)
         return;
     }
 
-    log::debug("Sending heartbeat to server");
+    log::trace("Sending heartbeat to server");
     assert(this->connection_);
     connection_->heartbeat();
 
