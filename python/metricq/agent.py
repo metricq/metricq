@@ -98,7 +98,7 @@ class Agent(RPCDispatcher):
             }
         else:
             ssl_options = None
-        connection = await aio_pika.connect_robust(url, loop=self.event_loop, reconnect_interval=5,
+        connection = await aio_pika.connect_robust(url, loop=self.event_loop, reconnect_interval=30,
                                                    ssl_options=ssl_options)
         # How stupid that we can't easily add the handlers *before* actually connecting.
         # We could make our own RobustConnection object, but then we loose url parsing convenience

@@ -54,17 +54,25 @@ public:
     {
     }
 
-    template <typename Duration>
     void start(Duration interval)
     {
-        interval_ = interval;
+        interval_ = std::chrono::duration_cast<std::chrono::microseconds>(interval);
+
+        // As we accept nanosecond resolution durations as interval, but the timer can only support
+        // microseconds, we should check that here
+        if (interval_.count() == 0)
+        {
+            // So the duration got casted to 0us, that means we have a problem
+            throw std::invalid_argument(
+                "metricq::Timer doesn't support sub-microseconds intervals.");
+        }
+
         canceled_ = false;
         running_ = true;
-        timer_.expires_from_now(interval);
+        timer_.expires_from_now(interval_);
         timer_.async_wait([this](auto error) { this->timer_callback(error); });
     }
 
-    template <typename Duration>
     void start(Callback callback, Duration interval)
     {
         callback_ = callback;

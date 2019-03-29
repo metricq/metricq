@@ -25,55 +25,36 @@
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #pragma once
 
-#include <nitro/log/attribute/jiffy.hpp>
-#include <nitro/log/attribute/severity.hpp>
-#include <nitro/log/filter/severity_filter.hpp>
-#include <nitro/log/log.hpp>
-#include <nitro/log/sink/stdout.hpp>
+#ifndef SUMMARY_H
+#define SUMMARY_H
 
-namespace metricq::logger::nitro
+#include <cstdint>
+#include <iosfwd>
+
+#include <metricq/chrono.hpp>
+#include <metricq/types.hpp>
+
+struct Summary
 {
-namespace detail
-{
-    using record =
-        ::nitro::log::record<::nitro::log::tag_attribute, ::nitro::log::message_attribute,
-                             ::nitro::log::severity_attribute, ::nitro::log::jiffy_attribute>;
+    std::size_t num_timepoints;
+    metricq::Duration duration;
 
-    template <typename Record>
-    class log_formater
-    {
-    public:
-        std::string format(Record& r)
-        {
-            std::stringstream s;
+    double average;
+    double stddev;
+    double absdev;
 
-            s << "[" << r.jiffy() << "][";
+    double quart25;
+    double quart50;
+    double quart75;
 
-            if (!r.tag().empty())
-            {
-                s << r.tag() << "][";
-            }
+    double minimum;
+    double maximum;
+    double range;
 
-            s << r.severity() << "]: " << r.message() << '\n';
+    static Summary calculate(std::vector<metricq::TimeValue>&& tv_pairs);
+};
 
-            return s.str();
-        }
-    };
-
-    template <typename Record>
-    using log_filter = ::nitro::log::filter::severity_filter<Record>;
-} // namespace detail
-
-using Log = ::nitro::log::logger<detail::record, detail::log_formater, ::nitro::log::sink::StdOut,
-                                 detail::log_filter>;
-
-inline void set_severity(::nitro::log::severity_level level)
-{
-    ::nitro::log::filter::severity_filter<detail::record>::set_severity(level);
-}
-
-void initialize();
-
-} // namespace metricq::logger::nitro
+#endif // ----- #ifndef SUMMARY_H -----

@@ -195,7 +195,7 @@ void BaseConnectionHandler::onHeartbeat(AMQP::Connection* connection)
 {
     (void)connection;
 
-    log::debug("Received heartbeat from server");
+    log::trace("Received heartbeat from server");
 }
 
 /**
@@ -355,9 +355,17 @@ void BaseConnectionHandler::read()
 
         if (this->recv_buffer_.size() >= connection_->expected())
         {
-            std::vector<char> data(asio::buffers_begin(this->recv_buffer_.data()),
-                                   asio::buffers_end(this->recv_buffer_.data()));
-            auto consumed = connection_->parse(data.data(), data.size());
+            auto bufs = this->recv_buffer_.data();
+            auto i = bufs.begin();
+            auto buf(*i);
+
+            // This should not happen™
+            assert(i + 1 == bufs.end());
+
+            auto begin = asio::buffer_cast<const char*>(buf);
+            auto size = asio::buffer_size(buf);
+
+            auto consumed = connection_->parse(begin, size);
             this->recv_buffer_.consume(consumed);
         }
 
@@ -446,7 +454,7 @@ void BaseConnectionHandler::beat(const asio::error_code& error)
         return;
     }
 
-    log::debug("Sending heartbeat to server");
+    log::trace("Sending heartbeat to server");
     assert(this->connection_);
     connection_->heartbeat();
 

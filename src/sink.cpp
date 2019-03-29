@@ -72,7 +72,26 @@ void Sink::subscribe(const std::vector<std::string>& metrics, int64_t expires)
 void Sink::sink_config(const json& config)
 {
     data_config(config);
-    data_queue_ = config.at("dataQueue");
+
+    if (data_queue_.empty())
+    {
+        // Set data queue name from configuration.
+        data_queue_ = config.at("dataQueue");
+    }
+    else
+    {
+        // If data_queue_ has already been set (for example from Drain), check
+        // that the local name matches the one in the configuration provided.
+        auto config_data_queue = config.at("dataQueue").get<std::string>();
+
+        if (data_queue_ != config_data_queue)
+        {
+            log::warn("configuration indicated to use data queue {}, but we expected {}.",
+                      config_data_queue, data_queue_);
+            log::warn("using queue provided by configuration");
+            data_queue_ = config_data_queue;
+        }
+    }
 
     if (config.count("metrics"))
     {

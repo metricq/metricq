@@ -95,7 +95,7 @@ int main(int argc, char* argv[])
     }
     catch (nitro::broken_options::parsing_error& e)
     {
-        Log::warn() << e.what();
+        std::cerr << e.what() << '\n';
         parser.usage();
         return 1;
     }
