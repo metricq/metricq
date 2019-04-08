@@ -87,6 +87,18 @@ class Timestamp:
         return self._value
 
     @property
+    def posix_us(self):
+        return self._value / 1000
+
+    @property
+    def posix_ms(self):
+        return self._value / 1000000
+
+    @property
+    def posix(self):
+        return self._value / 1000000000
+
+    @property
     def datetime(self):
         """
         This creates an aware UTC datetime object.
