@@ -73,6 +73,16 @@ public:
     void operator()(Scope s);
     Scope scope() const;
 
+    auto begin() const
+    {
+        return metadata_.begin();
+    }
+
+    auto end() const
+    {
+        return metadata_.end();
+    }
+
 private:
     metricq::json metadata_ = metricq::json::object();
 };
