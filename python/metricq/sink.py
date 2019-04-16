@@ -88,3 +88,17 @@ class Sink(DataClient):
     @abstractmethod
     async def on_data(self, metric, timestamp, value):
         pass
+
+
+class DurableSink(Sink):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, add_uuid=False, **kwargs)
+
+    async def connect(self):
+        await super().connect()
+
+        response = await self.rpc('sink.register')
+        assert(response is not None)
+        logger.info('register response: {}', response)
+
+        await self.rpc_dispatch('config', **response['config'])
