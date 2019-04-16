@@ -43,8 +43,8 @@ HistoryResponse = namedtuple('HistoryResponse', ['time_delta', 'value_min', 'val
 
 
 class HistoryClient(Client):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, add_uuid=True, **kwargs):
+        super().__init__(*args, add_uuid=add_uuid, **kwargs)
 
         self.data_server_address = None
         self.history_connection = None

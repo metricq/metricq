@@ -51,8 +51,8 @@ class RPCError(RuntimeError):
 
 
 class Agent(RPCDispatcher):
-    def __init__(self, token, management_url, event_loop=None):
-        self.token = token
+    def __init__(self, token, management_url, event_loop=None, add_uuid=False):
+        self.token = f'{token}.{uuid.uuid4().hex}' if add_uuid else token
 
         self._event_loop_owned = False
         self._event_loop = event_loop

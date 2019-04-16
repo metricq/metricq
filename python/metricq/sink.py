@@ -38,8 +38,8 @@ logger = get_logger(__name__)
 
 
 class Sink(DataClient):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, add_uuid=True, **kwargs):
+        super().__init__(*args, add_uuid=add_uuid, **kwargs)
         self._data_queue = None
 
     async def sink_config(self, dataQueue, **kwargs):
