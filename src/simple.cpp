@@ -39,7 +39,7 @@
 namespace metricq
 {
 std::string subscribe(const std::string& url, const std::string& token,
-                      const std::vector<std::string>& metrics, std::chrono::seconds timeout)
+                      const std::vector<std::string>& metrics, Duration timeout)
 {
     Subscriber subscriber(token, timeout);
 
@@ -50,7 +50,7 @@ std::string subscribe(const std::string& url, const std::string& token,
 }
 
 std::string subscribe(const std::string& url, const std::string& token, const std::string& metric,
-                      std::chrono::seconds timeout)
+                      Duration timeout)
 {
     return subscribe(url, token, std::vector<std::string>{ metric }, timeout);
 }
