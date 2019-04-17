@@ -69,4 +69,6 @@ constexpr ToDuration duration_cast(const FromDuration& dtn)
 {
     return std::chrono::duration_cast<ToDuration>(dtn);
 }
+
+Duration duration_parse(const std::string& str);
 } // namespace metricq
