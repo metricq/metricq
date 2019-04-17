@@ -91,7 +91,7 @@ Duration duration_parse(const std::string& str)
         throw std::invalid_argument("invalid duration string \"" + str +
                                     "\", not of form \"number unit\"");
     }
-    assert(match.size() == 2);
+    assert(match.size() == 3);
     double value = std::stod(match[1]);
     std::string unit = match[2];
     // TODO C++20 use .starts_with
