@@ -96,7 +96,7 @@ Duration duration_parse(const std::string& str)
     std::string unit = match[2];
     // TODO C++20 use .starts_with
     // Note: we use duration<double> to avoid distinguishing between double and integral types
-    // If you specify like 53 days as "4579200000000000 nanosecond"
+    // If you specify like 53 days as "4579200000000000 nanosecond" you will get rounding errors
     // Let the duration cast figure out the nifty details, hopefully correctly
     if (unit == "" or unit == "s" or unit == "seconds")
     {
