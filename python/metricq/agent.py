@@ -35,6 +35,7 @@ import signal
 import traceback
 import uuid
 import ssl
+import textwrap
 
 import aio_pika
 
@@ -270,8 +271,8 @@ class Agent(RPCDispatcher):
             from_token = message.app_id
             correlation_id = message.correlation_id
 
-            logger.info('received message from {}, correlation id: {}, reply_to: {}\n{}',
-                        from_token, correlation_id, message.reply_to, body)
+            logger.info('received message from {}, correlation id: {}, reply_to: {}, length: {}\n{}',
+                        from_token, correlation_id, message.reply_to, len(body), textwrap.shorten(body, width=200))
             arguments = json.loads(body)
             arguments['from_token'] = from_token
 
