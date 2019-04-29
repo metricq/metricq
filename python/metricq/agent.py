@@ -295,12 +295,12 @@ class Agent(RPCDispatcher):
                 if response is None:
                     response = dict()
                 duration = time.time() - time_begin
-                body = json.dumps(response).encode()
+                body = json.dumps(response)
                 logger.info('rpc response to {}, correlation id: {}, length: {}, time: {} s\n{}',
                             from_token, correlation_id, len(body), duration,
                             textwrap.shorten(body, width=self.LOG_MAX_WIDTH))
                 await self._management_channel.default_exchange.publish(
-                    aio_pika.Message(body=body,
+                    aio_pika.Message(body=body.encode(),
                                      correlation_id=correlation_id,
                                      content_type='application/json',
                                      app_id=self.token),
