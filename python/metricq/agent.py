@@ -36,6 +36,7 @@ import traceback
 import uuid
 import ssl
 import textwrap
+import time
 
 import aio_pika
 
@@ -52,6 +53,8 @@ class RPCError(RuntimeError):
 
 
 class Agent(RPCDispatcher):
+    LOG_MAX_WIDTH = 200
+
     def __init__(self, token, management_url, event_loop=None, add_uuid=False):
         self.token = f'{token}.{uuid.uuid4().hex}' if add_uuid else token
 
@@ -150,6 +153,8 @@ class Agent(RPCDispatcher):
         if 'function' not in kwargs:
             raise KeyError('all RPCs must contain a "function" argument')
 
+        time_begin = time.time()
+
         logger.info('sending RPC {}, exchange: {}, rk: {}, arguments: {}',
                     kwargs['function'], exchange.name, routing_key, kwargs)
 
@@ -171,6 +176,7 @@ class Agent(RPCDispatcher):
 
             def response_callback(**response_kwargs):
                 assert not request_future.done()
+                logger.info('rpc completed in {} s', time.time() - time_begin)
                 if 'error' in response_kwargs:
                     request_future.set_exception(RPCError(response_kwargs['error']))
                 else:
@@ -267,12 +273,14 @@ class Agent(RPCDispatcher):
         :param message: This is either an RPC or an RPC response
         """
         with message.process(requeue=True):
+            time_begin = time.time()
             body = message.body.decode()
             from_token = message.app_id
             correlation_id = message.correlation_id
 
             logger.info('received message from {}, correlation id: {}, reply_to: {}, length: {}\n{}',
-                        from_token, correlation_id, message.reply_to, len(body), textwrap.shorten(body, width=200))
+                        from_token, correlation_id, message.reply_to, len(body),
+                        textwrap.shorten(body, width=self.LOG_MAX_WIDTH))
             arguments = json.loads(body)
             arguments['from_token'] = from_token
 
@@ -286,8 +294,10 @@ class Agent(RPCDispatcher):
                     response = {'error': str(e)}
                 if response is None:
                     response = dict()
-                logger.info('rpc response to {}, correlation id: {}\n{}',
-                            from_token, correlation_id, response)
+                duration = time.time() - time_begin
+                logger.info('rpc response to {}, correlation id: {}, length: {}, time: {}\n{}',
+                            from_token, correlation_id, len(response), duration,
+                            textwrap.shorten(response, width=self.LOG_MAX_WIDTH))
                 await self._management_channel.default_exchange.publish(
                     aio_pika.Message(body=json.dumps(response).encode(),
                                      correlation_id=correlation_id,
