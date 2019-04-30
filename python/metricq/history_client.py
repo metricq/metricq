@@ -104,19 +104,23 @@ class HistoryClient(Client):
             del self._request_futures[correlation_id]
         return result
 
-    async def history_metric_list(self, selector=None, timeout=None):
+    async def history_metric_list(self, selector=None, historic=True, timeout=None):
         arguments = {'format': 'array'}
         if selector:
             arguments['selector'] = selector
         if timeout is not None:
             arguments['timeout'] = timeout
+        if historic is not None:
+            arguments['historic'] = historic
         result = await self.rpc('history.get_metrics', **arguments)
         return result["metrics"]
 
-    async def history_metric_metadata(self, selector=None):
+    async def history_metric_metadata(self, selector=None, historic=True):
         arguments = {'format': 'object'}
         if selector:
             arguments['selector'] = selector
+        if historic is not None:
+            arguments['historic'] = historic
         result = await self.rpc('history.get_metrics', **arguments)
         return result["metrics"]
 
