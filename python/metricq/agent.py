@@ -46,6 +46,7 @@ from .logging import get_logger
 from .rpc import RPCDispatcher
 
 logger = get_logger(__name__)
+timer = time.monotonic
 
 
 class RPCError(RuntimeError):
@@ -153,13 +154,13 @@ class Agent(RPCDispatcher):
         if 'function' not in kwargs:
             raise KeyError('all RPCs must contain a "function" argument')
 
-        time_begin = time.time()
+        time_begin = timer()
 
-        logger.info('sending RPC {}, exchange: {}, rk: {}, arguments: {}',
-                    kwargs['function'], exchange.name, routing_key, kwargs)
+        correlation_id = self._make_correlation_id()
+        logger.info('sending RPC {}, ex: {}, rk: {}, ci: {}, args: {}',
+                    kwargs['function'], exchange.name, routing_key, correlation_id, kwargs)
 
         body = json.dumps(kwargs).encode()
-        correlation_id = self._make_correlation_id()
         msg = aio_pika.Message(body=body, correlation_id=correlation_id,
                                app_id=self.token,
                                reply_to=self.management_rpc_queue.name,
@@ -176,7 +177,7 @@ class Agent(RPCDispatcher):
 
             def response_callback(**response_kwargs):
                 assert not request_future.done()
-                logger.info('rpc completed in {} s', time.time() - time_begin)
+                logger.info('rpc completed in {} s', timer() - time_begin)
                 if 'error' in response_kwargs:
                     request_future.set_exception(RPCError(response_kwargs['error']))
                 else:
@@ -273,7 +274,7 @@ class Agent(RPCDispatcher):
         :param message: This is either an RPC or an RPC response
         """
         with message.process(requeue=True):
-            time_begin = time.time()
+            time_begin = timer()
             body = message.body.decode()
             from_token = message.app_id
             correlation_id = message.correlation_id
@@ -294,7 +295,7 @@ class Agent(RPCDispatcher):
                     response = {'error': str(e)}
                 if response is None:
                     response = dict()
-                duration = time.time() - time_begin
+                duration = timer() - time_begin
                 body = json.dumps(response)
                 logger.info('rpc response to {}, correlation id: {}, length: {}, time: {} s\n{}',
                             from_token, correlation_id, len(body), duration,
