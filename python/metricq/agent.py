@@ -157,11 +157,11 @@ class Agent(RPCDispatcher):
         time_begin = timer()
 
         correlation_id = self._make_correlation_id()
+        body = json.dumps(kwargs)
         logger.info('sending RPC {}, ex: {}, rk: {}, ci: {}, args: {}',
-                    kwargs['function'], exchange.name, routing_key, correlation_id, kwargs)
-
-        body = json.dumps(kwargs).encode()
-        msg = aio_pika.Message(body=body, correlation_id=correlation_id,
+                    kwargs['function'], exchange.name, routing_key, correlation_id,
+                    textwrap.shorten(body, width=self.LOG_MAX_WIDTH))
+        msg = aio_pika.Message(body=body.encode(), correlation_id=correlation_id,
                                app_id=self.token,
                                reply_to=self.management_rpc_queue.name,
                                content_type='application/json')
