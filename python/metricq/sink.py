@@ -52,7 +52,7 @@ class Sink(DataClient):
         """
         :param metrics:
         :param expires: (optional) queue expiration time in seconds
-        :return:
+        :return: rpc response
         """
         if self._data_queue is not None:
             kwargs['dataQueue'] = self._data_queue.name
@@ -60,6 +60,7 @@ class Sink(DataClient):
         if self._data_queue is None:
             await self.sink_config(**response)
         assert self._data_queue.name == response['dataQueue']
+        return response
 
     async def unsubscribe(self, metrics):
         assert self._data_queue
