@@ -214,7 +214,7 @@ class Agent(RPCDispatcher):
         """
         logger.info('starting RPC consume')
         queues = [self.management_rpc_queue] + extra_queues
-        await asyncio.wait([
+        await asyncio.gather(*[
             queue.consume(self._on_management_message)
             for queue in queues
         ], loop=self.event_loop)

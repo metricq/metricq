@@ -131,7 +131,7 @@ class HistoryClient(Client):
     async def _history_consume(self, extra_queues=[]):
         logger.info('starting history consume')
         queues = [self.history_response_queue] + extra_queues
-        await asyncio.wait([
+        await asyncio.gather(*[
             queue.consume(self._on_history_response)
             for queue in queues
         ], loop=self.event_loop)
