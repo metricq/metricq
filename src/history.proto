@@ -60,9 +60,9 @@ message HistoryResponse {
 
     string metric = 1;
     repeated int64 time_delta = 2;
-    repeated double value_min = 3;
-    repeated double value_max = 4;
-    repeated double value_avg = 5;
+    repeated double value_min = 3 [deprecated=true];
+    repeated double value_max = 4 [deprecated=true];
+    repeated double value_avg = 5 [deprecated=true];
     repeated Aggregate aggregates = 6;
     repeated double values = 7;
 }
