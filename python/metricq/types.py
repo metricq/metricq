@@ -52,6 +52,10 @@ class Timedelta:
         return self._value
 
     @property
+    def s(self):
+        return self._value / 1e9
+
+    @property
     def timedelta(self):
         microseconds = self._value // 1000
         return timedelta(microseconds=microseconds)
@@ -66,6 +70,9 @@ class Timedelta:
         if isinstance(other, Timedelta):
             return Timedelta(self._value - other._value)
         raise TypeError('invalid type to subtract from Timedelta')
+
+    def __str__(self):
+        return '{}s'.format(self.s)
 
 
 class Timestamp:
@@ -132,8 +139,12 @@ class Timestamp:
     def __add__(self, delta: Timedelta):
         return Timestamp(self._value + delta.ns)
 
-    def __sub__(self, delta: Timedelta):
-        return Timestamp(self._value - delta.ns)
+    def __sub__(self, other):
+        if isinstance(other, Timedelta):
+            return Timestamp(self._value - other.ns)
+        if isinstance(other, Timestamp):
+            return Timedelta(self._value - other._value)
+        raise TypeError('Invalid type to subtract from Timestamp: {}'.format(type(other)))
 
     def __cmp__(self, other):
         return self._value - other._value
