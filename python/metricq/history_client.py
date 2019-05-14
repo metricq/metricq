@@ -125,6 +125,7 @@ class HistoryResponse:
         :raises `ValueError` if convert is False and the underlying response does not contain aggregates
         :returns a Generator of `TimeAggregate`
         """
+        time_ns = 0
         if self._mode == HistoryResponseType.AGGREGATES:
             for time_delta, proto_aggregate in zip(self._proto.time_delta, self._proto.aggregate):
                 time_ns = time_ns + time_delta
