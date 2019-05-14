@@ -110,7 +110,7 @@ private:
 private:
     asio::basic_waitable_timer<std::chrono::system_clock> timer_;
     Callback callback_;
-    metricq::Duration interval_;
+    std::chrono::microseconds interval_;
     bool canceled_ = false;
     bool running_ = false;
 };
