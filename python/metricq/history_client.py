@@ -37,10 +37,15 @@ from .logging import get_logger
 from .rpc import rpc_handler
 from .client import Client
 from . import history_pb2
-from .history_pb2.HistoryRequest import RequestType as HistoryRequestType
 from .types import Timedelta, Timestamp, TimeValue, TimeAggregate
 
 logger = get_logger(__name__)
+
+
+class HistoryRequestType(Enum):
+    AGGREGATE_TIMELINE = history_pb2.HistoryRequest.AGGREGATE_TIMELINE,
+    AGGREGATE = history_pb2.HistoryRequest.AGGREGATE
+    LAST_VALUE = history_pb2.HistoryRequest.LAST_VALUE
 
 
 class HistoryResponseType(Enum):
@@ -218,6 +223,12 @@ class HistoryClient(Client):
         finally:
             del self._request_futures[correlation_id]
         return result
+
+    async def history_last_value(self, metric: str, timeout=60):
+        result = await self.history_data_request(metric, start_time=None, end_time=None, interval_max=None,
+                                                 request_type=HistoryRequestType.LAST_VALUE, timeout=timeout)
+        assert len(result) == 1
+        return next(result.values())
 
     async def history_metric_list(self, selector=None, historic=True, timeout=None):
         arguments = {'format': 'array'}
