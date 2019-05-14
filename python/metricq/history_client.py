@@ -37,10 +37,15 @@ from .logging import get_logger
 from .rpc import rpc_handler
 from .client import Client
 from . import history_pb2
-from .history_pb2.HistoryRequest import RequestType as HistoryRequestType
 from .types import Timedelta, Timestamp, TimeValue, TimeAggregate
 
 logger = get_logger(__name__)
+
+
+class HistoryRequestType:
+    AGGREGATE_TIMELINE = history_pb2.HistoryRequest.AGGREGATE_TIMELINE
+    AGGREGATE = history_pb2.HistoryRequest.AGGREGATE
+    LAST_VALUE = history_pb2.HistoryRequest.LAST_VALUE
 
 
 class HistoryResponseType(Enum):
@@ -120,6 +125,7 @@ class HistoryResponse:
         :raises `ValueError` if convert is False and the underlying response does not contain aggregates
         :returns a Generator of `TimeAggregate`
         """
+        time_ns = 0
         if self._mode == HistoryResponseType.AGGREGATES:
             for time_delta, proto_aggregate in zip(self._proto.time_delta, self._proto.aggregate):
                 time_ns = time_ns + time_delta
@@ -202,10 +208,15 @@ class HistoryClient(Client):
         correlation_id = 'mq-history-py-{}-{}'.format(self.token, uuid.uuid4().hex)
 
         request = history_pb2.HistoryRequest()
-        request.start_time = start_time.posix_ns
-        request.end_time = end_time.posix_ns
-        request.interval_max = interval_max.ns
-        request.type = request_type
+        if start_time is not None:
+            request.start_time = start_time.posix_ns
+        if end_time is not None:
+            request.end_time = end_time.posix_ns
+        if interval_max is not None:
+            request.interval_max = interval_max.ns
+        if request_type is not None:
+            request.type = request_type
+
         msg = aio_pika.Message(body=request.SerializeToString(),
                                correlation_id=correlation_id,
                                reply_to=self.history_response_queue.name)
@@ -218,6 +229,12 @@ class HistoryClient(Client):
         finally:
             del self._request_futures[correlation_id]
         return result
+
+    async def history_last_value(self, metric: str, timeout=60):
+        result = await self.history_data_request(metric, start_time=None, end_time=None, interval_max=None,
+                                                 request_type=HistoryRequestType.LAST_VALUE, timeout=timeout)
+        assert len(result) == 1
+        return next(result.values())
 
     async def history_metric_list(self, selector=None, historic=True, timeout=None):
         arguments = {'format': 'array'}

@@ -30,7 +30,7 @@
 import asyncio
 import logging
 import pprint
-import time
+from datetime import timedelta
 
 import click
 import click_completion
@@ -61,17 +61,25 @@ async def aget_history(server, token, metric, list_metrics, list_metadata):
     if list_metadata:
         metadata = await client.history_metric_metadata(metric)
         pp = pprint.PrettyPrinter(indent=4)
-        click.echo(click.style('metrics matching {}:\n{}'.format(metric, pprint.pformat(metadata)),
+        click.echo(click.style('metrics matching {}:\n{}'.format(metric, pp.pformat(metadata)),
                                fg='bright_blue'))
         return
 
-    start = int((time.time() - 100) * 1e9)
-    end = int((time.time()) * 1e9)
-    history = await client.history_data_request(metric=metric,
-                                                start_time_ns=start, end_time_ns=end,
-                                                interval_ns=int(1e9))
-    click.echo(click.style('metric data for last 100 seconds at 1/s: {}'.format(history),
+    now = metricq.Timestamp.now()
+    last_timevalue = await client.history_last_value(metric)
+    click.echo(click.style('Last entry: {} ({} ago) value: {}'.format(
+        last_timevalue.timestamp, now - last_timevalue.timestamp, last_timevalue.value),
                            fg='bright_blue'))
+
+    delta = metricq.Timedelta.from_timedelta(timedelta(seconds=600))
+    start_time = now - delta
+    interval_max = metricq.Timedelta.from_timedelta(timedelta(seconds=10))
+    result = await client.history_data_request(metric, start_time=start_time, end_time=now, interval_max=interval_max)
+
+    click.echo('Values in the last {}'.format(delta))
+    for aggregate in result.aggregates():
+        click.echo(aggregate)
+
     await client.stop()
 
 

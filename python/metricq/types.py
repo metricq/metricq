@@ -30,10 +30,12 @@
 
 from datetime import datetime, timedelta, timezone
 from typing import NamedTuple
+from functools import total_ordering
 
 from . import history_pb2
 
 
+@total_ordering
 class Timedelta:
     @classmethod
     def from_timedelta(cls, delta):
@@ -52,11 +54,42 @@ class Timedelta:
         return self._value
 
     @property
+    def s(self):
+        return self._value / 1e9
+
+    @property
     def timedelta(self):
         microseconds = self._value // 1000
         return timedelta(microseconds=microseconds)
 
+    def __add__(self, other):
+        if isinstance(other, Timedelta):
+            return Timedelta(self._value + other._value)
+        # Fallback to Timestamp.__add__
+        return other + self
 
+    def __sub__(self, other):
+        if isinstance(other, Timedelta):
+            return Timedelta(self._value - other._value)
+        raise TypeError('invalid type to subtract from Timedelta')
+
+    def __truediv__(self, factor):
+        return Timedelta(self._value / factor)
+
+    def __mul__(self, factor):
+        return Timedelta(self._value * factor)
+
+    def __str__(self):
+        return '{}s'.format(self.s)
+
+    def __eq__(self, other: 'Timedelta'):
+        return self._value == other._value
+
+    def __lt__(self, other: 'Timedelta'):
+        return self._value < other._value
+
+
+@total_ordering
 class Timestamp:
     _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
@@ -78,7 +111,7 @@ class Timestamp:
     @classmethod
     def from_iso8601(cls, iso_string: str):
         return cls.from_datetime(datetime.strptime(iso_string, "%Y-%m-%dT%H:%M:%S.%fZ").replace(
-            tzinfo=datetime.timezone.utc))
+            tzinfo=timezone.utc))
 
     @classmethod
     def now(cls):
@@ -117,6 +150,22 @@ class Timestamp:
         # but our MetricQ timestamps are true UNIX timestamps without leap seconds
         microseconds = self._value // 1000
         return Timestamp._EPOCH + timedelta(microseconds=microseconds)
+
+    def __add__(self, delta: Timedelta):
+        return Timestamp(self._value + delta.ns)
+
+    def __sub__(self, other):
+        if isinstance(other, Timedelta):
+            return Timestamp(self._value - other.ns)
+        if isinstance(other, Timestamp):
+            return Timedelta(self._value - other._value)
+        raise TypeError('Invalid type to subtract from Timestamp: {}'.format(type(other)))
+
+    def __lt__(self, other: 'Timestamp'):
+        return self._value < other._value
+
+    def __eq__(self, other: 'Timestamp'):
+        return self._value == other._value
 
     def __str__(self):
         # Note we convert to local timezone with astimezone for printing
