@@ -73,7 +73,7 @@ async def aget_history(server, token, metric, list_metrics, list_metadata):
 
     delta = metricq.Timedelta.from_timedelta(timedelta(seconds=600))
     start_time = now - delta
-    interval_max = metricq.Timedelta.from_timedelta(timedelta(seconds=1))
+    interval_max = metricq.Timedelta.from_timedelta(timedelta(seconds=10))
     result = await client.history_data_request(metric, start_time=start_time, end_time=now, interval_max=interval_max)
 
     click.echo('Values in the last {}'.format(delta))
