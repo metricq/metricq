@@ -30,6 +30,7 @@
 
 from datetime import datetime, timedelta, timezone
 from typing import NamedTuple
+from functools import total_ordering
 
 from . import history_pb2
 
@@ -75,6 +76,7 @@ class Timedelta:
         return '{}s'.format(self.s)
 
 
+@total_ordering
 class Timestamp:
     _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
@@ -146,8 +148,11 @@ class Timestamp:
             return Timedelta(self._value - other._value)
         raise TypeError('Invalid type to subtract from Timestamp: {}'.format(type(other)))
 
-    def __cmp__(self, other):
-        return self._value - other._value
+    def __lt__(self, other: 'Timestamp'):
+        return self._value < other._value
+
+    def __eq__(self, other: 'Timestamp'):
+        return self._value == other._value
 
     def __str__(self):
         # Note we convert to local timezone with astimezone for printing
