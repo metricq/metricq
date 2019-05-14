@@ -63,7 +63,7 @@ std::string HistoryClient::history_request(const std::string& id, TimePoint begi
     HistoryRequest request;
     request.set_start_time(begin.time_since_epoch().count());
     request.set_end_time(end.time_since_epoch().count());
-    request.set_interval_ns(interval.count());
+    request.set_interval_max(interval.count());
 
     auto correlation_id = std::string("metricq-history-") + token() + "-" + uuid();
 
