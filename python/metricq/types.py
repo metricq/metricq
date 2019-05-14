@@ -56,6 +56,17 @@ class Timedelta:
         microseconds = self._value // 1000
         return timedelta(microseconds=microseconds)
 
+    def __add__(self, other):
+        if isinstance(other, Timedelta):
+            return Timedelta(self._value + other._value)
+        # Fallback to Timestamp.__add__
+        return other + self
+
+    def __sub__(self, other):
+        if isinstance(other, Timedelta):
+            return Timedelta(self._value - other._value)
+        raise TypeError('invalid type to subtract from Timedelta')
+
 
 class Timestamp:
     _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
@@ -117,6 +128,15 @@ class Timestamp:
         # but our MetricQ timestamps are true UNIX timestamps without leap seconds
         microseconds = self._value // 1000
         return Timestamp._EPOCH + timedelta(microseconds=microseconds)
+
+    def __add__(self, delta: Timedelta):
+        return Timestamp(self._value + delta.ns)
+
+    def __sub__(self, delta: Timedelta):
+        return Timestamp(self._value - delta.ns)
+
+    def __cmp__(self, other):
+        return self._value - other._value
 
     def __str__(self):
         # Note we convert to local timezone with astimezone for printing
