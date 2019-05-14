@@ -89,7 +89,7 @@ class Timestamp:
     @classmethod
     def from_iso8601(cls, iso_string: str):
         return cls.from_datetime(datetime.strptime(iso_string, "%Y-%m-%dT%H:%M:%S.%fZ").replace(
-            tzinfo=datetime.timezone.utc))
+            tzinfo=timezone.utc))
 
     @classmethod
     def now(cls):
@@ -164,7 +164,7 @@ class TimeAggregate(NamedTuple):
 
     @staticmethod
     def from_proto(timestamp: Timestamp,
-                   proto: history_pb2.Aggregate):
+                   proto: history_pb2.HistoryResponse.Aggregate):
         return TimeAggregate(timestamp=timestamp,
                              minimum=proto.minimum, maximum=proto.maximum,
                              sum=proto.sum, count=proto.count,
