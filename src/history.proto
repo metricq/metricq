@@ -45,7 +45,7 @@ message HistoryRequest {
         LAST_VALUE = 2;
     }
 
-    RequestType type = 4; // default should be considered AGGREGATE_TIMELINE
+    RequestType type = 4; // default: AGGREGATE_TIMELINE
 }
 
 message HistoryResponse {
@@ -63,6 +63,6 @@ message HistoryResponse {
     repeated double value_min = 3 [deprecated=true];
     repeated double value_max = 4 [deprecated=true];
     repeated double value_avg = 5 [deprecated=true];
-    repeated Aggregate aggregates = 6;
-    repeated double values = 7;
+    repeated Aggregate aggregate = 6;
+    repeated double value = 7;
 }
