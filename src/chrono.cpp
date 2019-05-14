@@ -34,6 +34,7 @@
 #include <sstream>
 #include <string>
 
+#include <cassert>
 #include <ctime>
 
 namespace metricq
@@ -78,5 +79,49 @@ std::string Clock::format(metricq::Clock::time_point tp, std::string fmt)
 std::string Clock::format_iso(metricq::Clock::time_point tp)
 {
     return format(tp, "%Y-%m-%dT%H:%M:%S.%f%z");
+}
+
+Duration duration_parse(const std::string& str)
+{
+    // Note that regex_match only considers full matches, so no ^$ needed
+    static std::regex number_and_unit("([+-]?\\d*[.,]?\\d+)\\s*([^\\d]*)");
+    std::smatch match;
+    if (!std::regex_match(str, match, number_and_unit))
+    {
+        throw std::invalid_argument("invalid duration string \"" + str +
+                                    "\", not of form \"number unit\"");
+    }
+    assert(match.size() == 3);
+    double value = std::stod(match[1]);
+    std::string unit = match[2];
+    // TODO C++20 use .starts_with
+    // Note: we use duration<double> to avoid distinguishing between double and integral types
+    // If you specify like 53 days as "4579200000000000 nanosecond" you will get rounding errors
+    // Let the duration cast figure out the nifty details, hopefully correctly
+    if (unit == "" or unit == "s" or unit == "seconds")
+    {
+        return duration_cast(std::chrono::duration<double>(value));
+    }
+    if (unit == "ms" or unit == "milliseconds")
+    {
+        return duration_cast(std::chrono::duration<double, std::milli>(value));
+    }
+    if (unit == "us" or unit == "microseconds" or unit == "μs")
+    {
+        return duration_cast(std::chrono::duration<double, std::micro>(value));
+    }
+    if (unit == "ns" or unit == "nanoseconds")
+    {
+        return duration_cast(std::chrono::duration<double, std::nano>(value));
+    }
+    if (unit == "min" or unit == "minutes")
+    {
+        return duration_cast(std::chrono::duration<double, std::ratio<60>>(value));
+    }
+    if (unit == "h" or unit == "hours")
+    {
+        return duration_cast(std::chrono::duration<double, std::ratio<3600>>(value));
+    }
+    throw std::invalid_argument("invalid duration unit \"" + unit + "\"");
 }
 } // namespace metricq

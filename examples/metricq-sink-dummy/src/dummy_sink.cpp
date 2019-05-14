@@ -130,11 +130,12 @@ void DummySink::on_data(const AMQP::Message& message, uint64_t delivery_tag, boo
     Sink::on_data(message, delivery_tag, redelivered);
 }
 
-void DummySink::on_data(const std::string&, metricq::TimeValue)
+void DummySink::on_data(const std::string& name, metricq::TimeValue tv)
 {
     if (message_count == 0)
     {
         first_metric_time = metricq::Clock::now();
     }
+    Log::debug() << "Received data for metric " << name << ": " << tv;
     message_count++;
 }

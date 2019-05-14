@@ -35,6 +35,8 @@ import signal
 import traceback
 import uuid
 import ssl
+import textwrap
+import time
 
 import aio_pika
 
@@ -44,6 +46,7 @@ from .logging import get_logger
 from .rpc import RPCDispatcher
 
 logger = get_logger(__name__)
+timer = time.monotonic
 
 
 class RPCError(RuntimeError):
@@ -51,8 +54,10 @@ class RPCError(RuntimeError):
 
 
 class Agent(RPCDispatcher):
-    def __init__(self, token, management_url, event_loop=None):
-        self.token = token
+    LOG_MAX_WIDTH = 200
+
+    def __init__(self, token, management_url, event_loop=None, add_uuid=False):
+        self.token = f'{token}.{uuid.uuid4().hex}' if add_uuid else token
 
         self._event_loop_owned = False
         self._event_loop = event_loop
@@ -149,12 +154,14 @@ class Agent(RPCDispatcher):
         if 'function' not in kwargs:
             raise KeyError('all RPCs must contain a "function" argument')
 
-        logger.info('sending RPC {}, exchange: {}, rk: {}, arguments: {}',
-                    kwargs['function'], exchange.name, routing_key, kwargs)
+        time_begin = timer()
 
-        body = json.dumps(kwargs).encode()
         correlation_id = self._make_correlation_id()
-        msg = aio_pika.Message(body=body, correlation_id=correlation_id,
+        body = json.dumps(kwargs)
+        logger.info('sending RPC {}, ex: {}, rk: {}, ci: {}, args: {}',
+                    kwargs['function'], exchange.name, routing_key, correlation_id,
+                    textwrap.shorten(body, width=self.LOG_MAX_WIDTH))
+        msg = aio_pika.Message(body=body.encode(), correlation_id=correlation_id,
                                app_id=self.token,
                                reply_to=self.management_rpc_queue.name,
                                content_type='application/json')
@@ -170,6 +177,7 @@ class Agent(RPCDispatcher):
 
             def response_callback(**response_kwargs):
                 assert not request_future.done()
+                logger.info('rpc completed in {} s', timer() - time_begin)
                 if 'error' in response_kwargs:
                     request_future.set_exception(RPCError(response_kwargs['error']))
                 else:
@@ -206,7 +214,7 @@ class Agent(RPCDispatcher):
         """
         logger.info('starting RPC consume')
         queues = [self.management_rpc_queue] + extra_queues
-        await asyncio.wait([
+        await asyncio.gather(*[
             queue.consume(self._on_management_message)
             for queue in queues
         ], loop=self.event_loop)
@@ -266,12 +274,14 @@ class Agent(RPCDispatcher):
         :param message: This is either an RPC or an RPC response
         """
         with message.process(requeue=True):
+            time_begin = timer()
             body = message.body.decode()
             from_token = message.app_id
             correlation_id = message.correlation_id
 
-            logger.info('received message from {}, correlation id: {}, reply_to: {}\n{}',
-                        from_token, correlation_id, message.reply_to, body)
+            logger.info('received message from {}, correlation id: {}, reply_to: {}, length: {}\n{}',
+                        from_token, correlation_id, message.reply_to, len(body),
+                        textwrap.shorten(body, width=self.LOG_MAX_WIDTH))
             arguments = json.loads(body)
             arguments['from_token'] = from_token
 
@@ -285,10 +295,13 @@ class Agent(RPCDispatcher):
                     response = {'error': str(e)}
                 if response is None:
                     response = dict()
-                logger.info('rpc response to {}, correlation id: {}\n{}',
-                            from_token, correlation_id, response)
+                duration = timer() - time_begin
+                body = json.dumps(response)
+                logger.info('rpc response to {}, correlation id: {}, length: {}, time: {} s\n{}',
+                            from_token, correlation_id, len(body), duration,
+                            textwrap.shorten(body, width=self.LOG_MAX_WIDTH))
                 await self._management_channel.default_exchange.publish(
-                    aio_pika.Message(body=json.dumps(response).encode(),
+                    aio_pika.Message(body=body.encode(),
                                      correlation_id=correlation_id,
                                      content_type='application/json',
                                      app_id=self.token),

@@ -41,6 +41,7 @@ logger = get_logger(__name__)
 
 HistoryResponse = namedtuple('HistoryResponse', ['time_delta', 'value_min', 'value_max', 'value_avg', 'request_duration'])
 
+
 class HistoryClient(Client):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -103,17 +104,23 @@ class HistoryClient(Client):
             del self._request_futures[correlation_id]
         return result
 
-    async def history_metric_list(self, selector=None):
+    async def history_metric_list(self, selector=None, historic=True, timeout=None):
         arguments = {'format': 'array'}
         if selector:
             arguments['selector'] = selector
+        if timeout is not None:
+            arguments['timeout'] = timeout
+        if historic is not None:
+            arguments['historic'] = historic
         result = await self.rpc('history.get_metrics', **arguments)
         return result["metrics"]
 
-    async def history_metric_metadata(self, selector=None):
+    async def history_metric_metadata(self, selector=None, historic=True):
         arguments = {'format': 'object'}
         if selector:
             arguments['selector'] = selector
+        if historic is not None:
+            arguments['historic'] = historic
         result = await self.rpc('history.get_metrics', **arguments)
         return result["metrics"]
 
@@ -124,30 +131,30 @@ class HistoryClient(Client):
     async def _history_consume(self, extra_queues=[]):
         logger.info('starting history consume')
         queues = [self.history_response_queue] + extra_queues
-        await asyncio.wait([
+        await asyncio.gather(*[
             queue.consume(self._on_history_response)
             for queue in queues
         ], loop=self.event_loop)
 
     async def _on_history_response(self, message: aio_pika.Message):
-            with message.process(requeue=True):
-                body = message.body
-                from_token = message.app_id
-                correlation_id = message.correlation_id
-                request_duration = message.headers.get("x-request-duration", "-1")
+        with message.process(requeue=True):
+            body = message.body
+            from_token = message.app_id
+            correlation_id = message.correlation_id
+            request_duration = message.headers.get("x-request-duration", "-1")
 
-                logger.info('received message from {}, correlation id: {}, reply_to: {}',
-                            from_token, correlation_id, message.reply_to)
-                history_response_pb = HistoryResponse_pb()
-                history_response_pb.ParseFromString(body)
+            logger.info('received message from {}, correlation id: {}, reply_to: {}',
+                        from_token, correlation_id, message.reply_to)
+            history_response_pb = HistoryResponse_pb()
+            history_response_pb.ParseFromString(body)
 
-                history_response = HistoryResponse(history_response_pb.time_delta, history_response_pb.value_min, history_response_pb.value_max, history_response_pb.value_avg, request_duration)
+            history_response = HistoryResponse(history_response_pb.time_delta, history_response_pb.value_min, history_response_pb.value_max, history_response_pb.value_avg, request_duration)
 
-                logger.debug('message is an history response')
-                try:
-                    future = self._request_futures[correlation_id]
-                    future.set_result(history_response)
-                except (KeyError, asyncio.InvalidStateError):
-                    logger.error('received history response with unknown correlation id {} '
-                                 'from {}', correlation_id, from_token)
-                    return
+            logger.debug('message is an history response')
+            try:
+                future = self._request_futures[correlation_id]
+                future.set_result(history_response)
+            except (KeyError, asyncio.InvalidStateError):
+                logger.error('received history response with unknown correlation id {} '
+                             'from {}', correlation_id, from_token)
+                return

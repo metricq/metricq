@@ -27,6 +27,9 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+import math
+
 from .datachunk_pb2 import DataChunk
 from .types import Timestamp
 
@@ -49,6 +52,9 @@ class SourceMetric:
         assert len(self.chunk.time_delta) == len(self.chunk.value)
         if 0 < self.chunk_size == len(self.chunk.time_delta):
             await self.flush()
+
+    async def error(self, time: Timestamp):
+        await self.send(time, math.nan)
 
     async def flush(self):
         await self.source._send(self.id, self.chunk)

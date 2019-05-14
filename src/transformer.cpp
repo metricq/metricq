@@ -84,11 +84,11 @@ void Transformer::config(const json& config)
             {
                 throw std::runtime_error("inconsistent sink dataQueue setting after subscription");
             }
+
+            on_transformer_ready();
+            declare_metrics();
         },
         { { "metrics", input_metrics } });
-
-    declare_metrics();
-    on_transformer_ready();
 }
 
 void Transformer::declare_metrics()

@@ -38,8 +38,8 @@ logger = get_logger(__name__)
 
 
 class Sink(DataClient):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, add_uuid=True, **kwargs):
+        super().__init__(*args, add_uuid=add_uuid, **kwargs)
         self._data_queue = None
 
     async def sink_config(self, dataQueue, **kwargs):
@@ -52,7 +52,7 @@ class Sink(DataClient):
         """
         :param metrics:
         :param expires: (optional) queue expiration time in seconds
-        :return:
+        :return: rpc response
         """
         if self._data_queue is not None:
             kwargs['dataQueue'] = self._data_queue.name
@@ -60,6 +60,7 @@ class Sink(DataClient):
         if self._data_queue is None:
             await self.sink_config(**response)
         assert self._data_queue.name == response['dataQueue']
+        return response
 
     async def unsubscribe(self, metrics):
         assert self._data_queue
@@ -88,3 +89,17 @@ class Sink(DataClient):
     @abstractmethod
     async def on_data(self, metric, timestamp, value):
         pass
+
+
+class DurableSink(Sink):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, add_uuid=False, **kwargs)
+
+    async def connect(self):
+        await super().connect()
+
+        response = await self.rpc('sink.register')
+        assert(response is not None)
+        logger.info('register response: {}', response)
+
+        await self.rpc_dispatch('config', **response['config'])
