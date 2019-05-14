@@ -42,7 +42,7 @@ from .types import Timedelta, Timestamp, TimeValue, TimeAggregate
 logger = get_logger(__name__)
 
 
-class HistoryRequestType(Enum):
+class HistoryRequestType:
     AGGREGATE_TIMELINE = history_pb2.HistoryRequest.AGGREGATE_TIMELINE,
     AGGREGATE = history_pb2.HistoryRequest.AGGREGATE
     LAST_VALUE = history_pb2.HistoryRequest.LAST_VALUE
@@ -207,10 +207,15 @@ class HistoryClient(Client):
         correlation_id = 'mq-history-py-{}-{}'.format(self.token, uuid.uuid4().hex)
 
         request = history_pb2.HistoryRequest()
-        request.start_time = start_time.posix_ns
-        request.end_time = end_time.posix_ns
-        request.interval_max = interval_max.ns
-        request.type = request_type
+        if start_time is not None:
+            request.start_time = start_time.posix_ns
+        if end_time is not None:
+            request.end_time = end_time.posix_ns
+        if interval_max is not None:
+            request.interval_max = interval_max.ns
+        if request_type is not None:
+            request.type = request_type
+
         msg = aio_pika.Message(body=request.SerializeToString(),
                                correlation_id=correlation_id,
                                reply_to=self.history_response_queue.name)
