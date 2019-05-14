@@ -29,17 +29,126 @@
 import asyncio
 from collections import namedtuple
 import uuid
+from enum import Enum
 
 import aio_pika
 
 from .logging import get_logger
 from .rpc import rpc_handler
 from .client import Client
-from .history_pb2 import HistoryRequest as HistoryRequest_pb, HistoryResponse as HistoryResponse_pb
+from . import history_pb2
+from .history_pb2.HistoryRequest import RequestType as HistoryRequestType
+from .types import Timedelta, Timestamp, TimeValue, TimeAggregate
 
 logger = get_logger(__name__)
 
-HistoryResponse = namedtuple('HistoryResponse', ['time_delta', 'value_min', 'value_max', 'value_avg', 'request_duration'])
+
+class HistoryResponseType(Enum):
+    AGGREGATES = 1
+    VALUES = 2
+    LEGACY = 3
+
+
+class HistoryResponse:
+    """ Currently read-only """
+    def __init__(self, proto: history_pb2.HistoryResponse, request_duration=None):
+        self.request_duration = request_duration
+        count = len(proto.time_delta)
+        if len(proto.aggregate) == count:
+            self._mode = HistoryResponseType.AGGREGATES
+            assert len(proto.value) == 0, 'Inconsistent HistoryResponse message'
+
+        elif len(proto.value) == count:
+            self._mode = HistoryResponseType.VALUES
+            assert len(proto.aggregate) == 0, 'Inconsistent HistoryResponse message'
+
+        elif len(proto.value_avg) == count:
+            self._mode = HistoryResponseType.LEGACY
+            assert len(proto.value_min) == count
+            assert len(proto.value_max) == count
+            assert len(proto.aggregate) == 0
+            assert len(proto.value) == 0
+
+        else:
+            raise ValueError('Inconsistent HistoryResponse message')
+
+        self._proto = proto
+
+    def __len__(self):
+        return len(self._proto.time_delta)
+
+    @property
+    def mode(self):
+        return self._mode
+
+    def values(self, convert=False):
+        """
+        :parameter `convert` other responses to values transparently
+        :raises `ValueError` if `convert` is False and the underlying response does not contain aggregates
+        :returns a Generator of `TimeValue`
+        """
+        time_ns = 0
+        if self._mode == HistoryResponseType.VALUES:
+            for time_delta, value in zip(self._proto.time_delta, self._proto.value):
+                time_ns = time_ns + time_delta
+                yield TimeValue(Timestamp(time_ns), value)
+            return
+
+        if not convert:
+            raise ValueError(
+                'Attempting to access values of HistoryResponse.values in wrong mode: {}'.format(self._mode))
+
+        if self._mode == HistoryResponseType.AGGREGATES:
+            for time_delta, proto_aggregate in zip(self._proto.time_delta, self._proto.aggregate):
+                time_ns = time_ns + time_delta
+                timestamp = Timestamp(time_ns)
+                aggregate = TimeAggregate.from_proto(timestamp, proto_aggregate)
+                yield TimeValue(timestamp, aggregate.mean)
+            return
+
+        if self._mode == HistoryResponseType.LEGACY:
+            for time_delta, average in zip(self._proto.time_delta, self._proto.value_avg):
+                time_ns = time_ns + time_delta
+                yield TimeValue(Timestamp(time_ns), average)
+            return
+
+        raise ValueError('Invalid HistoryResponse mode')
+
+    def aggregates(self, convert=False):
+        """
+        :parameter `convert` other responses to aggregates transparently
+        :raises `ValueError` if convert is False and the underlying response does not contain aggregates
+        :returns a Generator of `TimeAggregate`
+        """
+        if self._mode == HistoryResponseType.AGGREGATES:
+            for time_delta, proto_aggregate in zip(self._proto.time_delta, self._proto.aggregate):
+                time_ns = time_ns + time_delta
+                timestamp = Timestamp(time_ns)
+                yield TimeAggregate.from_proto(timestamp, proto_aggregate)
+            return
+
+        if not convert:
+            raise ValueError(
+                'Attempting to access values of HistoryResponse.aggregates in wrong mode: {}'.format(self._mode))
+
+        if self._mode == HistoryResponseType.VALUES:
+            for time_delta, value in zip(self._proto.time_delta, self._proto.value):
+                time_ns = time_ns + time_delta
+                yield TimeAggregate.from_value(Timestamp(time_ns), value)
+            return
+
+        if self._mode == HistoryResponseType.LEGACY:
+            for time_delta, minimum, maximum, average in zip(self._proto.time_delta, self._proto.value_min,
+                                                             self._proto.value_max, self._proto.value_avg):
+                time_ns = time_ns + time_delta
+                # That of course only makes sense if you just use mean or mean_sum
+                yield TimeAggregate(timestamp=Timestamp(time_ns),
+                                    minimum=minimum, maximum=maximum,
+                                    sum=average, count=1,
+                                    integral=0, active_time=0)
+            return
+
+        raise ValueError('Invalid HistoryResponse mode')
 
 
 class HistoryClient(Client):
@@ -50,19 +159,22 @@ class HistoryClient(Client):
         self.history_connection = None
         self.history_channel = None
         self.history_exchange = None
+        self.history_response_queue = None
 
         self._request_futures = dict()
 
     async def connect(self):
         await super().connect()
         response = await self.rpc('history.register')
-        logger.info('register response: {}', response)
+        logger.debug('register response: {}', response)
 
         self.data_server_address = self.add_credentials(response['dataServerAddress'])
         self.history_connection = await self.make_connection(self.data_server_address)
         self.history_channel = await self.history_connection.channel()
-        self.history_exchange = await self.history_channel.declare_exchange(name=response['historyExchange'], passive=True)
-        self.history_response_queue = await self.history_channel.declare_queue(name=response['historyQueue'], passive=True)
+        self.history_exchange = await self.history_channel.declare_exchange(
+            name=response['historyExchange'], passive=True)
+        self.history_response_queue = await self.history_channel.declare_queue(
+            name=response['historyQueue'], passive=True)
 
         if 'config' in response:
             await self.rpc_dispatch('config', **response['config'])
@@ -80,17 +192,20 @@ class HistoryClient(Client):
         self.history_exchange = None
         await super().stop()
 
-    # TODO refactor input times
-    # caller should not need to know anything about the protobuf representation
-    async def history_data_request(self, metric: str, start_time_ns, end_time_ns, interval_ns, timeout=60):
-        logger.info('running history request for {} ({}-{},{})', metric, start_time_ns, end_time_ns, interval_ns)
+    async def history_data_request(self, metric: str,
+                                   start_time: Timestamp, end_time: Timestamp, interval_max: Timedelta,
+                                   request_type: HistoryRequestType = HistoryRequestType.AGGREGATE_TIMELINE,
+                                   timeout=60):
+        logger.info('running history request for {} ({}-{},{})', metric, start_time, end_time, interval_max)
         if not metric:
             raise ValueError('metric must be a non-empty string')
         correlation_id = 'mq-history-py-{}-{}'.format(self.token, uuid.uuid4().hex)
-        request = HistoryRequest_pb()
-        request.start_time = start_time_ns
-        request.end_time = end_time_ns
-        request.interval_ns = interval_ns
+
+        request = history_pb2.HistoryRequest()
+        request.start_time = start_time.posix_ns
+        request.end_time = end_time.posix_ns
+        request.interval_max = interval_max.ns
+        request.type = request_type
         msg = aio_pika.Message(body=request.SerializeToString(),
                                correlation_id=correlation_id,
                                reply_to=self.history_response_queue.name)
@@ -145,10 +260,10 @@ class HistoryClient(Client):
 
             logger.info('received message from {}, correlation id: {}, reply_to: {}',
                         from_token, correlation_id, message.reply_to)
-            history_response_pb = HistoryResponse_pb()
+            history_response_pb = history_pb2.HistoryResponse()
             history_response_pb.ParseFromString(body)
 
-            history_response = HistoryResponse(history_response_pb.time_delta, history_response_pb.value_min, history_response_pb.value_max, history_response_pb.value_avg, request_duration)
+            history_response = HistoryResponse(history_response_pb, request_duration)
 
             logger.debug('message is an history response')
             try:

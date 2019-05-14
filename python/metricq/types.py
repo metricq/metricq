@@ -29,6 +29,9 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from datetime import datetime, timedelta, timezone
+from typing import NamedTuple
+
+from . import history_pb2
 
 
 class Timedelta:
@@ -71,6 +74,11 @@ class Timestamp:
         seconds = (delta.days * 24 * 3600) + delta.seconds
         microseconds = seconds * 1000000 + delta.microseconds
         return Timestamp(microseconds * 1000)
+
+    @classmethod
+    def from_iso8601(cls, iso_string: str):
+        return cls.from_datetime(datetime.strptime(iso_string, "%Y-%m-%dT%H:%M:%S.%fZ").replace(
+            tzinfo=datetime.timezone.utc))
 
     @classmethod
     def now(cls):
@@ -116,3 +124,50 @@ class Timestamp:
 
     def __repr__(self):
         return str(self.posix_ns)
+
+
+class TimeValue(NamedTuple):
+    timestamp: Timestamp
+    value: float
+
+
+class TimeAggregate(NamedTuple):
+    timestamp: Timestamp
+    minimum: float
+    maximum: float
+    sum: float
+    count: int
+    # TODO maybe convert to 1s based integral (rather than 1ns)
+    integral: float
+    # TODO maybe convert to Timedelta
+    active_time: int
+
+    @staticmethod
+    def from_proto(timestamp: Timestamp,
+                   proto: history_pb2.HistoryResponse.Aggregate):
+        return TimeAggregate(timestamp=timestamp,
+                             minimum=proto.minimum, maximum=proto.maximum,
+                             sum=proto.sum, count=proto.count,
+                             integral=proto.integral, active_time=proto.active_time)
+
+    @staticmethod
+    def from_value(timestamp: Timestamp, value: float):
+        return TimeAggregate(timestamp=timestamp,
+                             minimum=value, maximum=value,
+                             sum=value, count=1,
+                             integral=0, active_time=0)
+
+    @property
+    def mean(self):
+        if self.active_time > 0:
+            return self.mean_integral
+        else:
+            return self.mean_sum
+
+    @property
+    def mean_integral(self):
+        return self.integral / self.active_time
+
+    @property
+    def mean_sum(self):
+        return self.sum / self.count
