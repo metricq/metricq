@@ -164,7 +164,7 @@ class TimeAggregate(NamedTuple):
 
     @staticmethod
     def from_proto(timestamp: Timestamp,
-                   proto: history_pb2.HistoryResponse.Aggregate):
+                   proto: history_pb2.Aggregate):
         return TimeAggregate(timestamp=timestamp,
                              minimum=proto.minimum, maximum=proto.maximum,
                              sum=proto.sum, count=proto.count,
