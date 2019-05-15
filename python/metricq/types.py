@@ -31,17 +31,40 @@
 from datetime import datetime, timedelta, timezone
 from typing import NamedTuple
 from functools import total_ordering
+import re
 
 from . import history_pb2
 
 
 @total_ordering
 class Timedelta:
-    @classmethod
-    def from_timedelta(cls, delta):
+    @staticmethod
+    def from_timedelta(delta):
         seconds = (delta.days * 24) + delta.seconds
         microseconds = seconds * 1000000 + delta.microseconds
         return Timedelta(microseconds * 1000)
+
+    @staticmethod
+    def from_string(duration_str: str):
+        m = re.fullmatch(r'([+-]?\d*[.,]?\d+)\s*([^\d]*)', duration_str)
+        if not m:
+            raise ValueError('invalid duration string {}, not of form "number unit"',
+                             duration_str)
+        value = float(m.group(1))
+        unit = m.group(2)
+        if unit in ('', 's', 'second', 'seconds'):
+            return Timedelta(int(value * 1e9))
+        if unit in ('ms', 'millisecond', 'milliseconds'):
+            return Timedelta(int(value * 1e6))
+        if unit in ('us', 'microsecond', 'microseconds', 'μs'):
+            return Timedelta(int(value * 1e3))
+        if unit in ('ns', 'nanosecond', 'nanoseconds'):
+            return Timedelta(int(value))
+        if unit in ('min', 'minute', 'minutes'):
+            return Timedelta(int(value * 1e9 * 60))
+        if unit in ('h', 'hour', 'hours'):
+            return Timedelta(int(value * 1e9 * 3600))
+        raise ValueError('invalid duration unit {}'.format(unit))
 
     def __init__(self, value: int):
         """
