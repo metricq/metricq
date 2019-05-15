@@ -35,6 +35,7 @@ from functools import total_ordering
 from . import history_pb2
 
 
+@total_ordering
 class Timedelta:
     @classmethod
     def from_timedelta(cls, delta):
@@ -72,8 +73,20 @@ class Timedelta:
             return Timedelta(self._value - other._value)
         raise TypeError('invalid type to subtract from Timedelta')
 
+    def __truediv__(self, factor):
+        return Timedelta(self._value / factor)
+
+    def __mul__(self, factor):
+        return Timedelta(self._value * factor)
+
     def __str__(self):
         return '{}s'.format(self.s)
+
+    def __eq__(self, other: 'Timedelta'):
+        return self._value == other._value
+
+    def __lt__(self, other: 'Timedelta'):
+        return self._value < other._value
 
 
 @total_ordering
