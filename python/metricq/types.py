@@ -74,7 +74,7 @@ class Timedelta:
         raise TypeError('invalid type to subtract from Timedelta')
 
     def __truediv__(self, factor):
-        return Timedelta(self._value / factor)
+        return Timedelta(self._value // factor)
 
     def __mul__(self, factor):
         return Timedelta(self._value * factor)
