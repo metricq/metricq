@@ -29,8 +29,13 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from datetime import datetime, timedelta, timezone
+from typing import NamedTuple
+from functools import total_ordering
+
+from . import history_pb2
 
 
+@total_ordering
 class Timedelta:
     @classmethod
     def from_timedelta(cls, delta):
@@ -49,11 +54,42 @@ class Timedelta:
         return self._value
 
     @property
+    def s(self):
+        return self._value / 1e9
+
+    @property
     def timedelta(self):
         microseconds = self._value // 1000
         return timedelta(microseconds=microseconds)
 
+    def __add__(self, other):
+        if isinstance(other, Timedelta):
+            return Timedelta(self._value + other._value)
+        # Fallback to Timestamp.__add__
+        return other + self
 
+    def __sub__(self, other):
+        if isinstance(other, Timedelta):
+            return Timedelta(self._value - other._value)
+        raise TypeError('invalid type to subtract from Timedelta')
+
+    def __truediv__(self, factor):
+        return Timedelta(self._value / factor)
+
+    def __mul__(self, factor):
+        return Timedelta(self._value * factor)
+
+    def __str__(self):
+        return '{}s'.format(self.s)
+
+    def __eq__(self, other: 'Timedelta'):
+        return self._value == other._value
+
+    def __lt__(self, other: 'Timedelta'):
+        return self._value < other._value
+
+
+@total_ordering
 class Timestamp:
     _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
@@ -71,6 +107,11 @@ class Timestamp:
         seconds = (delta.days * 24 * 3600) + delta.seconds
         microseconds = seconds * 1000000 + delta.microseconds
         return Timestamp(microseconds * 1000)
+
+    @classmethod
+    def from_iso8601(cls, iso_string: str):
+        return cls.from_datetime(datetime.strptime(iso_string, "%Y-%m-%dT%H:%M:%S.%fZ").replace(
+            tzinfo=timezone.utc))
 
     @classmethod
     def now(cls):
@@ -110,9 +151,72 @@ class Timestamp:
         microseconds = self._value // 1000
         return Timestamp._EPOCH + timedelta(microseconds=microseconds)
 
+    def __add__(self, delta: Timedelta):
+        return Timestamp(self._value + delta.ns)
+
+    def __sub__(self, other):
+        if isinstance(other, Timedelta):
+            return Timestamp(self._value - other.ns)
+        if isinstance(other, Timestamp):
+            return Timedelta(self._value - other._value)
+        raise TypeError('Invalid type to subtract from Timestamp: {}'.format(type(other)))
+
+    def __lt__(self, other: 'Timestamp'):
+        return self._value < other._value
+
+    def __eq__(self, other: 'Timestamp'):
+        return self._value == other._value
+
     def __str__(self):
         # Note we convert to local timezone with astimezone for printing
         return "[{}] {}".format(self.posix_ns, str(self.datetime.astimezone()))
 
     def __repr__(self):
         return str(self.posix_ns)
+
+
+class TimeValue(NamedTuple):
+    timestamp: Timestamp
+    value: float
+
+
+class TimeAggregate(NamedTuple):
+    timestamp: Timestamp
+    minimum: float
+    maximum: float
+    sum: float
+    count: int
+    # TODO maybe convert to 1s based integral (rather than 1ns)
+    integral: float
+    # TODO maybe convert to Timedelta
+    active_time: int
+
+    @staticmethod
+    def from_proto(timestamp: Timestamp,
+                   proto: history_pb2.HistoryResponse.Aggregate):
+        return TimeAggregate(timestamp=timestamp,
+                             minimum=proto.minimum, maximum=proto.maximum,
+                             sum=proto.sum, count=proto.count,
+                             integral=proto.integral, active_time=proto.active_time)
+
+    @staticmethod
+    def from_value(timestamp: Timestamp, value: float):
+        return TimeAggregate(timestamp=timestamp,
+                             minimum=value, maximum=value,
+                             sum=value, count=1,
+                             integral=0, active_time=0)
+
+    @property
+    def mean(self):
+        if self.active_time > 0:
+            return self.mean_integral
+        else:
+            return self.mean_sum
+
+    @property
+    def mean_integral(self):
+        return self.integral / self.active_time
+
+    @property
+    def mean_sum(self):
+        return self.sum / self.count
