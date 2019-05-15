@@ -18,7 +18,8 @@ target_link_libraries(metricq-logger-nitro
     PUBLIC
         Nitro::log
         Nitro::env
-        Nitro::jiffy
+        date_interface
+        tz
 )
 
 install(TARGETS metricq-logger-nitro

@@ -1,5 +1,8 @@
 add_subdirectory(json)
 
+set(ENABLE_DATE_TESTING OFF CACHE INTERNAL "" FORCE)
+add_subdirectory(date)
+
 include(GNUInstallDirs)
 
 # BEGIN fmt
