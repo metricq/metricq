@@ -1,6 +1,9 @@
 add_subdirectory(json)
 
+# Don't test external projects.
 set(ENABLE_DATE_TESTING OFF CACHE INTERNAL "" FORCE)
+# Otherwise curl is required.
+set(USE_SYSTEM_TZ_DB ON CACHE INTERNAL "" FORCE)
 add_subdirectory(date)
 
 include(GNUInstallDirs)

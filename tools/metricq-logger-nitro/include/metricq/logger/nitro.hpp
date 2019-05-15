@@ -36,6 +36,8 @@
 #include <nitro/log/sink/stdout.hpp>
 #include <nitro/log/sink/syslog.hpp>
 
+// Remove this once this is fixed in date: https://github.com/HowardHinnant/date/issues/338
+#define HAS_UNCAUGHT_EXCEPTIONS 1
 #include <date/date.h>
 #include <date/tz.h>
 
