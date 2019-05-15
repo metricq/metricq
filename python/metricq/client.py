@@ -29,6 +29,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from datetime import datetime
+from typing import Union, Sequence, Optional
 
 from .agent import Agent
 from .logging import get_logger
@@ -74,3 +75,26 @@ class Client(Agent):
             'uptime': Timedelta(t - self.starting_time).ns,
             'time': Timestamp.from_datetime(t).posix_ns,
         }
+
+    async def get_metrics(self,
+                          selector: Union[str, Sequence[str], None] = None,
+                          metadata: bool = True,
+                          historic: Optional[bool] = None,
+                          timeout: Optional[float] = None,
+) -> Union[Sequence[str], Sequence[dict]]:
+        """
+        :param selector: regex for partial matching the metric name or sequence of possible metric names
+        :param historic: filter by historic flag
+        :param metadata: if true, metadata is included in response
+        :param timeout: timeout for the RPC in seconds
+        :return: either a {name: metadata} dict (metadata=True) or a list of metric names (metadata=False)
+        """
+        arguments = {'format': 'object' if metadata else 'array'}
+        if selector is not None:
+            arguments['selector'] = selector
+        if timeout is not None:
+            arguments['timeout'] = timeout
+        if historic is not None:
+            arguments['historic'] = historic
+        result = await self.rpc('get_metrics', **arguments)
+        return result["metrics"]
