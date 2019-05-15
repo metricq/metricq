@@ -5,6 +5,7 @@ set(ENABLE_DATE_TESTING OFF CACHE INTERNAL "" FORCE)
 # Otherwise curl is required.
 set(USE_SYSTEM_TZ_DB ON CACHE INTERNAL "" FORCE)
 add_subdirectory(date)
+target_compile_definitions(tz PRIVATE HAS_UNCAUGHT_EXCEPTIONS=1)
 
 include(GNUInstallDirs)
 
