@@ -61,6 +61,8 @@ class DataClient(Client):
             self.data_connection = await self.make_connection(self.data_server_address)
             # publisher confirms seem to be buggy, disable for now
             self.data_channel = await self.data_connection.channel(publisher_confirms=False)
+            # TODO configurable prefetch count
+            await self.data_channel.set_qos(prefetch_count=400)
 
     async def stop(self):
         logger.info('closing data channel and connection.')
