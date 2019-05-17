@@ -112,7 +112,7 @@ class Agent(RPCDispatcher):
         return connection
 
     async def connect(self):
-        logger.info("establishing management connection to {}", self._management_url)
+        logger.info("establishing management connection to {}", URL(self._management_url).with_password('***'))
 
         self._management_connection = await self.make_connection(self._management_url)
         self._management_channel = await self._management_connection.channel()
