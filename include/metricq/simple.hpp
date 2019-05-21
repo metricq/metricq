@@ -52,7 +52,16 @@ std::vector<TimeValue> drain(const std::string& url, const std::string& token,
 std::vector<std::string> get_metrics(const std::string& url, const std::string& token,
                                      const std::string& selector = std::string(""));
 
+// for *all* metrics - use with care
+std::unordered_map<std::string, Metadata> get_metadata(const std::string& url,
+                                                       const std::string& token);
+
+// selector is a regex
 std::unordered_map<std::string, Metadata>
-get_metadata(const std::string& url, const std::string& token,
-             const std::string& selector = std::string(""));
+get_metadata(const std::string& url, const std::string& token, const std::string& selector);
+
+// matches exactly the metrics in the selector vector
+std::unordered_map<std::string, Metadata> get_metadata(const std::string& url,
+                                                       const std::string& token,
+                                                       const std::vector<std::string>& selector);
 } // namespace metricq
