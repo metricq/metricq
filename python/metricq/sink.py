@@ -44,8 +44,10 @@ class Sink(DataClient):
 
     async def sink_config(self, dataQueue, **kwargs):
         await self.data_config(**kwargs)
-        self._data_queue = await self.data_channel.declare_queue(name=dataQueue, passive=True)
-        logger.info('starting sink consume')
+        self._data_queue = await self.data_channel.declare_queue(
+            name=dataQueue, passive=True
+        )
+        logger.info("starting sink consume")
         await self._data_queue.consume(self._on_data_message)
 
     async def subscribe(self, metrics, **kwargs):
@@ -55,16 +57,18 @@ class Sink(DataClient):
         :return: rpc response
         """
         if self._data_queue is not None:
-            kwargs['dataQueue'] = self._data_queue.name
-        response = await self.rpc('sink.subscribe', metrics=metrics, **kwargs)
+            kwargs["dataQueue"] = self._data_queue.name
+        response = await self.rpc("sink.subscribe", metrics=metrics, **kwargs)
         if self._data_queue is None:
             await self.sink_config(**response)
-        assert self._data_queue.name == response['dataQueue']
+        assert self._data_queue.name == response["dataQueue"]
         return response
 
     async def unsubscribe(self, metrics):
         assert self._data_queue
-        await self.rpc('sink.unsubscribe', dataQueue=self._data_queue.name, metrics=metrics)
+        await self.rpc(
+            "sink.unsubscribe", dataQueue=self._data_queue.name, metrics=metrics
+        )
 
     async def _on_data_message(self, message: aio_pika.IncomingMessage):
         with message.process(requeue=True):
@@ -72,7 +76,7 @@ class Sink(DataClient):
             from_token = message.app_id
             metric = message.routing_key
 
-            logger.debug('received message from {}', from_token)
+            logger.debug("received message from {}", from_token)
             data_response = DataChunk()
             data_response.ParseFromString(body)
 
@@ -98,8 +102,8 @@ class DurableSink(Sink):
     async def connect(self):
         await super().connect()
 
-        response = await self.rpc('sink.register')
-        assert(response is not None)
-        logger.info('register response: {}', response)
+        response = await self.rpc("sink.register")
+        assert response is not None
+        logger.info("register response: {}", response)
 
-        await self.rpc_dispatch('config', **response['config'])
+        await self.rpc_dispatch("config", **response["config"])

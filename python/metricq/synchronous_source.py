@@ -54,7 +54,7 @@ class _SynchronousSource(Source):
         super().on_exception(loop, context)
 
         if not self._ready_event.is_set():
-            self.exception = context['exception']
+            self.exception = context["exception"]
             self._ready_event.set()
 
     async def task(self):
@@ -63,9 +63,11 @@ class _SynchronousSource(Source):
 
     def wait_for_ready(self, timeout):
         if not self._ready_event.wait(timeout):
-            raise TimeoutError('SynchronousSource not ready in time')
+            raise TimeoutError("SynchronousSource not ready in time")
         if self.exception is not None:
-            logger.error('[_SynchronousSource] failed to wait for ready: {}', self.exception)
+            logger.error(
+                "[_SynchronousSource] failed to wait for ready: {}", self.exception
+            )
             raise self.exception
 
     def run(self):
@@ -85,46 +87,44 @@ class SynchronousSource:
             SynchronousSource._tid += 1
 
         # MetricQ Synchronous Source Event Loop Thread
-        self._thread.name = 'MQSSELT#{}'.format(thread_id)
+        self._thread.name = "MQSSELT#{}".format(thread_id)
         self._thread.start()
-        logger.debug('[SynchronousSource] spawning new thread {}', self._thread.name)
+        logger.debug("[SynchronousSource] spawning new thread {}", self._thread.name)
         try:
             self._source.wait_for_ready(60)
         except Exception as e:
             self.stop()
             raise e
 
-        logger.info('[SynchronousSource] ready')
+        logger.info("[SynchronousSource] ready")
 
     def send(self, metric, time, value, block=True, timeout=60):
         f = asyncio.run_coroutine_threadsafe(
-            self._source.send(metric, time, value),
-            self._source.event_loop
+            self._source.send(metric, time, value), self._source.event_loop
         )
         if block:
             exception = f.exception(timeout)
             if exception:
-                logger.error('[SynchronousSource] failed to send data {}', exception)
+                logger.error("[SynchronousSource] failed to send data {}", exception)
                 # Keep going for reconnect. If you want to panic, do the following instead
                 # self.stop()
                 # raise exception
 
     def declare_metrics(self, metrics, block=True, timeout=60):
         f = asyncio.run_coroutine_threadsafe(
-            self._source.declare_metrics(metrics),
-            self._source.event_loop
+            self._source.declare_metrics(metrics), self._source.event_loop
         )
         if block:
             exception = f.exception(timeout)
             if exception:
-                logger.error('[SynchronousSource] failed to send data {}', exception)
+                logger.error("[SynchronousSource] failed to send data {}", exception)
 
     def stop(self):
-        logger.info('[SynchronousSource] stopping')
+        logger.info("[SynchronousSource] stopping")
         asyncio.run_coroutine_threadsafe(self._source.stop(), self._source.event_loop)
         # We cannot wait for the future because stop never finishes completion as
         # it kills the event loop before returning
         # It's ok though because join will block until the event loop is done
-        logger.debug('[SynchronousSource] underlying source stopped')
+        logger.debug("[SynchronousSource] underlying source stopped")
         self._thread.join()
-        logger.info('[SynchronousSource] thread joined')
+        logger.info("[SynchronousSource] thread joined")

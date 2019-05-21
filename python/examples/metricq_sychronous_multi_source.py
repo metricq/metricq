@@ -36,9 +36,11 @@ from metricq import SynchronousSource, get_logger
 logger = get_logger()
 
 
-if __name__ == '__main__':
-    formatter = logging.Formatter(fmt='%(asctime)s %(threadName)-16s %(levelname)-8s %(message)s',
-                                  datefmt='%Y-%m-%d %H:%M:%S')
+if __name__ == "__main__":
+    formatter = logging.Formatter(
+        fmt="%(asctime)s %(threadName)-16s %(levelname)-8s %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
 
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)
@@ -48,14 +50,14 @@ if __name__ == '__main__':
     logger.addHandler(ch)
 
     sources = [
-        SynchronousSource('source-py-test-sync-{}'.format(i), 'amqp://127.0.0.1')
+        SynchronousSource("source-py-test-sync-{}".format(i), "amqp://127.0.0.1")
         for i in range(5)
     ]
 
     try:
         while True:
             for i in range(5):
-                sources[i % len(sources)].send('foo', time.time(), i)
+                sources[i % len(sources)].send("foo", time.time(), i)
                 time.sleep(0.1)
     except KeyboardInterrupt:
         print("Exiting")

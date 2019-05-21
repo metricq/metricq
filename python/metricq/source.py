@@ -49,16 +49,17 @@ class Source(DataClient):
 
     async def connect(self):
         await super().connect()
-        response = await self.rpc('source.register')
-        assert(response is not None)
-        logger.info('register response: {}', response)
+        response = await self.rpc("source.register")
+        assert response is not None
+        logger.info("register response: {}", response)
         await self.data_config(**response)
 
         self.data_exchange = await self.data_channel.declare_exchange(
-            name=response['dataExchange'], passive=True)
+            name=response["dataExchange"], passive=True
+        )
 
-        if 'config' in response:
-            await self.rpc_dispatch('config', **response['config'])
+        if "config" in response:
+            await self.rpc_dispatch("config", **response["config"])
 
         self.event_loop.create_task(self.task())
 
@@ -78,15 +79,15 @@ class Source(DataClient):
         return self.metrics[id]
 
     async def declare_metrics(self, metrics):
-        logger.debug('declare_metrics({})', metrics)
-        await self.rpc('source.declare_metrics', metrics=metrics)
+        logger.debug("declare_metrics({})", metrics)
+        await self.rpc("source.declare_metrics", metrics=metrics)
 
     async def send(self, metric, time: Timestamp, value):
         """
         Logical send.
         Dispatches to the SourceMetric for chunking
         """
-        logger.debug('send({},{},{})', metric, time, value)
+        logger.debug("send({},{},{})", metric, time, value)
         metric_object = self[metric]
         assert metric_object is not None
         await metric_object.send(time, value)
@@ -99,6 +100,6 @@ class Source(DataClient):
         msg = aio_pika.Message(data_chunk.SerializeToString())
         await self.data_exchange.publish(msg, routing_key=metric, mandatory=False)
 
-    @rpc_handler('config')
+    @rpc_handler("config")
     async def _source_config(self, **kwargs):
-        logger.info('received config {}', kwargs)
+        logger.info("received config {}", kwargs)

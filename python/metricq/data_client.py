@@ -47,25 +47,34 @@ class DataClient(Client):
         """
         You should not call this in child classes because it is a registered RPC handler
         """
-        logger.debug('data_config(dataServerAddress={})', dataServerAddress)
+        logger.debug("data_config(dataServerAddress={})", dataServerAddress)
         if not dataServerAddress:
-            raise ValueError("invalid dataServerAddress provided: {}".format(dataServerAddress))
+            raise ValueError(
+                "invalid dataServerAddress provided: {}".format(dataServerAddress)
+            )
         dataServerAddress = self.add_credentials(dataServerAddress)
         if self.data_connection:
             if dataServerAddress != self.data_server_address:
-                logger.error('attempting to change dataServerAddress on the fly, not supported.')
-            logger.info('ignoring new config')
+                logger.error(
+                    "attempting to change dataServerAddress on the fly, not supported."
+                )
+            logger.info("ignoring new config")
         else:
-            logger.info('setting up data connection to {}', URL(dataServerAddress).with_password('***'))
+            logger.info(
+                "setting up data connection to {}",
+                URL(dataServerAddress).with_password("***"),
+            )
             self.data_server_address = dataServerAddress
             self.data_connection = await self.make_connection(self.data_server_address)
             # publisher confirms seem to be buggy, disable for now
-            self.data_channel = await self.data_connection.channel(publisher_confirms=False)
+            self.data_channel = await self.data_connection.channel(
+                publisher_confirms=False
+            )
             # TODO configurable prefetch count
             await self.data_channel.set_qos(prefetch_count=400)
 
     async def stop(self):
-        logger.info('closing data channel and connection.')
+        logger.info("closing data channel and connection.")
         if self.data_channel:
             await self.data_channel.close()
             self.data_channel = None

@@ -47,41 +47,50 @@ class Client(Agent):
 
     @property
     def name(self):
-        return 'client-' + self.token
+        return "client-" + self.token
 
     async def connect(self):
         await super().connect()
 
         self._management_broadcast_exchange = await self._management_channel.declare_exchange(
-            name=self._management_broadcast_exchange_name, passive=True)
+            name=self._management_broadcast_exchange_name, passive=True
+        )
         self._management_exchange = await self._management_channel.declare_exchange(
-            name=self._management_exchange_name, passive=True)
+            name=self._management_exchange_name, passive=True
+        )
 
         await self.management_rpc_queue.bind(
-            exchange=self._management_broadcast_exchange, routing_key="#")
+            exchange=self._management_broadcast_exchange, routing_key="#"
+        )
 
         await self.rpc_consume()
 
     async def rpc(self, function, **kwargs):
-        return await super().rpc(function=function, exchange=self._management_exchange, routing_key=function,
-                                 cleanup_on_response=True, **kwargs)
+        return await super().rpc(
+            function=function,
+            exchange=self._management_exchange,
+            routing_key=function,
+            cleanup_on_response=True,
+            **kwargs
+        )
 
-    @rpc_handler('discover')
+    @rpc_handler("discover")
     async def _on_discover(self, **kwargs):
-        logger.info('responding to discover')
+        logger.info("responding to discover")
         t = datetime.now()
         return {
-            'alive': True,
-            'uptime': Timedelta(t - self.starting_time).ns,
-            'time': Timestamp.from_datetime(t).posix_ns,
+            "alive": True,
+            "uptime": Timedelta(t - self.starting_time).ns,
+            "time": Timestamp.from_datetime(t).posix_ns,
         }
 
-    async def get_metrics(self,
-                          selector: Union[str, Sequence[str], None] = None,
-                          metadata: bool = True,
-                          historic: Optional[bool] = None,
-                          timeout: Optional[float] = None,
-) -> Union[Sequence[str], Sequence[dict]]:
+    async def get_metrics(
+        self,
+        selector: Union[str, Sequence[str], None] = None,
+        metadata: bool = True,
+        historic: Optional[bool] = None,
+        timeout: Optional[float] = None,
+    ) -> Union[Sequence[str], Sequence[dict]]:
         """
         :param selector: regex for partial matching the metric name or sequence of possible metric names
         :param historic: filter by historic flag
@@ -89,12 +98,12 @@ class Client(Agent):
         :param timeout: timeout for the RPC in seconds
         :return: either a {name: metadata} dict (metadata=True) or a list of metric names (metadata=False)
         """
-        arguments = {'format': 'object' if metadata else 'array'}
+        arguments = {"format": "object" if metadata else "array"}
         if selector is not None:
-            arguments['selector'] = selector
+            arguments["selector"] = selector
         if timeout is not None:
-            arguments['timeout'] = timeout
+            arguments["timeout"] = timeout
         if historic is not None:
-            arguments['historic'] = historic
-        result = await self.rpc('get_metrics', **arguments)
+            arguments["historic"] = historic
+        result = await self.rpc("get_metrics", **arguments)
         return result["metrics"]

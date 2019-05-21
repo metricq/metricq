@@ -63,22 +63,22 @@ class RPCOther(RPCBase):
 class TestRPC(unittest.TestCase):
     def test_basic(self):
         x = RPCSimple(1)
-        self.assertEqual(x.dispatch('test'), 1)
-        self.assertEqual(x.dispatch('toast', 'x'), 'x')
+        self.assertEqual(x.dispatch("test"), 1)
+        self.assertEqual(x.dispatch("toast", "x"), "x")
 
     def test_separate(self):
         xx = RPCSimple(2)
-        self.assertEqual(xx.dispatch('test'), 2)
-        self.assertEqual(xx.dispatch('toast', 'x'), 'xx')
+        self.assertEqual(xx.dispatch("test"), 2)
+        self.assertEqual(xx.dispatch("toast", "x"), "xx")
 
     def test_sub(self):
         s = RPCSub(3)
-        self.assertEqual(s.dispatch('test'), 3)
-        self.assertEqual(s.dispatch('toast', 'x'), 'xxx')
-        self.assertEqual(s.dispatch('sub'), 6)
+        self.assertEqual(s.dispatch("test"), 3)
+        self.assertEqual(s.dispatch("toast", "x"), "xxx")
+        self.assertEqual(s.dispatch("sub"), 6)
 
     def test_other(self):
         o = RPCOther()
-        self.assertEqual(o.dispatch('foo'), 'foo')
+        self.assertEqual(o.dispatch("foo"), "foo")
         with self.assertRaises(KeyError):
-            o.dispatch('test')
+            o.dispatch("test")

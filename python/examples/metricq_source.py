@@ -40,10 +40,12 @@ from metricq.logging import get_logger
 logger = get_logger()
 
 click_log.basic_config(logger)
-logger.setLevel('INFO')
+logger.setLevel("INFO")
 # Use this if we ever use threads
 # logger.handlers[0].formatter = logging.Formatter(fmt='%(asctime)s %(threadName)-16s %(levelname)-8s %(message)s')
-logger.handlers[0].formatter = logging.Formatter(fmt='%(asctime)s [%(levelname)-8s] [%(name)-20s] %(message)s')
+logger.handlers[0].formatter = logging.Formatter(
+    fmt="%(asctime)s [%(levelname)-8s] [%(name)-20s] %(message)s"
+)
 
 click_completion.init()
 
@@ -54,30 +56,30 @@ class DummySource(metricq.IntervalSource):
         super().__init__(*args, **kwargs)
         self.period = None
 
-    @metricq.rpc_handler('config')
+    @metricq.rpc_handler("config")
     async def _on_config(self, **config):
-        logger.info('DummySource config: {}', config)
-        rate = config['rate']
+        logger.info("DummySource config: {}", config)
+        rate = config["rate"]
         self.period = 1 / rate
         meta = {
-            'rate': rate,
-            'description': 'A simple dummy metric from python',
-            'unit': 'm',
+            "rate": rate,
+            "description": "A simple dummy metric from python",
+            "unit": "m",
         }
-        await self.declare_metrics({'test.py.dummy': meta})
+        await self.declare_metrics({"test.py.dummy": meta})
 
     async def update(self):
-        await self['test.py.dummy'].send(metricq.Timestamp.now(), random.random())
+        await self["test.py.dummy"].send(metricq.Timestamp.now(), random.random())
 
 
 @click.command()
-@click.option('--server', default='amqp://localhost/')
-@click.option('--token', default='source-py-dummy')
+@click.option("--server", default="amqp://localhost/")
+@click.option("--token", default="source-py-dummy")
 @click_log.simple_verbosity_option(logger)
 def source(server, token):
     src = DummySource(token=token, management_url=server)
     src.run()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     source()

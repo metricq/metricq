@@ -42,24 +42,21 @@ from metricq.types import Timestamp
 logger = get_logger()
 
 click_log.basic_config(logger)
-logger.setLevel('INFO')
+logger.setLevel("INFO")
 # Use this if we ever use threads
 # logger.handlers[0].formatter = logging.Formatter(fmt='%(asctime)s %(threadName)-16s %(levelname)-8s %(message)s')
-logger.handlers[0].formatter = logging.Formatter(fmt='%(asctime)s [%(levelname)-8s] [%(name)-20s] %(message)s')
+logger.handlers[0].formatter = logging.Formatter(
+    fmt="%(asctime)s [%(levelname)-8s] [%(name)-20s] %(message)s"
+)
 
 click_completion.init()
 
 
 def run_source(ssource):
-    ssource.declare_metrics({
-        'dummy.time': {
-            'unit': 's',
-            'location': 'localhost',
-        }
-    })
+    ssource.declare_metrics({"dummy.time": {"unit": "s", "location": "localhost"}})
     try:
         while True:
-            ssource.send('dummy.time', Timestamp.now(), time.time())
+            ssource.send("dummy.time", Timestamp.now(), time.time())
             time.sleep(0.1)
     except KeyboardInterrupt:
         logger.info("stopping SynchronousSource")
@@ -67,13 +64,13 @@ def run_source(ssource):
 
 
 @click.command()
-@click.option('--server', default='amqp://localhost/')
-@click.option('--token', default='source-py-dummy')
+@click.option("--server", default="amqp://localhost/")
+@click.option("--token", default="source-py-dummy")
 @click_log.simple_verbosity_option(logger)
 def synchronous_source(server, token):
     ssource = SynchronousSource(token=token, management_url=server)
     run_source(ssource)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     synchronous_source()

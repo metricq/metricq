@@ -46,25 +46,26 @@ class Timedelta:
 
     @staticmethod
     def from_string(duration_str: str):
-        m = re.fullmatch(r'([+-]?\d*[.,]?\d+)\s*([^\d]*)', duration_str)
+        m = re.fullmatch(r"([+-]?\d*[.,]?\d+)\s*([^\d]*)", duration_str)
         if not m:
-            raise ValueError('invalid duration string {}, not of form "number unit"',
-                             duration_str)
+            raise ValueError(
+                'invalid duration string {}, not of form "number unit"', duration_str
+            )
         value = float(m.group(1))
         unit = m.group(2)
-        if unit in ('', 's', 'second', 'seconds'):
+        if unit in ("", "s", "second", "seconds"):
             return Timedelta(int(value * 1e9))
-        if unit in ('ms', 'millisecond', 'milliseconds'):
+        if unit in ("ms", "millisecond", "milliseconds"):
             return Timedelta(int(value * 1e6))
-        if unit in ('us', 'microsecond', 'microseconds', 'μs'):
+        if unit in ("us", "microsecond", "microseconds", "μs"):
             return Timedelta(int(value * 1e3))
-        if unit in ('ns', 'nanosecond', 'nanoseconds'):
+        if unit in ("ns", "nanosecond", "nanoseconds"):
             return Timedelta(int(value))
-        if unit in ('min', 'minute', 'minutes'):
+        if unit in ("min", "minute", "minutes"):
             return Timedelta(int(value * 1e9 * 60))
-        if unit in ('h', 'hour', 'hours'):
+        if unit in ("h", "hour", "hours"):
             return Timedelta(int(value * 1e9 * 3600))
-        raise ValueError('invalid duration unit {}'.format(unit))
+        raise ValueError("invalid duration unit {}".format(unit))
 
     def __init__(self, value: int):
         """
@@ -94,7 +95,7 @@ class Timedelta:
     def __sub__(self, other):
         if isinstance(other, Timedelta):
             return Timedelta(self._value - other._value)
-        raise TypeError('invalid type to subtract from Timedelta')
+        raise TypeError("invalid type to subtract from Timedelta")
 
     def __truediv__(self, factor):
         return Timedelta(self._value // factor)
@@ -103,12 +104,12 @@ class Timedelta:
         return Timedelta(self._value * factor)
 
     def __str__(self):
-        return '{}s'.format(self.s)
+        return "{}s".format(self.s)
 
-    def __eq__(self, other: 'Timedelta'):
+    def __eq__(self, other: "Timedelta"):
         return self._value == other._value
 
-    def __lt__(self, other: 'Timedelta'):
+    def __lt__(self, other: "Timedelta"):
         return self._value < other._value
 
 
@@ -133,8 +134,11 @@ class Timestamp:
 
     @classmethod
     def from_iso8601(cls, iso_string: str):
-        return cls.from_datetime(datetime.strptime(iso_string, "%Y-%m-%dT%H:%M:%S.%fZ").replace(
-            tzinfo=timezone.utc))
+        return cls.from_datetime(
+            datetime.strptime(iso_string, "%Y-%m-%dT%H:%M:%S.%fZ").replace(
+                tzinfo=timezone.utc
+            )
+        )
 
     @classmethod
     def now(cls):
@@ -182,12 +186,14 @@ class Timestamp:
             return Timestamp(self._value - other.ns)
         if isinstance(other, Timestamp):
             return Timedelta(self._value - other._value)
-        raise TypeError('Invalid type to subtract from Timestamp: {}'.format(type(other)))
+        raise TypeError(
+            "Invalid type to subtract from Timestamp: {}".format(type(other))
+        )
 
-    def __lt__(self, other: 'Timestamp'):
+    def __lt__(self, other: "Timestamp"):
         return self._value < other._value
 
-    def __eq__(self, other: 'Timestamp'):
+    def __eq__(self, other: "Timestamp"):
         return self._value == other._value
 
     def __str__(self):
@@ -215,19 +221,28 @@ class TimeAggregate(NamedTuple):
     active_time: int
 
     @staticmethod
-    def from_proto(timestamp: Timestamp,
-                   proto: history_pb2.HistoryResponse.Aggregate):
-        return TimeAggregate(timestamp=timestamp,
-                             minimum=proto.minimum, maximum=proto.maximum,
-                             sum=proto.sum, count=proto.count,
-                             integral=proto.integral, active_time=proto.active_time)
+    def from_proto(timestamp: Timestamp, proto: history_pb2.HistoryResponse.Aggregate):
+        return TimeAggregate(
+            timestamp=timestamp,
+            minimum=proto.minimum,
+            maximum=proto.maximum,
+            sum=proto.sum,
+            count=proto.count,
+            integral=proto.integral,
+            active_time=proto.active_time,
+        )
 
     @staticmethod
     def from_value(timestamp: Timestamp, value: float):
-        return TimeAggregate(timestamp=timestamp,
-                             minimum=value, maximum=value,
-                             sum=value, count=1,
-                             integral=0, active_time=0)
+        return TimeAggregate(
+            timestamp=timestamp,
+            minimum=value,
+            maximum=value,
+            sum=value,
+            count=1,
+            integral=0,
+            active_time=0,
+        )
 
     @property
     def mean(self):

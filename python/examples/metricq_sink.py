@@ -40,10 +40,12 @@ from metricq.logging import get_logger
 logger = get_logger()
 
 click_log.basic_config(logger)
-logger.setLevel('INFO')
+logger.setLevel("INFO")
 # Use this if we ever use threads
 # logger.handlers[0].formatter = logging.Formatter(fmt='%(asctime)s %(threadName)-16s %(levelname)-8s %(message)s')
-logger.handlers[0].formatter = logging.Formatter(fmt='%(asctime)s [%(levelname)-8s] [%(name)-20s] %(message)s')
+logger.handlers[0].formatter = logging.Formatter(
+    fmt="%(asctime)s [%(levelname)-8s] [%(name)-20s] %(message)s"
+)
 
 click_completion.init()
 
@@ -59,20 +61,20 @@ class DummySink(metricq.Sink):
         await self.subscribe(self._metrics)
 
     async def on_data(self, metric, timestamp, value):
-        click.echo(click.style('{}: {}, {}'.format(metric, timestamp, value),
-                               fg='bright_blue'))
+        click.echo(
+            click.style("{}: {}, {}".format(metric, timestamp, value), fg="bright_blue")
+        )
 
 
 @click.command()
-@click.option('--server', default='amqp://localhost/')
-@click.option('--token', default='sink-py-dummy')
-@click.option('-m', '--metrics', multiple=True, required=True)
+@click.option("--server", default="amqp://localhost/")
+@click.option("--token", default="sink-py-dummy")
+@click.option("-m", "--metrics", multiple=True, required=True)
 @click_log.simple_verbosity_option(logger)
 def source(server, token, metrics):
     src = DummySink(metrics=metrics, token=token, management_url=server)
     src.run()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     source()
-
