@@ -84,4 +84,3 @@ Summary Summary::calculate(std::vector<metricq::TimeValue>&& tv_pairs)
 
     return summary;
 }
-

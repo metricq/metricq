@@ -44,7 +44,7 @@ void Db::setup_history_queue(const AMQP::QueueCallback& callback)
     data_channel_->declareQueue(history_queue_, AMQP::passive).onSuccess(callback);
 }
 
-void Db::on_history(const AMQP::Message &incoming_message)
+void Db::on_history(const AMQP::Message& incoming_message)
 {
     const auto& metric_name = incoming_message.routingkey();
     auto message_string = std::string(incoming_message.body(), incoming_message.bodySize());
