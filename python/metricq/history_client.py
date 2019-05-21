@@ -240,7 +240,7 @@ class HistoryClient(Client):
         """
         DEPRECATED! use get_metrics
         """
-        return self.get_metrics(selector=selector, historic=historic, timeout=timeout)
+        return await self.get_metrics(selector=selector, historic=historic, timeout=timeout)
 
     async def history_metric_metadata(self, selector=None, historic=True):
         arguments = {'format': 'object'}
