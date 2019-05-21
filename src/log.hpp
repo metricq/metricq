@@ -81,5 +81,5 @@ namespace log
     {
         LoggerSingleton::get()->fatal(fmt::format(format, args...));
     }
-}
-}
+} // namespace log
+} // namespace metricq

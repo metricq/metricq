@@ -31,8 +31,8 @@
 #include "log.hpp"
 
 #include <metricq/datachunk.pb.h>
-#include <metricq/source.hpp>
 #include <metricq/json.hpp>
+#include <metricq/source.hpp>
 
 #include <amqpcpp.h>
 
@@ -100,6 +100,11 @@ void Source::declare_metrics()
     {
         payload["metrics"][metric.second.id()] = metric.second.metadata.json();
     }
-    rpc("source.declare_metrics", [this](const auto&) { /* nothing to do */ (void)this; }, payload);
+    rpc(
+        "source.declare_metrics",
+        [this](const auto&) { /* nothing to do */
+                              (void)this;
+        },
+        payload);
 }
 } // namespace metricq
