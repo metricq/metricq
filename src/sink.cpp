@@ -95,7 +95,14 @@ void Sink::sink_config(const json& config)
         const auto& metrics_metadata = config.at("metrics");
         for (auto it = metrics_metadata.begin(); it != metrics_metadata.end(); ++it)
         {
-            metadata_.emplace(it.key(), it.value());
+            if (it.value().is_object())
+            {
+                metadata_.emplace(it.key(), it.value());
+            }
+            else
+            {
+                log::warn("missing metadata for metric {}", it.key());
+            }
         }
     }
 
