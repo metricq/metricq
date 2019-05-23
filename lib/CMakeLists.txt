@@ -7,6 +7,8 @@ set(USE_SYSTEM_TZ_DB ON CACHE INTERNAL "" FORCE)
 add_subdirectory(date)
 # Can be removed once this is fixed: https://github.com/HowardHinnant/date/issues/338
 target_compile_definitions(tz PRIVATE HAS_UNCAUGHT_EXCEPTIONS=1)
+set_target_properties(tz PROPERTIES POSITION_INDEPENDENT_CODE ${METRICQ_POSITION_INDEPENDENT_CODE})
+
 
 include(GNUInstallDirs)
 
