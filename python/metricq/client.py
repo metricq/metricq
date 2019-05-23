@@ -29,12 +29,12 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from datetime import datetime
-from typing import Union, Sequence, Optional
+from typing import Optional, Sequence, Union
 
 from .agent import Agent
 from .logging import get_logger
 from .rpc import rpc_handler
-from .types import Timestamp, Timedelta
+from .types import Timedelta, Timestamp
 
 logger = get_logger(__name__)
 

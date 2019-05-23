@@ -32,10 +32,10 @@ from abc import abstractmethod
 
 import aio_pika
 
-from .logging import get_logger
-from .rpc import rpc_handler
 from .data_client import DataClient
 from .datachunk_pb2 import DataChunk
+from .logging import get_logger
+from .rpc import rpc_handler
 from .source_metric import SourceMetric
 from .types import Timestamp
 

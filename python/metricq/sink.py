@@ -26,12 +26,13 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import aio_pika
 from abc import abstractmethod
 
-from .logging import get_logger
+import aio_pika
+
 from .data_client import DataClient
 from .datachunk_pb2 import DataChunk
+from .logging import get_logger
 from .types import Timestamp
 
 logger = get_logger(__name__)

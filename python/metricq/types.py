@@ -28,10 +28,10 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from datetime import datetime, timedelta, timezone
-from typing import NamedTuple
-from functools import total_ordering
 import re
+from datetime import datetime, timedelta, timezone
+from functools import total_ordering
+from typing import NamedTuple
 
 from . import history_pb2
 

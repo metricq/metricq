@@ -28,10 +28,10 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import asyncio
-from threading import Thread, Lock, Event
+from threading import Event, Lock, Thread
 
-from .source import Source
 from .logging import get_logger
+from .source import Source
 
 logger = get_logger(__name__)
 

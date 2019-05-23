@@ -33,9 +33,9 @@ import logging
 import time
 
 import click
-import click_log
-import click_completion
 
+import click_completion
+import click_log
 from metricq import SynchronousSource, get_logger
 from metricq.types import Timestamp
 

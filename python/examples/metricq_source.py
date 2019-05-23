@@ -31,9 +31,9 @@ import logging
 import random
 
 import click
-import click_log
-import click_completion
 
+import click_completion
+import click_log
 import metricq
 from metricq.logging import get_logger
 

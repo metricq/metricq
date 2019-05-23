@@ -2,11 +2,11 @@
 import os
 import subprocess
 import sys
+from distutils.spawn import find_executable
 
 from setuptools import setup
 from setuptools.command.build_py import build_py
 from setuptools.command.develop import develop
-from distutils.spawn import find_executable
 
 
 def find_protoc():

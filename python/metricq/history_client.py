@@ -307,7 +307,7 @@ class HistoryClient(Client):
         queues = [self.history_response_queue] + extra_queues
         await asyncio.gather(
             *[queue.consume(self._on_history_response) for queue in queues],
-            loop=self.event_loop
+            loop=self.event_loop,
         )
 
     async def _on_history_response(self, message: aio_pika.Message):

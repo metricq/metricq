@@ -32,14 +32,13 @@ import asyncio
 import functools
 import json
 import signal
-import traceback
-import uuid
 import ssl
 import textwrap
 import time
+import traceback
+import uuid
 
 import aio_pika
-
 from yarl import URL
 
 from .logging import get_logger

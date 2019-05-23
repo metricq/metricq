@@ -33,9 +33,9 @@ import pprint
 from datetime import timedelta
 
 import click
+
 import click_completion
 import click_log
-
 import metricq
 
 logger = metricq.get_logger()
