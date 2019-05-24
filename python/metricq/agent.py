@@ -90,8 +90,12 @@ class Agent(RPCDispatcher):
     def event_loop(self):
         # TODO maybe we should instead **TRY** to get the loop of the current context
         if self._event_loop is None:
-            logger.info("GETTING NEW !? EVENT LOOP")
-            self._event_loop = asyncio.get_event_loop()
+            logger.debug("Getting current or new")
+            try:
+                self._event_loop = asyncio.get_event_loop()
+            except RuntimeError:
+                # Until python 3.6, it may raise instead of creating a new one
+                self._event_loop = asyncio.new_event_loop()
         return self._event_loop
 
     @event_loop.setter
