@@ -10,3 +10,6 @@
 [submodule "lib/nitro"]
 	path = lib/nitro
 	url = https://github.com/tud-zih-energy/nitro.git
+[submodule "lib/date"]
+	path = lib/date
+	url = https://github.com/HowardHinnant/date.git

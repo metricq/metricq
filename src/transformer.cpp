@@ -103,7 +103,8 @@ void Transformer::declare_metrics()
     {
         payload["metrics"][metric.second.id()] = metric.second.metadata.json();
     }
-    rpc("transformer.declare_metrics",
+    rpc(
+        "transformer.declare_metrics",
         [this](const auto&) { /* nothing to do */
                               (void)this;
         },

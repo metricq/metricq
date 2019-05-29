@@ -98,27 +98,27 @@ Duration duration_parse(const std::string& str)
     // Note: we use duration<double> to avoid distinguishing between double and integral types
     // If you specify like 53 days as "4579200000000000 nanosecond" you will get rounding errors
     // Let the duration cast figure out the nifty details, hopefully correctly
-    if (unit == "" or unit == "s" or unit == "seconds")
+    if (unit == "" or unit == "s" or unit == "second" or unit == "seconds")
     {
         return duration_cast(std::chrono::duration<double>(value));
     }
-    if (unit == "ms" or unit == "milliseconds")
+    if (unit == "ms" or unit == "millisecond" or unit == "milliseconds")
     {
         return duration_cast(std::chrono::duration<double, std::milli>(value));
     }
-    if (unit == "us" or unit == "microseconds" or unit == "μs")
+    if (unit == "us" or unit == "microsecond" or unit == "microseconds" or unit == "μs")
     {
         return duration_cast(std::chrono::duration<double, std::micro>(value));
     }
-    if (unit == "ns" or unit == "nanoseconds")
+    if (unit == "ns" or unit == "nanosecond" or unit == "nanoseconds")
     {
         return duration_cast(std::chrono::duration<double, std::nano>(value));
     }
-    if (unit == "min" or unit == "minutes")
+    if (unit == "min" or unit == "minute" or unit == "minutes")
     {
         return duration_cast(std::chrono::duration<double, std::ratio<60>>(value));
     }
-    if (unit == "h" or unit == "hours")
+    if (unit == "h" or unit == "hour" or unit == "hours")
     {
         return duration_cast(std::chrono::duration<double, std::ratio<3600>>(value));
     }

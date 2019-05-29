@@ -11,6 +11,9 @@ target_include_directories(metricq-logger-nitro
 )
 target_compile_features(metricq-logger-nitro PRIVATE cxx_std_17)
 target_compile_options(metricq-logger-nitro PRIVATE -Wall -Wextra -pedantic)
+set_target_properties(metricq-logger-nitro PROPERTIES
+    POSITION_INDEPENDENT_CODE ${METRICQ_POSITION_INDEPENDENT_CODE}
+)
 
 target_link_libraries(metricq-logger-nitro
     PRIVATE
@@ -18,7 +21,8 @@ target_link_libraries(metricq-logger-nitro
     PUBLIC
         Nitro::log
         Nitro::env
-        Nitro::jiffy
+        date_interface
+        tz
 )
 
 install(TARGETS metricq-logger-nitro

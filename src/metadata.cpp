@@ -80,6 +80,20 @@ std::string Metadata::unit() const
     return "";
 }
 
+void Metadata::quantity(const std::string& q)
+{
+    (*this)["quantity"] = q;
+}
+
+std::string Metadata::quantity() const
+{
+    if (metadata_.count("quantity"))
+    {
+        return (*this)["quantity"];
+    }
+    return "";
+}
+
 void Metadata::description(const std::string& d)
 {
     (*this)["description"] = d;

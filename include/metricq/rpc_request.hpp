@@ -55,7 +55,8 @@ public:
 protected:
     void on_connected() override
     {
-        rpc(function_,
+        rpc(
+            function_,
             [this](const json& response) {
                 response_ = response;
                 stop();

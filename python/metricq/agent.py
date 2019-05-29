@@ -32,14 +32,13 @@ import asyncio
 import functools
 import json
 import signal
-import traceback
-import uuid
 import ssl
 import textwrap
 import time
+import traceback
+import uuid
 
 import aio_pika
-
 from yarl import URL
 
 from .logging import get_logger
@@ -57,14 +56,14 @@ class Agent(RPCDispatcher):
     LOG_MAX_WIDTH = 200
 
     def __init__(self, token, management_url, event_loop=None, add_uuid=False):
-        self.token = f'{token}.{uuid.uuid4().hex}' if add_uuid else token
+        self.token = f"{token}.{uuid.uuid4().hex}" if add_uuid else token
 
         self._event_loop_owned = False
         self._event_loop = event_loop
 
         self._management_url = management_url
-        self._management_broadcast_exchange_name = 'metricq.broadcast'
-        self._management_exchange_name = 'metricq.management'
+        self._management_broadcast_exchange_name = "metricq.broadcast"
+        self._management_exchange_name = "metricq.management"
 
         self._management_connection = None
         self._management_channel = None
@@ -75,19 +74,28 @@ class Agent(RPCDispatcher):
         self._management_exchange = None
 
         self._rpc_response_handlers = dict()
-        logger.debug('initialized')
+        logger.debug("initialized")
 
     def add_credentials(self, address):
         """ Add the credentials from the management connection to the provided address """
         management_obj = URL(self._management_url)
         address_obj = URL(address)
-        return str(address_obj.with_user(management_obj.user).with_password(management_obj.password))
+        return str(
+            address_obj.with_user(management_obj.user).with_password(
+                management_obj.password
+            )
+        )
 
     @property
     def event_loop(self):
         # TODO maybe we should instead **TRY** to get the loop of the current context
         if self._event_loop is None:
-            self._event_loop = asyncio.new_event_loop()
+            logger.debug("Getting current or new")
+            try:
+                self._event_loop = asyncio.get_event_loop()
+            except RuntimeError:
+                # Until python 3.6, it may raise instead of creating a new one
+                self._event_loop = asyncio.new_event_loop()
         return self._event_loop
 
     @event_loop.setter
@@ -103,8 +111,9 @@ class Agent(RPCDispatcher):
             }
         else:
             ssl_options = None
-        connection = await aio_pika.connect_robust(url, loop=self.event_loop, reconnect_interval=30,
-                                                   ssl_options=ssl_options)
+        connection = await aio_pika.connect_robust(
+            url, loop=self.event_loop, reconnect_interval=30, ssl_options=ssl_options
+        )
         # How stupid that we can't easily add the handlers *before* actually connecting.
         # We could make our own RobustConnection object, but then we loose url parsing convenience
         connection.add_reconnect_callback(self._on_reconnect)
@@ -112,31 +121,45 @@ class Agent(RPCDispatcher):
         return connection
 
     async def connect(self):
-        logger.info("establishing management connection to {}", self._management_url)
+        logger.info(
+            "establishing management connection to {}",
+            URL(self._management_url).with_password("***"),
+        )
 
         self._management_connection = await self.make_connection(self._management_url)
         self._management_channel = await self._management_connection.channel()
         self.management_rpc_queue = await self._management_channel.declare_queue(
-            '{}-rpc'.format(self.token), exclusive=True)
+            "{}-rpc".format(self.token), exclusive=True
+        )
 
-    def run(self, catch_signals=('SIGINT', 'SIGTERM')):
+    def run(self, catch_signals=("SIGINT", "SIGTERM")):
         self._event_loop_owned = True
         self.event_loop.set_exception_handler(self.on_exception)
         for signame in catch_signals:
             try:
-                self.event_loop.add_signal_handler(getattr(signal, signame),
-                                                   functools.partial(self.on_signal, signame))
+                self.event_loop.add_signal_handler(
+                    getattr(signal, signame), functools.partial(self.on_signal, signame)
+                )
             except RuntimeError as error:
-                logger.warning('failed to setup signal handler for {}: {}', signame, error)
+                logger.warning(
+                    "failed to setup signal handler for {}: {}", signame, error
+                )
 
         self.event_loop.create_task(self.connect())
-        logger.debug('running event loop {}', self.event_loop)
+        logger.debug("running event loop {}", self.event_loop)
         self.event_loop.run_forever()
         self.event_loop.close()
-        logger.debug('event loop completed')
+        logger.debug("event loop completed")
 
-    async def rpc(self, exchange: aio_pika.Exchange, routing_key: str,
-                  response_callback=None, timeout=60, cleanup_on_response=True, **kwargs):
+    async def rpc(
+        self,
+        exchange: aio_pika.Exchange,
+        routing_key: str,
+        response_callback=None,
+        timeout=60,
+        cleanup_on_response=True,
+        **kwargs,
+    ):
         """
         :param function: tag of the RPC
         :param exchange:
@@ -151,20 +174,28 @@ class Agent(RPCDispatcher):
         Remember that we use javaScriptSnakeCase
         :return:
         """
-        if 'function' not in kwargs:
+        if "function" not in kwargs:
             raise KeyError('all RPCs must contain a "function" argument')
 
         time_begin = timer()
 
         correlation_id = self._make_correlation_id()
         body = json.dumps(kwargs)
-        logger.info('sending RPC {}, ex: {}, rk: {}, ci: {}, args: {}',
-                    kwargs['function'], exchange.name, routing_key, correlation_id,
-                    textwrap.shorten(body, width=self.LOG_MAX_WIDTH))
-        msg = aio_pika.Message(body=body.encode(), correlation_id=correlation_id,
-                               app_id=self.token,
-                               reply_to=self.management_rpc_queue.name,
-                               content_type='application/json')
+        logger.info(
+            "sending RPC {}, ex: {}, rk: {}, ci: {}, args: {}",
+            kwargs["function"],
+            exchange.name,
+            routing_key,
+            correlation_id,
+            textwrap.shorten(body, width=self.LOG_MAX_WIDTH),
+        )
+        msg = aio_pika.Message(
+            body=body.encode(),
+            correlation_id=correlation_id,
+            app_id=self.token,
+            reply_to=self.management_rpc_queue.name,
+            content_type="application/json",
+        )
 
         if response_callback is None:
             request_future = asyncio.Future(loop=self.event_loop)
@@ -173,27 +204,35 @@ class Agent(RPCDispatcher):
                 # We must cleanup when we use the future otherwise we get errors
                 # trying to set the future result multiple times ... after the future was
                 # already evaluated
-                raise TypeError("no cleanup_on_response requested while no response callback is given")
+                raise TypeError(
+                    "no cleanup_on_response requested while no response callback is given"
+                )
 
             def response_callback(**response_kwargs):
                 assert not request_future.done()
-                logger.info('rpc completed in {} s', timer() - time_begin)
-                if 'error' in response_kwargs:
-                    request_future.set_exception(RPCError(response_kwargs['error']))
+                logger.info("rpc completed in {} s", timer() - time_begin)
+                if "error" in response_kwargs:
+                    request_future.set_exception(RPCError(response_kwargs["error"]))
                 else:
                     request_future.set_result(response_kwargs)
+
         else:
             request_future = None
 
-        self._rpc_response_handlers[correlation_id] = (response_callback, cleanup_on_response)
+        self._rpc_response_handlers[correlation_id] = (
+            response_callback,
+            cleanup_on_response,
+        )
         await exchange.publish(msg, routing_key=routing_key)
 
         if timeout:
+
             def cleanup():
                 try:
                     del self._rpc_response_handlers[correlation_id]
                 except KeyError:
                     pass
+
             if not request_future:
                 self.event_loop.call_later(timeout, cleanup)
 
@@ -201,7 +240,9 @@ class Agent(RPCDispatcher):
             try:
                 return await asyncio.wait_for(request_future, timeout=timeout)
             except TimeoutError as te:
-                logger.error("timeout when waiting for RPC response future {}", correlation_id)
+                logger.error(
+                    "timeout when waiting for RPC response future {}", correlation_id
+                )
                 cleanup()
                 raise te
 
@@ -212,41 +253,41 @@ class Agent(RPCDispatcher):
         to handle RPCs
         :param extra_queues: additional queues on which to receive RPCs
         """
-        logger.info('starting RPC consume')
+        logger.info("starting RPC consume")
         queues = [self.management_rpc_queue] + extra_queues
-        await asyncio.gather(*[
-            queue.consume(self._on_management_message)
-            for queue in queues
-        ], loop=self.event_loop)
+        await asyncio.gather(
+            *[queue.consume(self._on_management_message) for queue in queues],
+            loop=self.event_loop,
+        )
 
     def on_signal(self, signal):
-        logger.info('received signal {}, calling stop()', signal)
+        logger.info("received signal {}, calling stop()", signal)
         self.event_loop.create_task(self.stop())
 
     def on_exception(self, loop, context):
-        logger.error('exception in event loop: {}'.format(context['message']))
+        logger.error("exception in event loop: {}".format(context["message"]))
         try:
-            logger.error('Future: {}', context['future'])
+            logger.error("Future: {}", context["future"])
         except KeyError:
             pass
         try:
-            logger.error('Handle: {}', context['handle'])
+            logger.error("Handle: {}", context["handle"])
         except KeyError:
             pass
         try:
-            ex = context['exception']
+            ex = context["exception"]
             if isinstance(ex, KeyboardInterrupt):
-                logger.info('stopping Agent on KeyboardInterrupt')
+                logger.info("stopping Agent on KeyboardInterrupt")
                 self.stop(ex)
 
-            logger.error('Exception: {} ({})', ex, type(ex).__qualname__)
+            logger.error("Exception: {} ({})", ex, type(ex).__qualname__)
             # TODO figure out how to logger
             traceback.print_tb(ex.__traceback__)
         except KeyError:
             pass
 
     async def stop(self):
-        logger.info('closing management channel and connection.')
+        logger.info("closing management channel and connection.")
         if self._management_channel:
             await self._management_channel.close()
             self._management_channel = None
@@ -258,16 +299,21 @@ class Agent(RPCDispatcher):
 
         if self._event_loop_owned:
             try:
-                logger.debug('remaining tasks when stopping event loop {}', asyncio.all_tasks(self.event_loop))
+                logger.debug(
+                    "remaining tasks when stopping event loop {}",
+                    asyncio.all_tasks(self.event_loop),
+                )
             except AttributeError:
                 # needs python 3.7
                 pass
             self.event_loop.stop()
         else:
-            logger.debug('stop completed, we do not own the event loop, so it is not stopped')
+            logger.debug(
+                "stop completed, we do not own the event loop, so it is not stopped"
+            )
 
     def _make_correlation_id(self):
-        return 'metricq-rpc-py-{}-{}'.format(self.token, uuid.uuid4().hex)
+        return "metricq-rpc-py-{}-{}".format(self.token, uuid.uuid4().hex)
 
     async def _on_management_message(self, message: aio_pika.Message):
         """
@@ -279,40 +325,60 @@ class Agent(RPCDispatcher):
             from_token = message.app_id
             correlation_id = message.correlation_id
 
-            logger.info('received message from {}, correlation id: {}, reply_to: {}, length: {}\n{}',
-                        from_token, correlation_id, message.reply_to, len(body),
-                        textwrap.shorten(body, width=self.LOG_MAX_WIDTH))
+            logger.info(
+                "received message from {}, correlation id: {}, reply_to: {}, length: {}\n{}",
+                from_token,
+                correlation_id,
+                message.reply_to,
+                len(body),
+                textwrap.shorten(body, width=self.LOG_MAX_WIDTH),
+            )
             arguments = json.loads(body)
-            arguments['from_token'] = from_token
+            arguments["from_token"] = from_token
 
-            if 'function' in arguments:
-                logger.debug('message is an RPC')
+            if "function" in arguments:
+                logger.debug("message is an RPC")
                 try:
                     response = await self.rpc_dispatch(**arguments)
                 except Exception as e:
-                    logger.error('error handling RPC {} ({}): {}',
-                                 arguments['function'], type(e), traceback.format_exc())
-                    response = {'error': str(e)}
+                    logger.error(
+                        "error handling RPC {} ({}): {}",
+                        arguments["function"],
+                        type(e),
+                        traceback.format_exc(),
+                    )
+                    response = {"error": str(e)}
                 if response is None:
                     response = dict()
                 duration = timer() - time_begin
                 body = json.dumps(response)
-                logger.info('rpc response to {}, correlation id: {}, length: {}, time: {} s\n{}',
-                            from_token, correlation_id, len(body), duration,
-                            textwrap.shorten(body, width=self.LOG_MAX_WIDTH))
+                logger.info(
+                    "rpc response to {}, correlation id: {}, length: {}, time: {} s\n{}",
+                    from_token,
+                    correlation_id,
+                    len(body),
+                    duration,
+                    textwrap.shorten(body, width=self.LOG_MAX_WIDTH),
+                )
                 await self._management_channel.default_exchange.publish(
-                    aio_pika.Message(body=body.encode(),
-                                     correlation_id=correlation_id,
-                                     content_type='application/json',
-                                     app_id=self.token),
-                    routing_key=message.reply_to)
+                    aio_pika.Message(
+                        body=body.encode(),
+                        correlation_id=correlation_id,
+                        content_type="application/json",
+                        app_id=self.token,
+                    ),
+                    routing_key=message.reply_to,
+                )
             else:
-                logger.debug('message is an RPC response')
+                logger.debug("message is an RPC response")
                 try:
                     handler, cleanup = self._rpc_response_handlers[correlation_id]
                 except KeyError:
-                    logger.error('received RPC response with unknown correlation id {} from {}',
-                                 correlation_id, from_token)
+                    logger.error(
+                        "received RPC response with unknown correlation id {} from {}",
+                        correlation_id,
+                        from_token,
+                    )
                     # We do not throw here, no requeue for this!
                     return
                 if cleanup:
@@ -328,7 +394,7 @@ class Agent(RPCDispatcher):
                     await r
 
     def _on_reconnect(self, connection):
-        logger.info('reconnected to {}', connection)
+        logger.info("reconnected to {}", connection)
 
     def _on_close(self, connection):
-        logger.info('closing connection to {}', connection)
+        logger.info("closing connection to {}", connection)

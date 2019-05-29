@@ -55,6 +55,9 @@ public:
     void unit(const std::string& u);
     std::string unit() const;
 
+    void quantity(const std::string& q);
+    std::string quantity() const;
+
     void description(const std::string& d);
     std::string description() const;
 

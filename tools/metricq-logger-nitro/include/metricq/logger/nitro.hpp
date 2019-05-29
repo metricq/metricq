@@ -27,13 +27,19 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#include <nitro/log/attribute/jiffy.hpp>
+#include <nitro/format/format.hpp>
 #include <nitro/log/attribute/severity.hpp>
+#include <nitro/log/attribute/timestamp.hpp>
 #include <nitro/log/filter/severity_filter.hpp>
 #include <nitro/log/log.hpp>
 #include <nitro/log/sink/stderr.hpp>
 #include <nitro/log/sink/stdout.hpp>
 #include <nitro/log/sink/syslog.hpp>
+
+// Remove this once this is fixed in date: https://github.com/HowardHinnant/date/issues/338
+#define HAS_UNCAUGHT_EXCEPTIONS 1
+#include <date/date.h>
+#include <date/tz.h>
 
 namespace metricq::logger::nitro
 {
@@ -41,7 +47,8 @@ namespace detail
 {
     using record =
         ::nitro::log::record<::nitro::log::tag_attribute, ::nitro::log::message_attribute,
-                             ::nitro::log::severity_attribute, ::nitro::log::jiffy_attribute>;
+                             ::nitro::log::severity_attribute,
+                             ::nitro::log::timestamp_clock_attribute<std::chrono::system_clock>>;
 
     template <typename Record>
     class log_formater
@@ -49,27 +56,27 @@ namespace detail
     public:
         std::string format(Record& r)
         {
-            std::stringstream s;
 #ifdef LOGGER_NITRO_SINK_SYSLOG
-            s << "<" << r.severity() << "> ";
-
             if (!r.tag().empty())
             {
-                s << "[" << r.tag() << "] ";
+                return ::nitro::format("<{}>[{}] {}\n") % r.severity() % r.tag() % r.message();
             }
-
-            s << r.message() << '\n';
+            else
+            {
+                return ::nitro::format("<{}> {}\n") % r.severity() % r.message();
+            }
 #else
-            s << "[" << r.jiffy() << "][";
+            auto ts = date::make_zoned(date::current_zone(), r.timestamp());
             if (!r.tag().empty())
             {
-                s << r.tag() << "][";
+                return ::nitro::format("[{}][{}][{}]: {}\n") % ts % r.tag() % r.severity() %
+                       r.message();
             }
-
-            s << r.severity() << "]: " << r.message() << '\n';
+            else
+            {
+                return ::nitro::format("[{}][{}]: {}\n") % ts % r.severity() % r.message();
+            }
 #endif
-
-            return s.str();
         }
     };
 

@@ -107,6 +107,7 @@ void Db::HistoryCompletion::operator()(const metricq::HistoryResponse& response)
         AMQP::Envelope envelope(reply_message.data(), reply_message.size());
         envelope.setCorrelationID(correlation_id);
         envelope.setContentType("application/json");
+        envelope.setAppID(self.token());
         headers["x-request-duration"] = std::to_string(
             std::chrono::duration_cast<std::chrono::duration<double>>(handling_duration).count());
         headers["x-processing-duration"] = std::to_string(

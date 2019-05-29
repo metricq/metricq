@@ -97,7 +97,7 @@ std::vector<std::string> get_metrics(const std::string& url, const std::string& 
 }
 
 std::unordered_map<std::string, Metadata>
-get_metadata(const std::string& url, const std::string& token, const std::string& selector)
+get_metadata_(const std::string& url, const std::string& token, const json& selector)
 {
     json payload = json::object();
     payload["format"] = "object";
@@ -105,7 +105,7 @@ get_metadata(const std::string& url, const std::string& token, const std::string
     {
         payload["selector"] = selector;
     }
-    RpcRequest request(token, "history.get_metrics", payload);
+    RpcRequest request(token, "get_metrics", payload);
     request.connect(url);
     request.main_loop();
     std::unordered_map<std::string, Metadata> response;
@@ -115,5 +115,25 @@ get_metadata(const std::string& url, const std::string& token, const std::string
         response.emplace(it.key(), it.value());
     }
     return response;
+}
+
+std::unordered_map<std::string, Metadata> get_metadata(const std::string& url,
+                                                       const std::string& token)
+{
+    // manager will ignore a Null selector
+    return get_metadata_(url, token, nullptr);
+}
+
+std::unordered_map<std::string, Metadata>
+get_metadata(const std::string& url, const std::string& token, const std::string& selector)
+{
+    return get_metadata_(url, token, selector);
+}
+
+std::unordered_map<std::string, Metadata> get_metadata(const std::string& url,
+                                                       const std::string& token,
+                                                       const std::vector<std::string>& selector)
+{
+    return get_metadata_(url, token, selector);
 }
 } // namespace metricq

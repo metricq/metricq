@@ -63,4 +63,4 @@ std::unique_ptr<Logger>& LoggerSingleton::get()
     static std::unique_ptr<Logger> logger = std::make_unique<DefaultLogger>();
     return logger;
 }
-}
+} // namespace metricq

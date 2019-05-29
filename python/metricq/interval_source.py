@@ -26,8 +26,8 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from abc import abstractmethod
 import asyncio
+from abc import abstractmethod
 
 from .logging import get_logger
 from .source import Source
@@ -50,8 +50,12 @@ class IntervalSource(Source):
             await self.update()
             try:
                 if self.period is None:
-                    raise ValueError("IntervalSource.period not set before running task")
-                await asyncio.wait_for(asyncio.shield(self._stop_future), timeout=self.period)
+                    raise ValueError(
+                        "IntervalSource.period not set before running task"
+                    )
+                await asyncio.wait_for(
+                    asyncio.shield(self._stop_future), timeout=self.period
+                )
                 self._stop_future.result()
                 logger.info("stopping IntervalSource task")
                 break
@@ -60,7 +64,7 @@ class IntervalSource(Source):
                 continue
 
     async def stop(self):
-        logger.debug('stop()')
+        logger.debug("stop()")
         if self._stop_future is not None:
             self._stop_future.set_result(42)
         await super().stop()

@@ -39,6 +39,7 @@ class RPCMeta(ABCMeta):
     lists of handlers for each rpc tag.
     In each list, the base-class rpc handlers will be before the child class ones
     """
+
     def __new__(mcs, name, bases, attrs, **kwargs):
         rpc_handlers = defaultdict(list)
         for base in bases:
@@ -50,14 +51,14 @@ class RPCMeta(ABCMeta):
 
         for handler in attrs.values():
             try:
-                function_tags = getattr(handler, '__rpc_tags')
+                function_tags = getattr(handler, "__rpc_tags")
                 for function_tag in function_tags:
                     rpc_handlers[function_tag].append(handler)
             except AttributeError:
                 # oops, not an rpc handler
                 pass
 
-        attrs['_rpc_handlers'] = rpc_handlers
+        attrs["_rpc_handlers"] = rpc_handlers
         return super().__new__(mcs, name, bases, attrs)
 
 
@@ -71,24 +72,30 @@ class RPCDispatcher(metaclass=RPCMeta):
         WARNING: DO NOT RENAME. It must be called function because it is called directly with the json dict
         """
         if function not in self._rpc_handlers:
-            raise KeyError('Missing rpc handler for {}'.format(function))
+            raise KeyError("Missing rpc handler for {}".format(function))
 
         for handler in self._rpc_handlers[function]:
             task = handler(self, **kwargs)
             if not isinstance(task, Awaitable):
-                raise TypeError('RPC handler for {} is not a coroutine'.format(function))
+                raise TypeError(
+                    "RPC handler for {} is not a coroutine".format(function)
+                )
             rv = await task
             if len(self._rpc_handlers[function]) == 1:
                 return rv
             elif rv is not None:
-                raise TypeError('multiple RPC handlers attempting to return a non-none value which is not permitted.')
+                raise TypeError(
+                    "multiple RPC handlers attempting to return a non-none value which is not permitted."
+                )
 
 
 def rpc_handler(*function_tags):
     """
     Decorator for an RPC handler, may contain multiple functions
     """
+
     def decorator(handler):
         handler.__rpc_tags = function_tags
         return handler
+
     return decorator

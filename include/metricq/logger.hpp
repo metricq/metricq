@@ -60,4 +60,4 @@ inline void make_logger(Args&&... args)
 {
     LoggerSingleton::get() = std::make_unique<L>(std::forward<Args>(args)...);
 }
-}
+} // namespace metricq

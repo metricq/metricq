@@ -73,8 +73,10 @@ public:
 
 private:
     std::string id_;
+
 public:
     Metadata metadata;
+
 private:
     Writer& writer_;
 
@@ -86,6 +88,13 @@ private:
 template <class Writer>
 inline void Metric<Writer>::flush()
 {
+    assert(chunk_.time_delta_size() == chunk_.value_size());
+    if (chunk_.time_delta_size() == 0)
+    {
+        // don't flush empty metrics
+        return;
+    }
+
     writer_.send(id_, chunk_);
     chunk_.clear_time_delta();
     chunk_.clear_value();

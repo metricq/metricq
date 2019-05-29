@@ -23,10 +23,10 @@ int main()
     timer.async_wait([&connection](auto error) {
         std::cerr << "Calling AMQP::TcpConnection::close()\n";
         connection.close();
-        // after this lambda is executed, all async operations trigger by the main() code itself will be removed from
-        // the io_service. So only AMQP could have operations left which delay the shutdown.
+        // after this lambda is executed, all async operations trigger by the main() code itself
+        // will be removed from the io_service. So only AMQP could have operations left which delay
+        // the shutdown.
     });
-
 
     std::cerr << "Start event loop and connection...\n";
     io_service.run();

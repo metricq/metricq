@@ -20,10 +20,12 @@ def _get_message(record):
 def _handle_wrap(fcn):
     """Wrap the handle function to replace the passed in
     record's getMessage function before calling handle"""
+
     @functools.wraps(fcn)
     def handle(record):
         record.getMessage = types.MethodType(_get_message, record)
         return fcn(record)
+
     return handle
 
 
