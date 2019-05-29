@@ -40,7 +40,7 @@ from . import history_pb2
 class Timedelta:
     @staticmethod
     def from_timedelta(delta):
-        seconds = (delta.days * 24) + delta.seconds
+        seconds = (delta.days * 24 * 3600) + delta.seconds
         microseconds = seconds * 1000000 + delta.microseconds
         return Timedelta(microseconds * 1000)
 
