@@ -71,7 +71,7 @@ class Client(Agent):
             exchange=self._management_exchange,
             routing_key=function,
             cleanup_on_response=True,
-            **kwargs
+            **kwargs,
         )
 
     @rpc_handler("discover")

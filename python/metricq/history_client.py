@@ -27,17 +27,17 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import asyncio
-from collections import namedtuple
 import uuid
+from collections import namedtuple
 from enum import Enum
 
 import aio_pika
 
+from . import history_pb2
+from .client import Client
 from .logging import get_logger
 from .rpc import rpc_handler
-from .client import Client
-from . import history_pb2
-from .types import Timedelta, Timestamp, TimeValue, TimeAggregate
+from .types import TimeAggregate, Timedelta, Timestamp, TimeValue
 
 logger = get_logger(__name__)
 
