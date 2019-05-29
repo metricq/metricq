@@ -65,6 +65,7 @@ void Db::on_history(const AMQP::Message& incoming_message)
     AMQP::Envelope envelope(reply_message.data(), reply_message.size());
     envelope.setHeaders(headers);
     envelope.setCorrelationID(incoming_message.correlationID());
+    envelope.setAppID(token());
     envelope.setContentType("application/json");
 
     data_channel_->publish("", incoming_message.replyTo(), envelope);
