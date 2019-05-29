@@ -29,6 +29,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <metricq/connection.hpp>
+#include <metricq/exception.hpp>
 #include <metricq/json.hpp>
 
 #include "connection_handler.hpp"
@@ -187,16 +188,19 @@ void Connection::handle_management_message(const AMQP::Message& incoming_message
         {
             log::error("error in rpc response handling {}: parsing message: {}\n{}",
                        incoming_message.correlationID(), e.what(), content_str);
+            throw RPCError();
         }
         catch (json::type_error& e)
         {
             log::error("error in rpc response handling {}: accessing parameter: {}\n{}",
                        incoming_message.correlationID(), e.what(), content_str);
+            throw RPCError();
         }
         catch (std::exception& e)
         {
             log::error("error in rpc response handling {}: {}\n{}",
                        incoming_message.correlationID(), e.what(), content_str);
+            throw RPCError();
         }
 
         // we must search again because the handler might have invalidated the iterator
@@ -205,7 +209,7 @@ void Connection::handle_management_message(const AMQP::Message& incoming_message
         {
             log::error("error in rpc response handling {}: response callback vanished",
                        incoming_message.correlationID());
-            return;
+            throw RPCError();
         }
         management_rpc_response_callbacks_.erase(it);
         return;
@@ -215,7 +219,7 @@ void Connection::handle_management_message(const AMQP::Message& incoming_message
     {
         log::error("error in rpc: no function but also no response callback: {}\n{}",
                    incoming_message.correlationID(), content_str);
-        return;
+        throw RPCError();
     }
 
     auto function = content.at("function").get<std::string>();
@@ -242,15 +246,18 @@ void Connection::handle_management_message(const AMQP::Message& incoming_message
         {
             log::error("error in rpc handling {}: parsing message: {}\n{}", function, e.what(),
                        content_str);
+            throw RPCError();
         }
         catch (json::type_error& e)
         {
             log::error("error in rpc handling {}: accessing parameter: {}\n{}", function, e.what(),
                        content_str);
+            throw RPCError();
         }
         catch (std::exception& e)
         {
             log::error("error in rpc handling {}: {}\n{}", function, e.what(), content_str);
+            throw RPCError();
         }
         return;
     }
