@@ -231,16 +231,18 @@ class HistoryClient(Client):
         request_type: HistoryRequestType = HistoryRequestType.AGGREGATE_TIMELINE,
         timeout=60,
     ):
+        if not metric:
+            raise ValueError("metric must be a non-empty string")
+        correlation_id = "mq-history-py-{}-{}".format(self.token, uuid.uuid4().hex)
+
         logger.info(
-            "running history request for {} ({}-{},{})",
+            "running history request for {} ({}-{},{}) with correlation id {}",
             metric,
             start_time,
             end_time,
             interval_max,
+            correlation_id,
         )
-        if not metric:
-            raise ValueError("metric must be a non-empty string")
-        correlation_id = "mq-history-py-{}-{}".format(self.token, uuid.uuid4().hex)
 
         request = history_pb2.HistoryRequest()
         if start_time is not None:
