@@ -46,25 +46,29 @@ class Timedelta:
 
     @staticmethod
     def from_string(duration_str: str):
-        m = re.fullmatch(r"([+-]?\d*[.,]?\d+)\s*([^\d]*)", duration_str)
+        m = re.fullmatch(r"\s*([+-]?\d*[.,]?\d+)\s*([^\d]*)\s*", duration_str)
         if not m:
             raise ValueError(
-                'invalid duration string {}, not of form "number unit"', duration_str
+                'invalid duration string {}, not of form "number unit"'.format(
+                    duration_str
+                )
             )
         value = float(m.group(1))
         unit = m.group(2)
         if unit in ("", "s", "second", "seconds"):
-            return Timedelta(int(value * 1e9))
+            return Timedelta(int(value * 1_000_000_000))
         if unit in ("ms", "millisecond", "milliseconds"):
-            return Timedelta(int(value * 1e6))
+            return Timedelta(int(value * 1_000_000))
         if unit in ("us", "microsecond", "microseconds", "μs"):
-            return Timedelta(int(value * 1e3))
+            return Timedelta(int(value * 1_000))
         if unit in ("ns", "nanosecond", "nanoseconds"):
             return Timedelta(int(value))
         if unit in ("min", "minute", "minutes"):
-            return Timedelta(int(value * 1e9 * 60))
+            return Timedelta(int(value * 1_000_000_000 * 60))
         if unit in ("h", "hour", "hours"):
-            return Timedelta(int(value * 1e9 * 3600))
+            return Timedelta(int(value * 1_000_000_000 * 3600))
+        if unit in ("d", "day", "days"):
+            return Timedelta(int(value * 1_000_000_000 * 3600 * 24))
         raise ValueError("invalid duration unit {}".format(unit))
 
     def __init__(self, value: int):
