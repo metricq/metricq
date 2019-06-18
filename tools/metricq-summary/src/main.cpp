@@ -70,6 +70,9 @@ Config::Config(int argc, const char* argv[])
     parser.toggle("quiet").short_name("q");
     parser.toggle("help").short_name("h");
 
+    parser.accept_positionals(3);
+    parser.positional_name("command [args]");
+
     try
     {
         auto options = parser.parse(argc, argv);
