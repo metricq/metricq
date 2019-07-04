@@ -94,7 +94,7 @@ void Connection::connect(const std::string& server_address)
     management_channel_->onReady(debug_success_cb("management channel ready"));
     management_channel_->onError(debug_error_cb("management channel error"));
 
-    management_client_queue_ = std::string("client-") + connection_token_ + "-rpc";
+    management_client_queue_ = connection_token_ + "-rpc";
 
     management_channel_->declareQueue(management_client_queue_, AMQP::exclusive)
         .onSuccess([this](const std::string& name, [[maybe_unused]] int msgcount,
