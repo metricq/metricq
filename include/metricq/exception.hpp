@@ -46,4 +46,4 @@ public:
     using Exception::Exception;
 };
 
-}
+} // namespace metricq
