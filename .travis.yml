@@ -30,6 +30,18 @@ matrix:
             - libssl-dev
           sources: *sources
     - os: linux
+      env: CXX="g++-9" CC="gcc-9"
+      compiler: gcc
+      addons:
+        apt:
+          packages:
+            - gcc-9
+            - g++-9
+            - cmake
+            - cmake-data
+            - libssl-dev
+          sources: *sources
+    - os: linux
       env: CXX="clang++-5.0" CC="clang-5.0"
       compiler: clang
       addons:
