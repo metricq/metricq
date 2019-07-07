@@ -36,6 +36,10 @@ namespace metricq
 {
 Db::Db(const std::string& token) : Sink(token)
 {
+    register_management_callback("config", [this](const json& config) {
+        on_db_config(config);
+        return json::object();
+    });
 }
 
 void Db::setup_history_queue(const AMQP::QueueCallback& callback)

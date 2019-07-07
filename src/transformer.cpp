@@ -35,6 +35,10 @@ namespace metricq
 {
 Transformer::Transformer(const std::string& token) : Sink(token)
 {
+    register_management_callback("config", [this](const json& config) -> json {
+        on_transformer_config(config);
+        return metricq::json::object();
+    });
 }
 
 void Transformer::on_connected()

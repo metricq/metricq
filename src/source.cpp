@@ -46,6 +46,11 @@ namespace metricq
 
 Source::Source(const std::string& token) : DataClient(token)
 {
+    register_management_callback("config", [this](const json& config) -> json {
+        on_source_config(config);
+        declare_metrics();
+        return json::object();
+    });
 }
 
 void Source::on_connected()
@@ -76,9 +81,9 @@ void Source::config(const json& config)
 
     data_exchange_ = config["dataExchange"];
 
-    if (config.find("config") != config.end())
+    if (auto config_it = config.find("config"); config_it != config.end())
     {
-        on_source_config(config["config"]);
+        on_source_config(*config_it);
     }
 }
 
