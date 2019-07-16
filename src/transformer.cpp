@@ -36,14 +36,14 @@ namespace metricq
 Transformer::Transformer(const std::string& token) : Sink(token)
 {
     register_management_callback("config", [this](const json& config) -> json {
-        on_transformer_config(config);
+        this->configure(config);
         return metricq::json::object();
     });
 }
 
 void Transformer::on_connected()
 {
-    rpc("transformer.register", [this](const auto& response) { config(response); });
+    rpc("transformer.register", [this](const auto& response) { on_register_response(response); });
 }
 
 void Transformer::send(const std::string& id, const DataChunk& dc)
@@ -57,20 +57,9 @@ void Transformer::send(const std::string& id, TimeValue tv)
     data_channel_->publish(data_exchange_, id, DataChunk(tv).SerializeAsString());
 }
 
-void Transformer::config(const json& config)
+void Transformer::configure(const json& config)
 {
-    if (!data_exchange_.empty() && config["dataExchange"] != data_exchange_)
-    {
-        log::fatal("changing dataExchange on the fly is not currently supported");
-        std::abort();
-    }
-
-    data_exchange_ = config["dataExchange"];
-
-    if (config.find("config") != config.end())
-    {
-        on_transformer_config(config["config"]);
-    }
+    on_transformer_config(config);
 
     if (input_metrics.empty())
     {
@@ -92,6 +81,20 @@ void Transformer::config(const json& config)
             declare_metrics();
         },
         { { "metrics", input_metrics } });
+}
+
+void Transformer::on_register_response(const json& response)
+{
+    if (!data_exchange_.empty() && response["dataExchange"] != data_exchange_)
+    {
+        log::fatal("changing dataExchange on the fly is not currently supported");
+        std::abort();
+    }
+
+    data_exchange_ = response["dataExchange"];
+
+    assert(response.count("config"));
+    this->configure(response["config"]);
 }
 
 void Transformer::declare_metrics()
