@@ -91,6 +91,7 @@ class Client(Agent):
         historic: Optional[bool] = None,
         timeout: Optional[float] = None,
         prefix: Optional[str] = None,
+        infix: Optional[str] = None,
         limit: Optional[int] = None,
     ) -> Union[Sequence[str], Sequence[dict]]:
         """
@@ -99,6 +100,7 @@ class Client(Agent):
         :param metadata: if true, metadata is included in response
         :param timeout: timeout for the RPC in seconds
         :param prefix: filter results by prefix on the key
+        :param infix: filter results by infix on the key
         :param limit: limit the number of results to return
         :return: either a {name: metadata} dict (metadata=True) or a list of metric names (metadata=False)
         """
@@ -111,6 +113,8 @@ class Client(Agent):
             arguments["historic"] = historic
         if prefix is not None:
             arguments["prefix"] = prefix
+        if infix is not None:
+            arguments["infix"] = infix
         if limit is not None:
             arguments["limit"] = limit
 
