@@ -32,6 +32,7 @@ import re
 from datetime import datetime, timedelta, timezone
 from functools import total_ordering
 from typing import NamedTuple
+from numbers import Number
 
 from . import history_pb2
 
@@ -71,6 +72,18 @@ class Timedelta:
             return Timedelta(int(value * 1_000_000_000 * 3600 * 24))
         raise ValueError("invalid duration unit {}".format(unit))
 
+    @staticmethod
+    def from_us(value: Number):
+        return Timedelta(int(value * 1e3))
+
+    @staticmethod
+    def from_ms(value: Number):
+        return Timedelta(int(value * 1e6))
+
+    @staticmethod
+    def from_s(value: Number):
+        return Timedelta(int(value * 1e9))
+
     def __init__(self, value: int):
         """
         :param value: integer duration in nanoseconds
@@ -80,6 +93,14 @@ class Timedelta:
     @property
     def ns(self):
         return self._value
+
+    @property
+    def us(self):
+        return self._value / 1e3
+
+    @property
+    def ms(self):
+        return self._value / 1e6
 
     @property
     def s(self):
