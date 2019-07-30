@@ -317,7 +317,7 @@ class HistoryClient(Client):
             body = message.body
             from_token = message.app_id
             correlation_id = message.correlation_id
-            request_duration = message.headers.get("x-request-duration", "-1")
+            request_duration = float(message.headers.get("x-request-duration", "-1"))
 
             logger.info(
                 "received message from {}, correlation id: {}, reply_to: {}",
