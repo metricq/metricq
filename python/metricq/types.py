@@ -120,7 +120,9 @@ class Timedelta:
     def __sub__(self, other):
         if isinstance(other, Timedelta):
             return Timedelta(self._value - other._value)
-        raise TypeError("invalid type to subtract from Timedelta")
+        raise TypeError(
+            "invalid type to subtract from Timedelta: {}".format(type(other))
+        )
 
     def __truediv__(self, factor):
         return Timedelta(self._value // factor)
