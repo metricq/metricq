@@ -31,8 +31,8 @@
 import re
 from datetime import datetime, timedelta, timezone
 from functools import total_ordering
-from typing import NamedTuple
 from numbers import Number
+from typing import NamedTuple
 
 from . import history_pb2
 

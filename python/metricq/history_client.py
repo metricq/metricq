@@ -235,7 +235,7 @@ class HistoryClient(Client):
             raise ValueError("metric must be a non-empty string")
         correlation_id = "mq-history-py-{}-{}".format(self.token, uuid.uuid4().hex)
 
-        logger.info(
+        logger.debug(
             "running history request for {} ({}-{},{}) with correlation id {}",
             metric,
             start_time,
@@ -319,7 +319,7 @@ class HistoryClient(Client):
             correlation_id = message.correlation_id
             request_duration = float(message.headers.get("x-request-duration", "-1"))
 
-            logger.info(
+            logger.debug(
                 "received message from {}, correlation id: {}, reply_to: {}",
                 from_token,
                 correlation_id,
