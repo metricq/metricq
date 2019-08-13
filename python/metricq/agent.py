@@ -60,6 +60,7 @@ class Agent(RPCDispatcher):
 
         self._event_loop_owned = False
         self._event_loop = event_loop
+        self._event_loop_cancel_on_exception = False
 
         self._management_url = management_url
         self._management_broadcast_exchange_name = "metricq.broadcast"
@@ -132,8 +133,9 @@ class Agent(RPCDispatcher):
             "{}-rpc".format(self.token), exclusive=True
         )
 
-    def run(self, catch_signals=("SIGINT", "SIGTERM")):
+    def run(self, catch_signals=("SIGINT", "SIGTERM"), cancel_on_exception=False):
         self._event_loop_owned = True
+        self._event_loop_cancel_on_exception = cancel_on_exception
         self.event_loop.set_exception_handler(self.on_exception)
         for signame in catch_signals:
             try:
@@ -278,11 +280,14 @@ class Agent(RPCDispatcher):
             ex = context["exception"]
             if isinstance(ex, KeyboardInterrupt):
                 logger.info("stopping Agent on KeyboardInterrupt")
-                self.stop(ex)
-
-            logger.error("Exception: {} ({})", ex, type(ex).__qualname__)
-            # TODO figure out how to logger
-            traceback.print_tb(ex.__traceback__)
+                loop.create_task(self.stop())
+            else:
+                logger.error("Exception: {} ({})", ex, type(ex).__qualname__)
+                # TODO figure out how to logger
+                traceback.print_tb(ex.__traceback__)
+                if self._event_loop_cancel_on_exception:
+                    logger.error("stopping Agent on unhandled exception")
+                    loop.create_task(self.stop())
         except KeyError:
             pass
 
