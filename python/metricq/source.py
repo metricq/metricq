@@ -28,6 +28,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import asyncio
 from abc import abstractmethod
 
 import aio_pika
@@ -91,6 +92,11 @@ class Source(DataClient):
         metric_object = self[metric]
         assert metric_object is not None
         await metric_object.send(time, value)
+
+    async def flush(self):
+        await asyncio.gather(
+            *[m.flush() for m in self.metrics.values() if not m.empty()]
+        )
 
     async def _send(self, metric, data_chunk: DataChunk):
         """
