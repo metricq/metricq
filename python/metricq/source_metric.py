@@ -56,7 +56,7 @@ class SourceMetric:
 
     async def send(self, time: Timestamp, value):
         self.append(time, value)
-        if 0 < self.chunk_size == len(self.chunk.time_delta):
+        if 0 < self.chunk_size <= len(self.chunk.time_delta):
             await self.flush()
 
     async def error(self, time: Timestamp):
