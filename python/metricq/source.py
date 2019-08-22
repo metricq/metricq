@@ -95,9 +95,7 @@ class Source(DataClient):
         await metric_object.send(time, value)
 
     async def flush(self):
-        await asyncio.gather(
-            *[m.flush() for m in self.metrics.values() if not m.empty()]
-        )
+        await asyncio.gather(*[m.flush() for m in self.metrics.values() if not m.empty])
 
     async def _send(self, metric, data_chunk: DataChunk):
         """
