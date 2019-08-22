@@ -35,11 +35,11 @@ from .types import Timestamp
 
 
 class SourceMetric:
-    def __init__(self, id, source):
+    def __init__(self, id, source, chunk_size=1):
         self.id = id
         self.source = source
 
-        self.chunk_size = 1
+        self.chunk_size = chunk_size
         self.previous_timestamp = 0
         self.chunk = DataChunk()
 

@@ -47,6 +47,7 @@ class Source(DataClient):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.metrics = dict()
+        self.chunk_size = 1
 
     async def connect(self):
         await super().connect()
@@ -76,7 +77,7 @@ class Source(DataClient):
 
     def __getitem__(self, id):
         if id not in self.metrics:
-            self.metrics[id] = SourceMetric(id, self)
+            self.metrics[id] = SourceMetric(id, self, chunk_size=self.chunk_size)
         return self.metrics[id]
 
     async def declare_metrics(self, metrics):
