@@ -61,7 +61,7 @@ class ProtoDevelop(develop):
 
 setup(
     name="metricq",
-    version="0.0",
+    version="0.0.1",
     author="TU Dresden",
     python_requires=">=3.5",
     packages=["metricq", "metricq_proto"],
