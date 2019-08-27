@@ -31,6 +31,7 @@ from abc import abstractmethod
 
 from .logging import get_logger
 from .source import Source
+from .types import Timedelta, Timestamp
 
 logger = get_logger(__name__)
 
@@ -46,6 +47,7 @@ class IntervalSource(Source):
 
     async def task(self):
         self._stop_future = asyncio.Future()
+        deadline = Timestamp.now()
         while True:
             await self.update()
             try:
@@ -53,8 +55,15 @@ class IntervalSource(Source):
                     raise ValueError(
                         "IntervalSource.period not set before running task"
                     )
+                deadline += Timedelta.from_s(self.period)
+                now = Timestamp.now()
+                while now >= deadline:
+                    logger.warn("Missed deadline {}, it is now {}", deadline, now)
+                    deadline += Timedelta.from_s(self.period)
+
+                timeout = (deadline - now).s
                 await asyncio.wait_for(
-                    asyncio.shield(self._stop_future), timeout=self.period
+                    asyncio.shield(self._stop_future), timeout=timeout
                 )
                 self._stop_future.result()
                 logger.info("stopping IntervalSource task")
