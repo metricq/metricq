@@ -151,10 +151,21 @@ class HistoryResponse:
                 )
             )
 
+        if len(self) == 0:
+            return
+
         if self._mode == HistoryResponseType.VALUES:
-            for time_delta, value in zip(self._proto.time_delta, self._proto.value):
+            previous_timestamp = Timestamp(self._proto.time_delta[0])
+            # First interval is useless here
+            for time_delta, value in zip(
+                self._proto.time_delta[1:], self._proto.value[1:]
+            ):
                 time_ns = time_ns + time_delta
-                yield TimeAggregate.from_value(Timestamp(time_ns), value)
+                timestamp = Timestamp(time_ns)
+                yield TimeAggregate.from_value_pair(
+                    previous_timestamp, timestamp, value
+                )
+                previous_timestamp = timestamp
             return
 
         if self._mode == HistoryResponseType.LEGACY:
@@ -166,6 +177,7 @@ class HistoryResponse:
             ):
                 time_ns = time_ns + time_delta
                 # That of course only makes sense if you just use mean or mean_sum
+                # We don't do the nice intervals here...
                 yield TimeAggregate(
                     timestamp=Timestamp(time_ns),
                     minimum=minimum,

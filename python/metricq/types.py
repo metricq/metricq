@@ -279,6 +279,22 @@ class TimeAggregate(NamedTuple):
             active_time=0,
         )
 
+    @staticmethod
+    def from_value_pair(
+        timestamp_before: Timestamp, timestamp: Timestamp, value: float
+    ):
+        assert timestamp > timestamp_before
+        delta = timestamp - timestamp_before
+        return TimeAggregate(
+            timestamp=timestamp_before,
+            minimum=value,
+            maximum=value,
+            sum=value,
+            count=1,
+            integral=delta.ns * value,
+            active_time=delta,
+        )
+
     @property
     def mean(self):
         if self.active_time > 0:
