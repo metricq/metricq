@@ -46,6 +46,7 @@ class HistoryRequestType:
     AGGREGATE_TIMELINE = history_pb2.HistoryRequest.AGGREGATE_TIMELINE
     AGGREGATE = history_pb2.HistoryRequest.AGGREGATE
     LAST_VALUE = history_pb2.HistoryRequest.LAST_VALUE
+    FLEX_TIMELINE = history_pb2.HistoryRequest.FLEX_TIMELINE
 
 
 class HistoryResponseType(Enum):
