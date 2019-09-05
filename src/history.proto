@@ -43,6 +43,8 @@ message HistoryRequest {
         AGGREGATE = 1;
         // Single last value in values (0 values if no values in DB)
         LAST_VALUE = 2;
+        // Either aggregates or values in |start_time, end_time[ depending on the specified interval_max
+        FLEX_TIMELINE = 3;
     }
 
     RequestType type = 4; // default: AGGREGATE_TIMELINE
