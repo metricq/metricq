@@ -45,6 +45,8 @@ struct Config
     std::string url;
     std::string token;
     std::chrono::minutes timeout;
+    std::chrono::milliseconds start_delta;
+    std::chrono::milliseconds stop_delta;
     std::vector<std::string> metrics;
     std::vector<std::string> cmdline;
 
@@ -66,6 +68,10 @@ Config::Config(int argc, const char* argv[])
     parser.option("timeout", "Time-To-Live for data queue (in minutes)")
         .default_value("30")
         .short_name("T");
+    parser.option("start-delta", "Delete delta from start of the data queue (in milliseconds)")
+        .default_value("0");
+        parser.option("stop-delta", "Delete delta till stop of the data queue (in milliseconds)")
+        .default_value("0");
     parser.toggle("verbose").short_name("v");
     parser.toggle("trace").short_name("t");
     parser.toggle("quiet").short_name("q");
@@ -113,6 +119,26 @@ Config::Config(int argc, const char* argv[])
             std::exit(EXIT_FAILURE);
         }
 
+        try
+        {
+            start_delta = std::chrono::milliseconds(std::stoul(options.get("start-delta")));
+        }
+        catch (const std::logic_error&)
+        {
+            std::cerr << "Invalid start-delta: " << options.get("start-delta") << '\n';
+            std::exit(EXIT_FAILURE);
+        }
+
+        try
+        {
+            stop_delta = std::chrono::milliseconds(std::stoul(options.get("stop-delta")));
+        }
+        catch (const std::logic_error&)
+        {
+            std::cerr << "Invalid stop-delta: " << options.get("stop-delta") << '\n';
+            std::exit(EXIT_FAILURE);
+        }
+
         cmdline = options.positionals();
         if (cmdline.size() == 0)
         {
@@ -136,7 +162,8 @@ Config::Config(int argc, const char* argv[])
 }
 
 void summary_csv_print(std::ostream& os,
-                       std::unordered_map<std::string, std::vector<metricq::TimeValue>>&& stats)
+                       std::unordered_map<std::string, std::vector<metricq::TimeValue>>&& stats,
+                       std::chrono::milliseconds start_delta, std::chrono::milliseconds stop_delta)
 {
     std::cout << "metric,"
                  "num_timepoints,"
@@ -153,7 +180,7 @@ void summary_csv_print(std::ostream& os,
             continue;
         }
 
-        Summary sum = Summary::calculate(std::move(values));
+        Summary sum = Summary::calculate(std::move(values), start_delta, stop_delta);
         auto duration_ns =
             std::chrono::duration_cast<std::chrono::nanoseconds>(sum.duration).count();
         // clang-format off
@@ -187,7 +214,7 @@ int main(int argc, const char* argv[])
         Log::info() << "Draining queue " << queue;
         auto stats = metricq::drain(cfg.url, cfg.token, cfg.metrics, queue);
 
-        summary_csv_print(std::cout, std::move(stats));
+        summary_csv_print(std::cout, std::move(stats), cfg.start_delta, cfg.stop_delta);
 
         return status;
     }
