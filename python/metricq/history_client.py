@@ -155,7 +155,8 @@ class HistoryResponse:
             return
 
         if self._mode == HistoryResponseType.VALUES:
-            previous_timestamp = Timestamp(self._proto.time_delta[0])
+            time_ns = self._proto.time_delta[0]
+            previous_timestamp = Timestamp(time_ns)
             # First interval is useless here
             for time_delta, value in zip(
                 self._proto.time_delta[1:], self._proto.value[1:]
