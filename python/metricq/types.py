@@ -292,7 +292,7 @@ class TimeAggregate(NamedTuple):
             sum=value,
             count=1,
             integral=delta.ns * value,
-            active_time=delta,
+            active_time=delta.ns,
         )
 
     @property
