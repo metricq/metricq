@@ -69,7 +69,7 @@ Config::Config(int argc, const char* argv[])
         .short_name("T");
     parser.option("start-delta", "Delete delta from start of the data queue (in milliseconds)")
         .default_value("0");
-        parser.option("stop-delta", "Delete delta till stop of the data queue (in milliseconds)")
+    parser.option("stop-delta", "Delete delta till stop of the data queue (in milliseconds)")
         .default_value("0");
     parser.toggle("verbose").short_name("v");
     parser.toggle("trace").short_name("t");

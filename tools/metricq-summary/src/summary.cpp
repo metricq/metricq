@@ -28,17 +28,63 @@
 
 #include "summary.hpp"
 
-Summary Summary::calculate(std::vector<metricq::TimeValue>&& tv_pairs, std::chrono::milliseconds start_delta, std::chrono::milliseconds stop_delta)
+void Summary::last_semantic(std::vector<metricq::TimeValue>& tv_pairs, metricq::TimePoint t,
+                            bool left)
 {
     auto begin = tv_pairs.begin();
     auto end = tv_pairs.end();
+    if (!left)
+    {
+        std::reverse(begin, end);
+        begin = tv_pairs.begin();
+        end = tv_pairs.end();
+    }
+    auto second_tv = std::find_if(begin, end, [&t, left](metricq::TimeValue& tv) {
+        return left ? (tv.time >= t) : (tv.time <= t);
+    });
+    metricq::TimeValue tv;
+    auto first_tv = std::prev(second_tv);
+    auto t1 = first_tv->time;
+    auto t2 = second_tv->time;
+    tv.time = t;
+    tv.value = second_tv->value * (t2 - t) / (t2 - t1);
+    if (second_tv != end)
+    {
+        end = std::next(second_tv);
+    }
+    tv_pairs.erase(begin, end);
+    if (tv_pairs.size() > 0 && t2 != t)
+    {
+        tv_pairs.insert(tv_pairs.begin(), tv);
+    }
+    begin = tv_pairs.begin();
+    end = tv_pairs.end();
+    if (!left)
+    {
+        std::reverse(begin, end);
+    }
+}
 
-    auto start = tv_pairs.front().time;
-    auto stop = tv_pairs.back().time;
+Summary Summary::calculate(std::vector<metricq::TimeValue>&& tv_pairs,
+                           std::chrono::milliseconds start_delta,
+                           std::chrono::milliseconds stop_delta)
+{
+    assert(tv_pairs.size() > 0);
 
-    tv_pairs.erase(std::remove_if(begin, end, [&start, stop, start_delta, stop_delta](metricq::TimeValue& tv) {
-        return tv.time <= start + start_delta || tv.time >= stop - stop_delta;
-    }), end);
+    auto begin = tv_pairs.begin();
+    auto end = tv_pairs.end();
+
+    auto start_d = tv_pairs.front().time + start_delta;
+    if (start_delta.count() > 0)
+    {
+        Summary::last_semantic(tv_pairs, start_d, true);
+    }
+
+    auto stop_d = tv_pairs.back().time - stop_delta;
+    if (stop_delta.count() > 0)
+    {
+        Summary::last_semantic(tv_pairs, stop_d, false);
+    }
 
     begin = tv_pairs.begin();
     end = tv_pairs.end();
