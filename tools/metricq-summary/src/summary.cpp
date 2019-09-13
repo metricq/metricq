@@ -33,35 +33,37 @@ void Summary::last_semantic(std::vector<metricq::TimeValue>& tv_pairs, metricq::
 {
     auto begin = tv_pairs.begin();
     auto end = tv_pairs.end();
-    if (!left)
-    {
-        std::reverse(begin, end);
-        begin = tv_pairs.begin();
-        end = tv_pairs.end();
-    }
     auto second_tv = std::find_if(begin, end, [&t, left](metricq::TimeValue& tv) {
-        return left ? (tv.time >= t) : (tv.time <= t);
+        return left ? (tv.time >= t) : (tv.time > t);
     });
     metricq::TimeValue tv;
     auto first_tv = std::prev(second_tv);
     auto t1 = first_tv->time;
     auto t2 = second_tv->time;
-    tv.time = t;
-    tv.value = second_tv->value * (t2 - t) / (t2 - t1);
+    tv.time = left ? t2 : t;
+    tv.value = second_tv->value * (left ? (t2 - t) : (t - t1)) / (t2 - t1);
     if (second_tv != end)
     {
-        end = std::next(second_tv);
+        if (left)
+        {
+            end = std::next(second_tv);
+        }
+        else
+        {
+            begin = second_tv;
+        }
     }
     tv_pairs.erase(begin, end);
-    if (tv_pairs.size() > 0 && t2 != t)
+    if (tv_pairs.size() > 0 && t1 != t && t2 != t)
     {
-        tv_pairs.insert(tv_pairs.begin(), tv);
-    }
-    begin = tv_pairs.begin();
-    end = tv_pairs.end();
-    if (!left)
-    {
-        std::reverse(begin, end);
+        if (left)
+        {
+            tv_pairs.insert(tv_pairs.begin(), tv);
+        }
+        else
+        {
+            tv_pairs.push_back(tv);
+        }
     }
 }
 
