@@ -58,10 +58,11 @@ Config::Config(int argc, const char* argv[])
     nitro::broken_options::parser parser;
     parser.option("server", "The metricq management server to connect to.")
         .default_value("amqp://localhost")
+        .env("METRICQ_SERVER")
         .short_name("s");
     parser.option("token", "Token used for source authentication against the metricq manager.")
         .default_value("summary");
-    parser.multi_option("metrics", "MetricQ metrics!").short_name("m");
+    parser.multi_option("metrics", "MetricQ metrics!").short_name("m").env("METRICQ_METRICS");
     parser.option("timeout", "Time-To-Live for data queue (in minutes)")
         .default_value("30")
         .short_name("T");
