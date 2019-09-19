@@ -54,7 +54,9 @@ struct Summary
     double maximum;
     double range;
 
-    static Summary calculate(std::vector<metricq::TimeValue>&& tv_pairs);
+    static Summary calculate(std::vector<metricq::TimeValue>&& tv_pairs,
+                             std::chrono::milliseconds start_delta,
+                             std::chrono::milliseconds stop_delta);
 };
 
 #endif // ----- #ifndef SUMMARY_H -----
