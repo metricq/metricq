@@ -28,7 +28,9 @@
 
 #include "summary.hpp"
 
-Summary Summary::calculate(std::vector<metricq::TimeValue>&& tv_pairs, std::chrono::milliseconds start_delta, std::chrono::milliseconds stop_delta)
+Summary Summary::calculate(std::vector<metricq::TimeValue>&& tv_pairs,
+                           std::chrono::milliseconds start_delta,
+                           std::chrono::milliseconds stop_delta)
 {
     auto begin = tv_pairs.begin();
     auto end = tv_pairs.end();
@@ -36,9 +38,12 @@ Summary Summary::calculate(std::vector<metricq::TimeValue>&& tv_pairs, std::chro
     auto start = tv_pairs.front().time;
     auto stop = tv_pairs.back().time;
 
-    tv_pairs.erase(std::remove_if(begin, end, [&start, stop, start_delta, stop_delta](metricq::TimeValue& tv) {
-        return tv.time <= start + start_delta || tv.time >= stop - stop_delta;
-    }), end);
+    tv_pairs.erase(std::remove_if(begin, end,
+                                  [&start, stop, start_delta, stop_delta](metricq::TimeValue& tv) {
+                                      return tv.time <= start + start_delta ||
+                                             tv.time >= stop - stop_delta;
+                                  }),
+                   end);
 
     begin = tv_pairs.begin();
     end = tv_pairs.end();
