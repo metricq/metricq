@@ -97,6 +97,7 @@ install:
       (cd protobuf-${PROTOBUF_VERSION} && ./configure --prefix=${PROTOBUF_DIR} && make -j2 install)
     fi
   - export CMAKE_PREFIX_PATH=${PROTOBUF_DIR}:${CMAKE_PREFIX_PATH}
+  - export PROTOC=${PROTOBUF_DIR}/bin/protoc
 script:
   - cmake --version
   - cmake -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl@1.1/ .
