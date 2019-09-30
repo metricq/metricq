@@ -63,6 +63,11 @@ setup(
     name="metricq",
     version="0.0.1",
     author="TU Dresden",
+    url="https://github.com/metricq",
+    classifiers=[
+        "License :: OSI Approved :: BSD License",
+        "Programming Language :: Python :: 3",
+    ],
     python_requires=">=3.5",
     packages=["metricq", "metricq_proto"],
     scripts=[],
