@@ -32,6 +32,7 @@ matrix:
     - os: linux
       env: CXX="g++-9" CC="gcc-9"
       compiler: gcc
+      python: 3.5
       addons:
         apt:
           packages:
@@ -82,7 +83,6 @@ matrix:
         homebrew:
           packages:
             - openssl@1.1
-    - python: 3.5
 
 cache:
   directories:
