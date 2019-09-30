@@ -7,6 +7,7 @@ from distutils.spawn import find_executable
 from setuptools import setup
 from setuptools.command.build_py import build_py
 from setuptools.command.develop import develop
+from setuptools.command.sdist import sdist
 
 
 def find_protoc():
@@ -59,6 +60,11 @@ class ProtoDevelop(develop):
         super().run()
 
 
+class ProtoSdist(sdist):
+    def run(self):
+        self.run_command("build_py")
+        super().run()
+
 setup(
     name="metricq",
     version="0.0.1",
@@ -75,7 +81,7 @@ setup(
     extras_require={
         "examples": ["aiomonitor", "click", "click-log", "click-completion"]
     },
-    cmdclass={"build_py": ProtoBuildPy, "develop": ProtoDevelop},
+    cmdclass={"build_py": ProtoBuildPy, "develop": ProtoDevelop, "sdist": ProtoSdist},
     package_dir={"": "python", "metricq_proto": "src"},
     test_suite="examples",
 )
