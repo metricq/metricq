@@ -29,8 +29,7 @@
 #include "summary.hpp"
 
 Summary Summary::calculate(std::vector<metricq::TimeValue>&& tv_pairs,
-                           std::chrono::milliseconds start_delta,
-                           std::chrono::milliseconds stop_delta)
+                           metricq::Duration start_delta, metricq::Duration stop_delta)
 {
     auto begin = tv_pairs.begin();
     auto end = tv_pairs.end();

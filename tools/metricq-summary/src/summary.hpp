@@ -55,8 +55,7 @@ struct Summary
     double range;
 
     static Summary calculate(std::vector<metricq::TimeValue>&& tv_pairs,
-                             std::chrono::milliseconds start_delta,
-                             std::chrono::milliseconds stop_delta);
+                             metricq::Duration start_delta, metricq::Duration stop_delta);
 };
 
 #endif // ----- #ifndef SUMMARY_H -----
