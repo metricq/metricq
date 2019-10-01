@@ -104,6 +104,7 @@ script:
   - make -j 2
 
 deploy:
+  skip_cleanup: true
   provider: pypi
   user: __token__
   distributions: sdist bdist_wheel
