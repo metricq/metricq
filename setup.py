@@ -63,10 +63,10 @@ class ProtoDevelop(develop):
 
 setup(
     name="metricq",
-    version="0.0.1",
+    version="1.0.0",
     author="TU Dresden",
     description="A highly-scalable, distributed metric data processing framework based on RabbitMQ",
-    url="https://github.com/metricq",
+    url="https://github.com/metricq/metricq",
     classifiers=[
         "License :: OSI Approved :: BSD License",
         "Programming Language :: Python :: 3",
@@ -74,7 +74,7 @@ setup(
     python_requires=">=3.5",
     packages=["metricq", "metricq_proto"],
     scripts=[],
-    install_requires=["aio-pika>=5.2.3", "protobuf", "yarl"],
+    install_requires=["aio-pika>=5.2.3", "protobuf>=3", "yarl"],
     extras_require={
         "examples": ["aiomonitor", "click", "click-log", "click-completion"]
     },
