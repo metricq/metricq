@@ -63,6 +63,7 @@ setup(
     name="metricq",
     version="0.0.1",
     author="TU Dresden",
+    description="A highly-scalable, distributed metric data processing framework based on RabbitMQ",
     url="https://github.com/metricq",
     classifiers=[
         "License :: OSI Approved :: BSD License",
