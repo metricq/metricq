@@ -18,7 +18,9 @@ def find_protoc():
     if protoc is None:
         sys.stderr.write(
             "protoc not found. Is protobuf-compiler installed? \n"
-            "Alternatively, you can point the PROTOC environment variable at a local version."
+            "Alternatively, you can point the PROTOC environment variable at a local version (current: {}).".format(
+                os.environ.get("PROTOC", "Not set")
+            )
         )
         sys.exit(1)
 
@@ -27,7 +29,7 @@ def find_protoc():
 
 def make_proto(command):
     proto_dir = command.get_package_dir("metricq_proto")
-    print("[protobuf] {}\n".format(proto_dir))
+    print("[protobuf] {}".format(proto_dir))
     for proto_file in filter(lambda x: x.endswith(".proto"), os.listdir(proto_dir)):
         source = os.path.join(proto_dir, proto_file)
         out_file = source.replace(".proto", "_pb2.py")
@@ -63,6 +65,12 @@ setup(
     name="metricq",
     version="0.0.1",
     author="TU Dresden",
+    description="A highly-scalable, distributed metric data processing framework based on RabbitMQ",
+    url="https://github.com/metricq",
+    classifiers=[
+        "License :: OSI Approved :: BSD License",
+        "Programming Language :: Python :: 3",
+    ],
     python_requires=">=3.5",
     packages=["metricq", "metricq_proto"],
     scripts=[],
