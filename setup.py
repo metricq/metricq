@@ -18,7 +18,9 @@ def find_protoc():
     if protoc is None:
         sys.stderr.write(
             "protoc not found. Is protobuf-compiler installed? \n"
-            "Alternatively, you can point the PROTOC environment variable at a local version (current: {}).".format(os.environ.get("PROTOC", "Not set"))
+            "Alternatively, you can point the PROTOC environment variable at a local version (current: {}).".format(
+                os.environ.get("PROTOC", "Not set")
+            )
         )
         sys.exit(1)
 
@@ -27,7 +29,7 @@ def find_protoc():
 
 def make_proto(command):
     proto_dir = command.get_package_dir("metricq_proto")
-    print("[protobuf] {}\n".format(proto_dir))
+    print("[protobuf] {}".format(proto_dir))
     for proto_file in filter(lambda x: x.endswith(".proto"), os.listdir(proto_dir)):
         source = os.path.join(proto_dir, proto_file)
         out_file = source.replace(".proto", "_pb2.py")
