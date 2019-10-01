@@ -104,7 +104,7 @@ script:
   - make -j 2
 
 before_deploy:
-  - sudo ln -sfn /usr/bin/python3.6 /usr/bin/python
+  - pyenv global 3.6.7
 deploy:
   skip_cleanup: true
   provider: pypi
