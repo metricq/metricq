@@ -111,5 +111,5 @@ deploy:
   user: __token__
   distributions: sdist bdist_wheel
   on:
-    all_branches: true
-    condition: $CC = "gcc-9"
+    condition: $CC = "gcc-9" && $TRAVIS_TAG =~ ^python-v
+    tags: true
