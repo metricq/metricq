@@ -103,6 +103,8 @@ script:
   - cmake -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl@1.1/ .
   - make -j 2
 
+before_deploy:
+  - alias python='python3.6'
 deploy:
   skip_cleanup: true
   provider: pypi
