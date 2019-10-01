@@ -110,8 +110,6 @@ deploy:
   provider: pypi
   user: __token__
   distributions: sdist bdist_wheel
-  password:
-    secure: iPt/b1jaYAlzxx3pCA0zl8A+GUu8TLzKg26140rLFfHr1IhTCqfzZIbj7kjHV9utYKQxFaO4LmsQdvB3cAas3T/srEj0wmEigNRdQBnLU5NGUkjJyDdkSCRDlF0uygQt5l4O44MXaaFGbc/HVoDDXtMoSADwjQA/pA5ApRVHYQPJpuioaeRtqBGXxOcLVkOCrYef/JXfEWgHZ3c9e2Tg20qetsh9OLq8ph2kP89IA3RIRHQqceVfeN4CRddnJXNSD9U7gn94ewVCu0jZngmC9OZYApg9gb8EusrieqrestUI/QhOb1DMYGmPughUcML4AVXQZzqOC16lmayaE4Y3awPyS9tJjPkVyhu7adWtMK/WLV/fcsfrkuOVZxx/FiwpbPht663Ybbh+YdFGXsub8zm5JWnnnolU9OFZP7B4I37amBsIqUQu/X4rnNSwWRpFr9lVam4kIu4DjaHN7jyQBxxZzbfZReBGaJLmdtgdqcrmAYLoiJ3cjzdxR/QkQWf+rlLZw9k/xNPmQ2REs9mCVnDDvp4eD2rU8A8waUwDBh1poA4QSm2mly8uN0sDM6EpPHTzAIdbq01U5Doqg/4xY/CmaWrPFaCzjSp1V1FdoKcslP9PxeHSDbdavhbU2LgI0RfWb3AxRIV33b0K77bQlCbbCGWnLu4JXs8YEc99ghg=
   on:
     all_branches: true
     condition: $CC = "gcc-9"
