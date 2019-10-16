@@ -31,12 +31,16 @@
 from datetime import datetime
 from typing import Optional, Sequence, Union
 
-from .agent import Agent
+from .agent import Agent, RpcRequestError
 from .logging import get_logger
 from .rpc import rpc_handler
 from .types import Timedelta, Timestamp
 
 logger = get_logger(__name__)
+
+
+class ManagementRpcPublishError(RpcRequestError):
+    pass
 
 
 class Client(Agent):
@@ -66,13 +70,20 @@ class Client(Agent):
         await self.rpc_consume()
 
     async def rpc(self, function, **kwargs):
-        return await super().rpc(
-            function=function,
-            exchange=self._management_exchange,
-            routing_key=function,
-            cleanup_on_response=True,
-            **kwargs,
-        )
+        logger.debug("Waiting for management connection to be reestablished...")
+        await self._management_connection_established.wait()
+        try:
+            return await super().rpc(
+                function=function,
+                exchange=self._management_exchange,
+                routing_key=function,
+                cleanup_on_response=True,
+                **kwargs,
+            )
+        except RpcRequestError as e:
+            raise ManagementRpcPublishError(
+                f"Failed to send management RPC request {function!r}"
+            ) from e
 
     @rpc_handler("discover")
     async def _on_discover(self, **kwargs):

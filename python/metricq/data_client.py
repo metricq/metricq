@@ -27,6 +27,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from typing import Optional
+from asyncio import Event
 
 from yarl import URL
 
@@ -44,6 +45,7 @@ class DataClient(Client):
         self.data_connection = None
         self.data_channel = None
         self.data_exchange = None
+        self.data_connection_established = Event()
 
     async def data_config(self, dataServerAddress, **kwargs):
         """
@@ -68,12 +70,20 @@ class DataClient(Client):
             )
             self.data_server_address = dataServerAddress
             self.data_connection = await self.make_connection(self.data_server_address)
+
+            self.data_connection.add_close_callback(self._on_data_connection_close)
+            self.data_connection.add_reconnect_callback(
+                self._on_data_connection_reconnect
+            )
+
             # publisher confirms seem to be buggy, disable for now
             self.data_channel = await self.data_connection.channel(
                 publisher_confirms=False
             )
             # TODO configurable prefetch count
             await self.data_channel.set_qos(prefetch_count=400)
+
+            self.data_connection_established.set()
 
     async def stop(self, exception: Optional[Exception]):
         logger.info("closing data channel and connection.")
@@ -85,3 +95,11 @@ class DataClient(Client):
             self.data_connection = None
         self.data_exchange = None
         await super().stop(exception)
+
+    def _on_data_connection_close(self, exception: Optional[Exception]):
+        logger.debug("Data connection closed: {}", exception)
+        self.data_connection_established.clear()
+
+    def _on_data_connection_reconnect(self, connection):
+        logger.debug("Reestablished data connection to {}", connection)
+        self.data_connection_established.set()

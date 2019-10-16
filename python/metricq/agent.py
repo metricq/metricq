@@ -42,6 +42,7 @@ from contextlib import suppress
 
 import aio_pika
 from yarl import URL
+from aiormq import ChannelInvalidStateError
 
 from .logging import get_logger
 from .rpc import RPCDispatcher
@@ -51,10 +52,6 @@ timer = time.monotonic
 
 
 class AgentStoppedError(Exception):
-    pass
-
-
-class AmqpConnectionClosedError(AgentStoppedError):
     pass
 
 
@@ -69,6 +66,26 @@ class ConnectFailedError(AgentStoppedError):
 
 
 class RPCError(RuntimeError):
+    pass
+
+
+class PublishFailedError(Exception):
+    """Exception raised when publishing to an exchange failed unexpectedly
+
+    The source exception is always attached as a cause.
+    """
+
+    pass
+
+
+class RpcRequestError(PublishFailedError):
+    """Exception raised when issuing an RPC request failed
+    """
+
+    pass
+
+
+class RpcReplyError(PublishFailedError):
     pass
 
 
@@ -87,6 +104,7 @@ class Agent(RPCDispatcher):
         self._management_exchange_name = "metricq.management"
 
         self._management_connection = None
+        self._management_connection_established = asyncio.Event()
         self._management_channel = None
 
         self.management_rpc_queue = None
@@ -95,7 +113,7 @@ class Agent(RPCDispatcher):
         self._management_exchange = None
 
         self._rpc_response_handlers = dict()
-        logger.debug("initialized")
+        logger.debug("Initialized Agent")
 
     def add_credentials(self, address):
         """ Add the credentials from the management connection to the provided address """
@@ -132,13 +150,16 @@ class Agent(RPCDispatcher):
             }
         else:
             ssl_options = None
+
         connection = await aio_pika.connect_robust(
             url, loop=self.event_loop, reconnect_interval=30, ssl_options=ssl_options
         )
+
         # How stupid that we can't easily add the handlers *before* actually connecting.
         # We could make our own RobustConnection object, but then we loose url parsing convenience
         connection.add_reconnect_callback(self._on_reconnect)
         connection.add_close_callback(self._on_close)
+
         return connection
 
     async def connect(self):
@@ -148,10 +169,20 @@ class Agent(RPCDispatcher):
         )
 
         self._management_connection = await self.make_connection(self._management_url)
+        self._management_connection.add_close_callback(
+            self._on_management_connection_close
+        )
+
+        self._management_connection.add_reconnect_callback(
+            self._on_management_connection_reconnect
+        )
+
         self._management_channel = await self._management_connection.channel()
         self.management_rpc_queue = await self._management_channel.declare_queue(
             "{}-rpc".format(self.token), exclusive=True
         )
+
+        self._management_connection_established.set()
 
     def run(
         self, catch_signals=("SIGINT", "SIGTERM"), cancel_on_exception=False
@@ -252,7 +283,8 @@ class Agent(RPCDispatcher):
         Remember that we use javaScriptSnakeCase
         :return:
         """
-        if "function" not in kwargs:
+        function = kwargs.get("function")
+        if function is None:
             raise KeyError('all RPCs must contain a "function" argument')
 
         time_begin = timer()
@@ -261,7 +293,7 @@ class Agent(RPCDispatcher):
         body = json.dumps(kwargs)
         logger.info(
             "sending RPC {}, ex: {}, rk: {}, ci: {}, args: {}",
-            kwargs["function"],
+            function,
             exchange.name,
             routing_key,
             correlation_id,
@@ -302,7 +334,13 @@ class Agent(RPCDispatcher):
             response_callback,
             cleanup_on_response,
         )
-        await exchange.publish(msg, routing_key=routing_key)
+
+        try:
+            await exchange.publish(msg, routing_key=routing_key)
+        except ChannelInvalidStateError as e:
+            errmsg = f"Failed to issue RPC request {function!r} to exchange {exchange}"
+            logger.error("{}: {}", errmsg, e)
+            raise RpcRequestError(errmsg) from e
 
         def cleanup():
             self._rpc_response_handlers.pop(correlation_id, None)
@@ -456,14 +494,15 @@ class Agent(RPCDispatcher):
             arguments = json.loads(body)
             arguments["from_token"] = from_token
 
-            if "function" in arguments:
+            function = arguments.get("function")
+            if function is not None:
                 logger.debug("message is an RPC")
                 try:
                     response = await self.rpc_dispatch(**arguments)
                 except Exception as e:
                     logger.error(
                         "error handling RPC {} ({}): {}",
-                        arguments["function"],
+                        function,
                         type(e),
                         traceback.format_exc(),
                     )
@@ -480,15 +519,23 @@ class Agent(RPCDispatcher):
                     duration,
                     textwrap.shorten(body, width=self.LOG_MAX_WIDTH),
                 )
-                await self._management_channel.default_exchange.publish(
-                    aio_pika.Message(
-                        body=body.encode(),
-                        correlation_id=correlation_id,
-                        content_type="application/json",
-                        app_id=self.token,
-                    ),
-                    routing_key=message.reply_to,
-                )
+                await self._management_connection_established.wait()
+                try:
+                    await self._management_channel.default_exchange.publish(
+                        aio_pika.Message(
+                            body=body.encode(),
+                            correlation_id=correlation_id,
+                            content_type="application/json",
+                            app_id=self.token,
+                        ),
+                        routing_key=message.reply_to,
+                    )
+                except ChannelInvalidStateError as e:
+                    errmsg = (
+                        "Failed to reply to {message.reply_to} for RPC {function!r}"
+                    )
+                    logger.error("{}: {}", errmsg, e)
+                    raise RpcReplyError(errmsg) from e
             else:
                 logger.debug("message is an RPC response")
                 try:
@@ -514,7 +561,17 @@ class Agent(RPCDispatcher):
                     await r
 
     def _on_reconnect(self, connection):
-        logger.info("reconnected to {}", connection)
+        logger.info("Reconnected to {}", connection)
 
-    def _on_close(self, connection):
-        logger.info("closing connection to {}", connection)
+    def _on_close(self, exception):
+        logger.info(
+            "Connection closed: {} ({})", exception, type(exception).__qualname__
+        )
+
+    def _on_management_connection_reconnect(self, connection):
+        logger.info("Management connection to {} reestablished", connection)
+        self._management_connection_established.set()
+
+    def _on_management_connection_close(self, exception: Optional[Exception]):
+        logger.info("Management connection closed: {}", exception)
+        self._management_connection_established.clear()
