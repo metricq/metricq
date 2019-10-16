@@ -37,6 +37,8 @@ import textwrap
 import time
 import traceback
 import uuid
+from typing import Optional, Awaitable
+from contextlib import suppress
 
 import aio_pika
 from yarl import URL
@@ -46,6 +48,24 @@ from .rpc import RPCDispatcher
 
 logger = get_logger(__name__)
 timer = time.monotonic
+
+
+class AgentStoppedError(Exception):
+    pass
+
+
+class AmqpConnectionClosedError(AgentStoppedError):
+    pass
+
+
+class ReceivedSignalError(AgentStoppedError):
+    def __init__(self, signal, *args):
+        self.signal = signal
+        super().__init__(f"Received signal {signal} while running Agent", *args)
+
+
+class ConnectFailedError(AgentStoppedError):
+    pass
 
 
 class RPCError(RuntimeError):
@@ -61,6 +81,8 @@ class Agent(RPCDispatcher):
         self._event_loop_owned = False
         self._event_loop = event_loop
         self._event_loop_cancel_on_exception = False
+        self._stop_in_progress = False
+        self._stop_future: Awaitable[None] = self.event_loop.create_future()
 
         self._management_url = management_url
         self._management_broadcast_exchange_name = "metricq.broadcast"
@@ -133,7 +155,27 @@ class Agent(RPCDispatcher):
             "{}-rpc".format(self.token), exclusive=True
         )
 
-    def run(self, catch_signals=("SIGINT", "SIGTERM"), cancel_on_exception=False):
+    def run(
+        self, catch_signals=("SIGINT", "SIGTERM"), cancel_on_exception=False
+    ) -> None:
+        """Run an Agent by calling :py:meth:`connect` and waiting for it to be
+        :py:meth:`stop`ped.
+
+        If :py:meth:`connect` raises an exception, ConnectFailedError is
+        raised, with the offending exception attached as a cause.  Any
+        exception passed to :py:meth:`stop` is reraised.
+
+        :param catch_signals:
+            Call :py:meth:`on_signal` if any of theses signals were raised.
+        :type catch_signals: list[str]
+        :param bool cancel_on_exception:
+            Stop the running Agent when an unhandled exception occurs.  The
+            exception is reraised from this method.
+
+        :raises Exception:
+            Any exception passed to :py:meth:`stop`, or any exception raised by
+            :py:meth:`connect`.
+        """
         self._event_loop_owned = True
         self._event_loop_cancel_on_exception = cancel_on_exception
         self.event_loop.set_exception_handler(self.on_exception)
@@ -147,11 +189,47 @@ class Agent(RPCDispatcher):
                     "failed to setup signal handler for {}: {}", signame, error
                 )
 
-        self.event_loop.create_task(self.connect())
-        logger.debug("running event loop {}", self.event_loop)
-        self.event_loop.run_forever()
-        self.event_loop.close()
-        logger.debug("event loop completed")
+        async def wait_for_stop():
+            connect_task = self.event_loop.create_task(self.connect())
+            stop_task = asyncio.shield(self._stop_future)
+
+            pending = {stop_task, connect_task}
+            while pending:
+                done, pending = await asyncio.wait(
+                    pending, return_when=asyncio.FIRST_COMPLETED
+                )
+
+                # Check for successful connection, if connect() failed with
+                # an unhandled exception, raise ConnectFailedError and attach
+                # the unhandled exception as its cause.
+                if connect_task in done:
+                    exc = connect_task.exception()
+                    if exc is not None:
+                        logger.error(
+                            "Failed to connect {}: {} ({})",
+                            type(self).__qualname__,
+                            exc,
+                            type(exc).__qualname__,
+                        )
+                        raise ConnectFailedError("Failed to connect Agent") from exc
+
+                # If the Agent was stopped explicitly, return `None`.  If it was
+                # stopped because of an exception, reraise it.
+                if stop_task in done:
+                    return stop_task.result()
+
+        try:
+            logger.debug("Running event loop {}...", self.event_loop)
+            self.event_loop.run_until_complete(wait_for_stop())
+        finally:
+            self.event_loop.stop()
+            self.event_loop.run_until_complete(self.event_loop.shutdown_asyncgens())
+
+            with suppress(AttributeError):  # needs python 3.7
+                all_tasks = asyncio.all_tasks(self.event_loop)
+                logger.debug("Tasks remaining when stopping Agent: {}", len(all_tasks))
+
+            logger.debug("Event loop completed, exiting...")
 
     async def rpc(
         self,
@@ -257,36 +335,78 @@ class Agent(RPCDispatcher):
         )
 
     def on_signal(self, signal):
-        logger.info("received signal {}, calling stop()", signal)
-        self.event_loop.create_task(self.stop())
+        logger.info("Received signal {}, stopping...", signal)
+        self._schedule_stop(
+            exception=None if signal == "SIGINT" else ReceivedSignalError(signal)
+        )
 
-    def on_exception(self, loop, context):
-        logger.error("exception in event loop: {}".format(context["message"]))
-        try:
+    def on_exception(self, loop: asyncio.AbstractEventLoop, context):
+        logger.error("Exception in event loop: {}".format(context["message"]))
+
+        with suppress(KeyError):
             logger.error("Future: {}", context["future"])
-        except KeyError:
-            pass
-        try:
-            logger.error("Handle: {}", context["handle"])
-        except KeyError:
-            pass
-        try:
-            ex = context["exception"]
-            if isinstance(ex, KeyboardInterrupt):
-                logger.info("stopping Agent on KeyboardInterrupt")
-                loop.create_task(self.stop())
-            else:
-                logger.error("Exception: {} ({})", ex, type(ex).__qualname__)
-                # TODO figure out how to logger
-                traceback.print_tb(ex.__traceback__)
-                if self._event_loop_cancel_on_exception:
-                    logger.error("stopping Agent on unhandled exception")
-                    loop.create_task(self.stop())
-        except KeyError:
-            pass
 
-    async def stop(self):
-        logger.info("closing management channel and connection.")
+        with suppress(KeyError):
+            logger.error("Handle: {}", context["handle"])
+
+        ex: Optional[Exception] = context.get("exception")
+        if ex is not None:
+            logger.critical(
+                f"Agent {type(self).__qualname__} encountered an unhandled exception",
+                exc_info=(ex.__class__, ex, ex.__traceback__),
+            )
+
+            is_keyboard_interrupt = isinstance(ex, KeyboardInterrupt)
+            if self._event_loop_cancel_on_exception or is_keyboard_interrupt:
+                if not is_keyboard_interrupt:
+                    logger.error(
+                        "Stopping Agent on unhandled exception ({})",
+                        type(ex).__qualname__,
+                    )
+                self._schedule_stop(exception=ex, loop=loop)
+
+    def _schedule_stop(
+        self,
+        exception: Optional[Exception] = None,
+        loop: asyncio.AbstractEventLoop = None,
+    ):
+        loop = self.event_loop if loop is None else loop
+        loop.create_task(self.stop(exception=exception))
+
+    async def stop(self, exception: Optional[Exception] = None):
+        """Stop a :py:meth:`run`ning Agent.
+
+        :param exception:
+            An optional exception that will be raised by :py:meth:`run` if given
+        """
+        # TODO: fix races to stop
+        # If stop(exception=A) is called on an derived Agent which shuts down
+        # connections created by make_connection() before calling the base
+        # method Agent.stop(), _on_close() fires for these connections and
+        # triggers stop(exception=CancelledError).  The second call then is the
+        # one to set the result of _stop_future.
+        #
+        # Proposed solution: Do not attach on_close-callbacks to connections by
+        # default.
+        if self._stop_in_progress:
+            logger.debug("Stop in progress! ({})", exception)
+            return
+        else:
+            self._stop_in_progress = True
+
+            assert not self._stop_future.done()
+
+            logger.info("Stopping Agent {} ({})...", type(self).__qualname__, exception)
+
+            await asyncio.shield(self._close())
+
+            if exception is not None:
+                self._stop_future.set_exception(exception)
+            else:
+                self._stop_future.set_result(None)
+
+    async def _close(self):
+        logger.info("Closing management channel and connection...")
         if self._management_channel:
             await self._management_channel.close()
             self._management_channel = None
@@ -295,21 +415,6 @@ class Agent(RPCDispatcher):
             self._management_connection = None
         self._management_broadcast_exchange = None
         self._management_exchange = None
-
-        if self._event_loop_owned:
-            try:
-                logger.debug(
-                    "remaining tasks when stopping event loop {}",
-                    asyncio.all_tasks(self.event_loop),
-                )
-            except AttributeError:
-                # needs python 3.7
-                pass
-            self.event_loop.stop()
-        else:
-            logger.debug(
-                "stop completed, we do not own the event loop, so it is not stopped"
-            )
 
     def _make_correlation_id(self):
         return "metricq-rpc-py-{}-{}".format(self.token, uuid.uuid4().hex)

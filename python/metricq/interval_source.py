@@ -28,6 +28,7 @@
 
 import asyncio
 from abc import abstractmethod
+from typing import Optional
 
 from .logging import get_logger
 from .source import Source
@@ -72,11 +73,11 @@ class IntervalSource(Source):
                 # This is the normal case, just continue with the loop
                 continue
 
-    async def stop(self):
+    async def stop(self, exception: Optional[Exception]):
         logger.debug("stop()")
         if self._stop_future is not None:
             self._stop_future.set_result(42)
-        await super().stop()
+        await super().stop(exception)
 
     @abstractmethod
     async def update(self):
