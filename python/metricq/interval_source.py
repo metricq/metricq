@@ -28,6 +28,7 @@
 
 import asyncio
 from abc import abstractmethod
+from typing import Optional
 
 from .logging import get_logger
 from .source import Source
@@ -43,10 +44,10 @@ class IntervalSource(Source):
         """
         super().__init__(*args, **kwargs)
         self.period = period
-        self._stop_future = None
+        self._interval_task_stop_future = None
 
     async def task(self):
-        self._stop_future = asyncio.Future()
+        self._interval_task_stop_future = self.event_loop.create_future()
         deadline = Timestamp.now()
         while True:
             await self.update()
@@ -63,20 +64,20 @@ class IntervalSource(Source):
 
                 timeout = (deadline - now).s
                 await asyncio.wait_for(
-                    asyncio.shield(self._stop_future), timeout=timeout
+                    asyncio.shield(self._interval_task_stop_future), timeout=timeout
                 )
-                self._stop_future.result()
+                self._interval_task_stop_future.result()
                 logger.info("stopping IntervalSource task")
                 break
             except asyncio.TimeoutError:
                 # This is the normal case, just continue with the loop
                 continue
 
-    async def stop(self):
+    async def stop(self, exception: Optional[Exception]):
         logger.debug("stop()")
-        if self._stop_future is not None:
-            self._stop_future.set_result(42)
-        await super().stop()
+        if self._interval_task_stop_future is not None:
+            self._interval_task_stop_future.set_result(None)
+        await super().stop(exception)
 
     @abstractmethod
     async def update(self):

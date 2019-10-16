@@ -26,6 +26,8 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from typing import Optional
+
 from yarl import URL
 
 from .client import Client
@@ -73,13 +75,13 @@ class DataClient(Client):
             # TODO configurable prefetch count
             await self.data_channel.set_qos(prefetch_count=400)
 
-    async def stop(self):
+    async def stop(self, exception: Optional[Exception]):
         logger.info("closing data channel and connection.")
         if self.data_channel:
             await self.data_channel.close()
             self.data_channel = None
         if self.data_connection:
-            await self.data_connection.close()
+            await self.data_connection.close(exception)
             self.data_connection = None
         self.data_exchange = None
-        await super().stop()
+        await super().stop(exception)
