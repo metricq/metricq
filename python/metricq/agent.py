@@ -78,9 +78,7 @@ class Agent(RPCDispatcher):
     def __init__(self, token, management_url, event_loop=None, add_uuid=False):
         self.token = f"{token}.{uuid.uuid4().hex}" if add_uuid else token
 
-        self._event_loop_owned = False
         self._event_loop = event_loop
-        self._event_loop_cancel_on_exception = False
         self._stop_in_progress = False
         self._stop_future: Awaitable[None] = self.event_loop.create_future()
 
@@ -176,9 +174,9 @@ class Agent(RPCDispatcher):
             Any exception passed to :py:meth:`stop`, or any exception raised by
             :py:meth:`connect`.
         """
-        self._event_loop_owned = True
-        self._event_loop_cancel_on_exception = cancel_on_exception
-        self.event_loop.set_exception_handler(self.on_exception)
+        self.event_loop.set_exception_handler(
+            functools.partial(self.on_exception, cancel_on_exception)
+        )
         for signame in catch_signals:
             try:
                 self.event_loop.add_signal_handler(
@@ -340,7 +338,9 @@ class Agent(RPCDispatcher):
             exception=None if signal == "SIGINT" else ReceivedSignalError(signal)
         )
 
-    def on_exception(self, loop: asyncio.AbstractEventLoop, context):
+    def on_exception(
+        self, cancel_on_exception: bool, loop: asyncio.AbstractEventLoop, context
+    ):
         logger.error("Exception in event loop: {}".format(context["message"]))
 
         with suppress(KeyError):
@@ -357,7 +357,7 @@ class Agent(RPCDispatcher):
             )
 
             is_keyboard_interrupt = isinstance(ex, KeyboardInterrupt)
-            if self._event_loop_cancel_on_exception or is_keyboard_interrupt:
+            if cancel_on_exception or is_keyboard_interrupt:
                 if not is_keyboard_interrupt:
                     logger.error(
                         "Stopping Agent on unhandled exception ({})",
