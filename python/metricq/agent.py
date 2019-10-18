@@ -227,16 +227,8 @@ class Agent(RPCDispatcher):
         )
         await exchange.publish(msg, routing_key=routing_key)
 
-        if timeout:
-
-            def cleanup():
-                try:
-                    del self._rpc_response_handlers[correlation_id]
-                except KeyError:
-                    pass
-
-            if not request_future:
-                self.event_loop.call_later(timeout, cleanup)
+        def cleanup():
+            self._rpc_response_handlers.pop(correlation_id, None)
 
         if request_future:
             try:
@@ -247,6 +239,8 @@ class Agent(RPCDispatcher):
                 )
                 cleanup()
                 raise te
+        elif timeout:
+            self.event_loop.call_later(timeout, cleanup)
 
     async def rpc_consume(self, extra_queues=[]):
         """
