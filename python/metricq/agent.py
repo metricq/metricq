@@ -200,7 +200,7 @@ class Agent(RPCDispatcher):
         )
 
         if response_callback is None:
-            request_future = asyncio.Future(loop=self.event_loop)
+            request_future = self.event_loop.create_future()
 
             if not cleanup_on_response:
                 # We must cleanup when we use the future otherwise we get errors
@@ -210,7 +210,7 @@ class Agent(RPCDispatcher):
                     "no cleanup_on_response requested while no response callback is given"
                 )
 
-            def response_callback(**response_kwargs):
+            def default_response_callback(**response_kwargs):
                 assert not request_future.done()
                 logger.info("rpc completed in {} s", timer() - time_begin)
                 if "error" in response_kwargs:
@@ -218,6 +218,7 @@ class Agent(RPCDispatcher):
                 else:
                     request_future.set_result(response_kwargs)
 
+            response_callback = default_response_callback
         else:
             request_future = None
 
@@ -227,16 +228,8 @@ class Agent(RPCDispatcher):
         )
         await exchange.publish(msg, routing_key=routing_key)
 
-        if timeout:
-
-            def cleanup():
-                try:
-                    del self._rpc_response_handlers[correlation_id]
-                except KeyError:
-                    pass
-
-            if not request_future:
-                self.event_loop.call_later(timeout, cleanup)
+        def cleanup():
+            self._rpc_response_handlers.pop(correlation_id, None)
 
         if request_future:
             try:
@@ -247,6 +240,8 @@ class Agent(RPCDispatcher):
                 )
                 cleanup()
                 raise te
+        elif timeout:
+            self.event_loop.call_later(timeout, cleanup)
 
     async def rpc_consume(self, extra_queues=[]):
         """
