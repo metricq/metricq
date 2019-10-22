@@ -56,5 +56,11 @@ private:
     std::atomic<bool> stop_requested_ = false;
     bool running_ = false;
 
+    metricq::TimePoint current_time_;
+
+    int messages_per_chunk_;
+    int chunks_to_send_;
+    std::string metric_;
+
     metricq::Timer::TimerResult timeout_cb(std::error_code);
 };

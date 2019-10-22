@@ -68,18 +68,25 @@ DummySource::~DummySource()
 {
 }
 
-void DummySource::on_source_config(const nlohmann::json&)
+void DummySource::on_source_config(const nlohmann::json& config)
 {
     Log::debug() << "DummySource::on_source_config() called";
-    (*this)["dummy.source"];
+
+    metric_ = config.value("metric", "dummy.source");
+    messages_per_chunk_ = config.value("messagesPerChunk", 10);
+    chunks_to_send_ = config.value("chunksToSend", 0);
+
+    (*this)[metric_];
 }
 
 void DummySource::on_source_ready()
 {
     Log::debug() << "DummySource::on_source_ready() called";
-    (*this)["dummy.source"].metadata.unit("kittens");
-    (*this)["dummy.source"].metadata["color"] = "pink";
-    (*this)["dummy.source"].metadata["paws"] = 4;
+    (*this)[metric_].metadata.unit("kittens");
+    (*this)[metric_].metadata["color"] = "pink";
+    (*this)[metric_].metadata["paws"] = 4;
+
+    current_time_ = metricq::Clock::now();
 
     timer_.start([this](auto err) { return this->timeout_cb(err); },
                  std::chrono::milliseconds(interval_ms));
@@ -111,17 +118,22 @@ metricq::Timer::TimerResult DummySource::timeout_cb(std::error_code)
         return metricq::Timer::TimerResult::cancel;
     }
     Log::debug() << "sending metrics...";
-    auto current_time = metricq::Clock::now();
-    const auto r = 10;
-    auto& metric = (*this)["dummy.source"];
+    auto& metric = (*this)[metric_];
     metric.chunk_size(0);
-    for (int i = 0; i < r; i++)
+    for (int i = 0; i < messages_per_chunk_; i++)
     {
-        double value = sin((2 * M_PI * (t + i * 0.1)) / interval_ms);
-        metric.send({ current_time, value });
-        current_time += std::chrono::milliseconds(interval_ms) / r;
+        double value = 2 * M_PI * (t + (double)i / messages_per_chunk_) / interval_ms;
+        metric.send({ current_time_, value });
+        current_time_ +=
+            std::chrono::duration_cast<metricq::Duration>(std::chrono::milliseconds(interval_ms)) /
+            (messages_per_chunk_ + 1);
     }
     metric.flush();
     t++;
+    if (chunks_to_send_ && t >= chunks_to_send_)
+    {
+        stop();
+        return metricq::Timer::TimerResult::cancel;
+    }
     return metricq::Timer::TimerResult::repeat;
 }
