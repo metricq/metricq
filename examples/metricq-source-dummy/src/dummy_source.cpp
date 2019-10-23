@@ -37,8 +37,8 @@
 
 using Log = metricq::logger::nitro::Log;
 
-DummySource::DummySource(const std::string& manager_host, const std::string& token, int interval_ms)
-: metricq::Source(token), signals_(io_service, SIGINT, SIGTERM), interval_ms(interval_ms), t(0),
+DummySource::DummySource(const std::string& manager_host, const std::string& token, metricq::Duration interval)
+: metricq::Source(token), signals_(io_service, SIGINT, SIGTERM), interval(interval), t(0),
   timer_(io_service)
 {
     Log::debug() << "DummySource::DummySource() called";
@@ -89,7 +89,7 @@ void DummySource::on_source_ready()
     current_time_ = metricq::Clock::now();
 
     timer_.start([this](auto err) { return this->timeout_cb(err); },
-                 std::chrono::milliseconds(interval_ms));
+                 interval);
 
     running_ = true;
 }
@@ -119,13 +119,14 @@ metricq::Timer::TimerResult DummySource::timeout_cb(std::error_code)
     }
     Log::debug() << "sending metrics...";
     auto& metric = (*this)[metric_];
+    auto interval_ms = std::chrono::duration_cast<std::chrono::milliseconds>(interval).count();
     metric.chunk_size(0);
     for (int i = 0; i < messages_per_chunk_; i++)
     {
         double value = 2 * M_PI * (t + (double)i / messages_per_chunk_) / interval_ms;
         metric.send({ current_time_, value });
         current_time_ +=
-            std::chrono::duration_cast<metricq::Duration>(std::chrono::milliseconds(interval_ms)) /
+            interval /
             (messages_per_chunk_ + 1);
     }
     metric.flush();

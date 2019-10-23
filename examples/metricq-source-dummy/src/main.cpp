@@ -50,13 +50,14 @@ int main(int argc, char* argv[])
     parser.toggle("trace").short_name("t");
     parser.toggle("quiet").short_name("q");
     parser.toggle("help").short_name("h");
-    parser.option("interval", "Interval to generate data in milliseconds.")
+    parser.option("interval", "Interval to generate data as duration string.")
         .short_name("i")
-        .default_value("100");
+        .default_value("100ms");
 
     try
     {
         auto options = parser.parse(argc, argv);
+        metricq::Duration interval;
 
         if (options.given("help"))
         {
@@ -79,8 +80,18 @@ int main(int argc, char* argv[])
 
         metricq::logger::nitro::initialize();
 
+        try
+        {
+            interval = metricq::duration_parse(options.get("interval"));
+        }
+        catch (const std::logic_error&)
+        {
+            std::cerr << "Invalid interval: " << options.get("interval") << '\n';
+            return 1;
+        }
+
         DummySource source(options.get("server"), options.get("token"),
-                           options.as<int>("interval"));
+                           interval);
         Log::info() << "starting main loop.";
         source.main_loop();
         Log::info() << "exiting main loop.";
