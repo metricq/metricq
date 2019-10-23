@@ -86,8 +86,6 @@ void DummySource::on_source_ready()
     (*this)[metric_].metadata["color"] = "pink";
     (*this)[metric_].metadata["paws"] = 4;
 
-    current_time_ = metricq::Clock::now();
-
     timer_.start([this](auto err) { return this->timeout_cb(err); },
                  interval);
 
