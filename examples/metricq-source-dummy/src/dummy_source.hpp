@@ -51,7 +51,7 @@ private:
     asio::signal_set signals_;
 
     metricq::Duration interval;
-    int t;
+    int chunks_sent_;
     metricq::Timer timer_;
     std::atomic<bool> stop_requested_ = false;
     bool running_ = false;

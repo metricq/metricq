@@ -38,7 +38,7 @@
 using Log = metricq::logger::nitro::Log;
 
 DummySource::DummySource(const std::string& manager_host, const std::string& token, metricq::Duration interval)
-: metricq::Source(token), signals_(io_service, SIGINT, SIGTERM), interval(interval), t(0),
+: metricq::Source(token), signals_(io_service, SIGINT, SIGTERM), interval(interval), chunks_sent_(0),
   timer_(io_service)
 {
     Log::debug() << "DummySource::DummySource() called";
@@ -122,15 +122,15 @@ metricq::Timer::TimerResult DummySource::timeout_cb(std::error_code)
     metric.chunk_size(0);
     for (int i = 0; i < messages_per_chunk_; i++)
     {
-        double value = sin(2 * M_PI * (t + static_cast<double>(i) / messages_per_chunk_) / interval_ms);
+        double value = sin(2 * M_PI * (chunks_sent_ + static_cast<double>(i) / messages_per_chunk_) / interval_ms);
         metric.send({ current_time, value });
         current_time +=
             interval /
             (messages_per_chunk_ + 1);
     }
     metric.flush();
-    t++;
-    if (chunks_to_send_ && t >= chunks_to_send_)
+    chunks_sent_++;
+    if (chunks_to_send_ && chunks_sent_ >= chunks_to_send_)
     {
         stop();
         return metricq::Timer::TimerResult::cancel;
