@@ -118,14 +118,15 @@ metricq::Timer::TimerResult DummySource::timeout_cb(std::error_code)
         return metricq::Timer::TimerResult::cancel;
     }
     Log::debug() << "sending metrics...";
+    auto current_time = metricq::Clock::now();
     auto& metric = (*this)[metric_];
     auto interval_ms = std::chrono::duration_cast<std::chrono::milliseconds>(interval).count();
     metric.chunk_size(0);
     for (int i = 0; i < messages_per_chunk_; i++)
     {
-        double value = 2 * M_PI * (t + (double)i / messages_per_chunk_) / interval_ms;
-        metric.send({ current_time_, value });
-        current_time_ +=
+        double value = sin(2 * M_PI * (t + static_cast<double>(i) / messages_per_chunk_) / interval_ms);
+        metric.send({ current_time, value });
+        current_time +=
             interval /
             (messages_per_chunk_ + 1);
     }
