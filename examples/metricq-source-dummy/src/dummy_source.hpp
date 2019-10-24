@@ -38,7 +38,9 @@
 class DummySource : public metricq::Source
 {
 public:
-    DummySource(const std::string& manager_host, const std::string& token, metricq::Duration interval, const std::string& metric, int messages_per_chunk, int chunks_to_send);
+    DummySource(const std::string& manager_host, const std::string& token,
+                metricq::Duration interval, const std::string& metric, int messages_per_chunk,
+                int chunks_to_send);
     ~DummySource();
 
     void on_error(const std::string& message) override;

@@ -93,8 +93,9 @@ int main(int argc, char* argv[])
             return 1;
         }
 
-        DummySource source(options.get("server"), options.get("token"),
-                           interval, options.get("metric"), options.as<int>("messages-per-chunk"), options.as<int>("chunk-count"));
+        DummySource source(options.get("server"), options.get("token"), interval,
+                           options.get("metric"), options.as<int>("messages-per-chunk"),
+                           options.as<int>("chunk-count"));
         Log::info() << "starting main loop.";
         source.main_loop();
         Log::info() << "exiting main loop.";

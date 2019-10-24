@@ -37,9 +37,12 @@
 
 using Log = metricq::logger::nitro::Log;
 
-DummySource::DummySource(const std::string& manager_host, const std::string& token, metricq::Duration interval, const std::string& metric, int messages_per_chunk, int chunks_to_send)
-: metricq::Source(token), signals_(io_service, SIGINT, SIGTERM), interval(interval), chunks_sent_(0),
-  timer_(io_service), metric_(metric), messages_per_chunk_(messages_per_chunk), chunks_to_send_(chunks_to_send)
+DummySource::DummySource(const std::string& manager_host, const std::string& token,
+                         metricq::Duration interval, const std::string& metric,
+                         int messages_per_chunk, int chunks_to_send)
+: metricq::Source(token), signals_(io_service, SIGINT, SIGTERM), interval(interval),
+  chunks_sent_(0), timer_(io_service), metric_(metric), messages_per_chunk_(messages_per_chunk),
+  chunks_to_send_(chunks_to_send)
 {
     Log::debug() << "DummySource::DummySource() called";
 
@@ -81,8 +84,7 @@ void DummySource::on_source_ready()
     (*this)[metric_].metadata["color"] = "pink";
     (*this)[metric_].metadata["paws"] = 4;
 
-    timer_.start([this](auto err) { return this->timeout_cb(err); },
-                 interval);
+    timer_.start([this](auto err) { return this->timeout_cb(err); }, interval);
 
     running_ = true;
 }
@@ -117,11 +119,10 @@ metricq::Timer::TimerResult DummySource::timeout_cb(std::error_code)
     metric.chunk_size(0);
     for (int i = 0; i < messages_per_chunk_; i++)
     {
-        double value = sin(2 * M_PI * (chunks_sent_ + static_cast<double>(i) / messages_per_chunk_) / interval_ms);
+        double value = sin(
+            2 * M_PI * (chunks_sent_ + static_cast<double>(i) / messages_per_chunk_) / interval_ms);
         metric.send({ current_time, value });
-        current_time +=
-            interval /
-            (messages_per_chunk_ + 1);
+        current_time += interval / (messages_per_chunk_ + 1);
     }
     metric.flush();
     chunks_sent_++;
