@@ -39,7 +39,7 @@ class DummySink : public metricq::Sink
 {
 public:
     DummySink(const std::string& manager_host, const std::string& token,
-              const std::vector<std::string>& metrics, int timeout,
+              const std::vector<std::string>& metrics, metricq::Duration timeout,
               std::size_t expected_chunk_count);
 
 protected:
@@ -59,7 +59,7 @@ private:
 
     std::vector<std::string> metrics_;
 
-    int timeout_;
+    metricq::Duration timeout_;
     std::size_t expected_chunk_count_;
 
     std::size_t message_count_ = 0;

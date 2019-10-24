@@ -42,7 +42,7 @@ using json = nlohmann::json;
 using Log = metricq::logger::nitro::Log;
 
 DummySink::DummySink(const std::string& manager_host, const std::string& token,
-                     const std::vector<std::string>& metrics, int timeout,
+                     const std::vector<std::string>& metrics, metricq::Duration timeout,
                      std::size_t expected_chunk_count)
 : metricq::Sink(token, true), signals_(io_service, SIGINT, SIGTERM), metrics_(metrics),
   timeout_(timeout), expected_chunk_count_(expected_chunk_count), timer_(io_service),
@@ -103,19 +103,20 @@ void DummySink::on_data_channel_ready()
         },
         std::chrono::seconds(10));
 
-    if (timeout_)
+    if (timeout_.count())
     {
         timeout_timer_.start(
             [this](std::error_code error) {
                 if (!error)
                 {
-                    Log::error() << "Data timeout! Didn't receive data in " << timeout_ << " s.";
+                    Log::error() << "Data timeout! Didn't receive data in " << this->timeout_
+                                 << " ns.";
                     throw metricq::Exception();
                 }
 
                 return metricq::Timer::TimerResult::cancel;
             },
-            std::chrono::seconds(timeout_));
+            timeout_);
     }
 }
 
@@ -154,7 +155,7 @@ void DummySink::on_data(const AMQP::Message& message, uint64_t delivery_tag, boo
     if (timeout_timer_.running())
     {
         timeout_timer_.cancel();
-        timeout_timer_.start(std::chrono::seconds(timeout_));
+        timeout_timer_.start(timeout_);
     }
 
     if (expected_chunk_count_ && chunk_count_ >= expected_chunk_count_)

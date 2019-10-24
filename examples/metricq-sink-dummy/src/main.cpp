@@ -64,6 +64,7 @@ int main(int argc, char* argv[])
     try
     {
         auto options = parser.parse(argc, argv);
+        metricq::Duration timeout;
 
         if (options.given("help"))
         {
@@ -86,13 +87,23 @@ int main(int argc, char* argv[])
 
         metricq::logger::nitro::initialize();
 
+        try
+        {
+            timeout = metricq::duration_parse(options.get("timeout"));
+        }
+        catch (const std::logic_error&)
+        {
+            std::cerr << "Invalid timeout: " << options.get("timeout") << '\n';
+            return 1;
+        }
+
         std::vector<std::string> metrics;
         for (size_t i = 0; i < options.count("metrics"); ++i)
         {
             metrics.push_back(options.get("metrics", i));
         }
-        DummySink sink(options.get("server"), options.get("token"), metrics,
-                       options.as<int>("timeout"), options.as<std::size_t>("count"));
+        DummySink sink(options.get("server"), options.get("token"), metrics, timeout,
+                       options.as<std::size_t>("count"));
         Log::info() << "starting main loop.";
         sink.main_loop();
         Log::info() << "exiting main loop.";
