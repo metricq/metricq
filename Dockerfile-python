@@ -17,5 +17,5 @@ RUN . /home/metricq/venv/bin/activate && pip install .
 FROM python:3-slim
 RUN useradd -m metricq
 USER metricq
-COPY --from=builder /home/metricq/venv /home/metricq/venv
+COPY --from=builder --chown=metricq:metricq /home/metricq/venv /home/metricq/venv
 CMD [ "/home/metricq/venv/bin/python" ]
