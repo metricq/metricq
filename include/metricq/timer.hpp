@@ -33,6 +33,7 @@
 #include <asio/io_service.hpp>
 
 #include <functional>
+#include <nitro/log/logger.hpp>
 #include <system_error>
 
 namespace metricq
@@ -94,6 +95,13 @@ public:
 private:
     void timer_callback(std::error_code err)
     {
+        // starting a running or recently canceled timer will cancel all callbacks on the event
+        // loop, calling them with error code operation_aborted and this.canceled_ set to false
+        if (err == asio::error::operation_aborted)
+        {
+            return;
+        }
+
         auto res = callback_(err);
 
         if (res == TimerResult::repeat && !canceled_)
