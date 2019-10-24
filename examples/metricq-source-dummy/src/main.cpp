@@ -53,6 +53,9 @@ int main(int argc, char* argv[])
     parser.option("interval", "Interval to generate data as duration string.")
         .short_name("i")
         .default_value("100ms");
+    parser.option("metric").short_name("m").default_value("dummy.source");
+    parser.option("messages-per-chunk").default_value("10");
+    parser.option("chunk-count").short_name("c").default_value("0");
 
     try
     {
@@ -91,7 +94,7 @@ int main(int argc, char* argv[])
         }
 
         DummySource source(options.get("server"), options.get("token"),
-                           interval);
+                           interval, options.get("metric"), options.as<int>("messages-per-chunk"), options.as<int>("chunk-count"));
         Log::info() << "starting main loop.";
         source.main_loop();
         Log::info() << "exiting main loop.";

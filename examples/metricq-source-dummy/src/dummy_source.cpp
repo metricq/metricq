@@ -37,9 +37,9 @@
 
 using Log = metricq::logger::nitro::Log;
 
-DummySource::DummySource(const std::string& manager_host, const std::string& token, metricq::Duration interval)
+DummySource::DummySource(const std::string& manager_host, const std::string& token, metricq::Duration interval, const std::string& metric, int messages_per_chunk, int chunks_to_send)
 : metricq::Source(token), signals_(io_service, SIGINT, SIGTERM), interval(interval), chunks_sent_(0),
-  timer_(io_service)
+  timer_(io_service), metric_(metric), messages_per_chunk_(messages_per_chunk), chunks_to_send_(chunks_to_send)
 {
     Log::debug() << "DummySource::DummySource() called";
 
@@ -68,14 +68,9 @@ DummySource::~DummySource()
 {
 }
 
-void DummySource::on_source_config(const nlohmann::json& config)
+void DummySource::on_source_config(const nlohmann::json&)
 {
     Log::debug() << "DummySource::on_source_config() called";
-
-    metric_ = config.value("metric", "dummy.source");
-    messages_per_chunk_ = config.value("messagesPerChunk", 10);
-    chunks_to_send_ = config.value("chunksToSend", 0);
-
     (*this)[metric_];
 }
 
