@@ -50,13 +50,17 @@ int main(int argc, char* argv[])
     parser.toggle("trace").short_name("t");
     parser.toggle("quiet").short_name("q");
     parser.toggle("help").short_name("h");
-    parser.option("interval", "Interval to generate data in milliseconds.")
+    parser.option("interval", "Interval to generate data as duration string.")
         .short_name("i")
-        .default_value("100");
+        .default_value("100ms");
+    parser.option("metric").short_name("m").default_value("dummy.source");
+    parser.option("messages-per-chunk").default_value("10");
+    parser.option("chunk-count").short_name("c").default_value("0");
 
     try
     {
         auto options = parser.parse(argc, argv);
+        metricq::Duration interval;
 
         if (options.given("help"))
         {
@@ -79,8 +83,19 @@ int main(int argc, char* argv[])
 
         metricq::logger::nitro::initialize();
 
-        DummySource source(options.get("server"), options.get("token"),
-                           options.as<int>("interval"));
+        try
+        {
+            interval = metricq::duration_parse(options.get("interval"));
+        }
+        catch (const std::invalid_argument&)
+        {
+            std::cerr << "Invalid input for interval: " << options.get("interval") << '\n';
+            return 1;
+        }
+
+        DummySource source(options.get("server"), options.get("token"), interval,
+                           options.get("metric"), options.as<int>("messages-per-chunk"),
+                           options.as<int>("chunk-count"));
         Log::info() << "starting main loop.";
         source.main_loop();
         Log::info() << "exiting main loop.";
@@ -94,5 +109,6 @@ int main(int argc, char* argv[])
     catch (std::exception& e)
     {
         Log::error() << "Unhandled exception: " << e.what();
+        return 2;
     }
 }

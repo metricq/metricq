@@ -38,7 +38,9 @@
 class DummySource : public metricq::Source
 {
 public:
-    DummySource(const std::string& manager_host, const std::string& token, int interval_ms);
+    DummySource(const std::string& manager_host, const std::string& token,
+                metricq::Duration interval, const std::string& metric, int messages_per_chunk,
+                int chunks_to_send);
     ~DummySource();
 
     void on_error(const std::string& message) override;
@@ -50,11 +52,15 @@ private:
 
     asio::signal_set signals_;
 
-    int interval_ms;
-    int t;
+    metricq::Duration interval;
+    int chunks_sent_;
     metricq::Timer timer_;
     std::atomic<bool> stop_requested_ = false;
     bool running_ = false;
+
+    std::string metric_;
+    int messages_per_chunk_;
+    int chunks_to_send_;
 
     metricq::Timer::TimerResult timeout_cb(std::error_code);
 };

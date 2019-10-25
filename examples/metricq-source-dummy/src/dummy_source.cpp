@@ -37,9 +37,12 @@
 
 using Log = metricq::logger::nitro::Log;
 
-DummySource::DummySource(const std::string& manager_host, const std::string& token, int interval_ms)
-: metricq::Source(token), signals_(io_service, SIGINT, SIGTERM), interval_ms(interval_ms), t(0),
-  timer_(io_service)
+DummySource::DummySource(const std::string& manager_host, const std::string& token,
+                         metricq::Duration interval, const std::string& metric,
+                         int messages_per_chunk, int chunks_to_send)
+: metricq::Source(token), signals_(io_service, SIGINT, SIGTERM), interval(interval),
+  chunks_sent_(0), timer_(io_service), metric_(metric), messages_per_chunk_(messages_per_chunk),
+  chunks_to_send_(chunks_to_send)
 {
     Log::debug() << "DummySource::DummySource() called";
 
@@ -71,18 +74,17 @@ DummySource::~DummySource()
 void DummySource::on_source_config(const nlohmann::json&)
 {
     Log::debug() << "DummySource::on_source_config() called";
-    (*this)["dummy.source"];
+    (*this)[metric_];
 }
 
 void DummySource::on_source_ready()
 {
     Log::debug() << "DummySource::on_source_ready() called";
-    (*this)["dummy.source"].metadata.unit("kittens");
-    (*this)["dummy.source"].metadata["color"] = "pink";
-    (*this)["dummy.source"].metadata["paws"] = 4;
+    (*this)[metric_].metadata.unit("kittens");
+    (*this)[metric_].metadata["color"] = "pink";
+    (*this)[metric_].metadata["paws"] = 4;
 
-    timer_.start([this](auto err) { return this->timeout_cb(err); },
-                 std::chrono::milliseconds(interval_ms));
+    timer_.start([this](auto err) { return this->timeout_cb(err); }, interval);
 
     running_ = true;
 }
@@ -112,16 +114,22 @@ metricq::Timer::TimerResult DummySource::timeout_cb(std::error_code)
     }
     Log::debug() << "sending metrics...";
     auto current_time = metricq::Clock::now();
-    const auto r = 10;
-    auto& metric = (*this)["dummy.source"];
+    auto& metric = (*this)[metric_];
+    auto interval_ms = std::chrono::duration_cast<std::chrono::milliseconds>(interval).count();
     metric.chunk_size(0);
-    for (int i = 0; i < r; i++)
+    for (int i = 0; i < messages_per_chunk_; i++)
     {
-        double value = sin((2 * M_PI * (t + i * 0.1)) / interval_ms);
+        double value = sin(
+            2 * M_PI * (chunks_sent_ + static_cast<double>(i) / messages_per_chunk_) / interval_ms);
         metric.send({ current_time, value });
-        current_time += std::chrono::milliseconds(interval_ms) / r;
+        current_time += interval / (messages_per_chunk_ + 1);
     }
     metric.flush();
-    t++;
+    chunks_sent_++;
+    if (chunks_to_send_ && chunks_sent_ >= chunks_to_send_)
+    {
+        stop();
+        return metricq::Timer::TimerResult::cancel;
+    }
     return metricq::Timer::TimerResult::repeat;
 }
