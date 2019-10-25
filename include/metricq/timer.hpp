@@ -68,9 +68,8 @@ public:
                 "metricq::Timer doesn't support sub-microseconds intervals.");
         }
 
-        canceled_ = false;
         running_ = true;
-        timer_.expires_from_now(interval_);
+        timer_.expires_after(interval_);
         timer_.async_wait([this](auto error) { this->timer_callback(error); });
     }
 
@@ -83,7 +82,6 @@ public:
     void cancel()
     {
         timer_.cancel();
-        canceled_ = true;
         running_ = false;
     }
 
@@ -95,8 +93,8 @@ public:
 private:
     void timer_callback(std::error_code err)
     {
-        // starting a running or recently canceled timer will cancel all callbacks on the event
-        // loop, calling them with error code operation_aborted and this.canceled_ set to false
+        // Calling start() for an already running or recently canceled timer will cancel all
+        // callbacks on the event loop. So we get the error code operation_aborted here.
         if (err == asio::error::operation_aborted)
         {
             return;
@@ -104,7 +102,7 @@ private:
 
         auto res = callback_(err);
 
-        if (res == TimerResult::repeat && !canceled_)
+        if (res == TimerResult::repeat)
         {
             timer_.expires_at(timer_.expires_at() + interval_);
             timer_.async_wait([this](auto error) { this->timer_callback(error); });
@@ -119,7 +117,6 @@ private:
     asio::basic_waitable_timer<std::chrono::system_clock> timer_;
     Callback callback_;
     std::chrono::microseconds interval_;
-    bool canceled_ = false;
     bool running_ = false;
 };
 

@@ -1,2 +1,11 @@
-build
+build*
 cmake-build-*
+.idea/
+
+*_pb2.py
+metricq.egg-info
+.eggs/
+__pycache__/
+venv/
+
+.DS_STORE
