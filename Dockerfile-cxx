@@ -26,7 +26,8 @@ RUN make package
 
 FROM ubuntu:eoan
 
-RUN apt-get update && apt-get install -y libssl1.1 libprotobuf17
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y libssl1.1 libprotobuf17 tzdata
 
 RUN useradd -m metricq
 COPY --chown=metricq:metricq --from=builder /home/metricq/metricq/build/metricq-1.0.0-Linux.sh /home/metricq/metricq-1.0.0-Linux.sh
