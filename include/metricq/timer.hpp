@@ -33,7 +33,6 @@
 #include <asio/io_service.hpp>
 
 #include <functional>
-#include <nitro/log/logger.hpp>
 #include <system_error>
 
 namespace metricq

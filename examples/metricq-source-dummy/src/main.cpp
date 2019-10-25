@@ -87,9 +87,9 @@ int main(int argc, char* argv[])
         {
             interval = metricq::duration_parse(options.get("interval"));
         }
-        catch (const std::logic_error&)
+        catch (const std::invalid_argument&)
         {
-            std::cerr << "Invalid interval: " << options.get("interval") << '\n';
+            std::cerr << "Invalid input for interval: " << options.get("interval") << '\n';
             return 1;
         }
 

@@ -91,9 +91,9 @@ int main(int argc, char* argv[])
         {
             timeout = metricq::duration_parse(options.get("timeout"));
         }
-        catch (const std::logic_error&)
+        catch (const std::invalid_argument&)
         {
-            std::cerr << "Invalid timeout: " << options.get("timeout") << '\n';
+            std::cerr << "Invalid input for timeout: " << options.get("timeout") << '\n';
             return 1;
         }
 
