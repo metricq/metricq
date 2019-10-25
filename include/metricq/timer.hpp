@@ -84,6 +84,12 @@ public:
         running_ = false;
     }
 
+    void restart(Duration interval)
+    {
+        cancel();
+        start(interval);
+    }
+
     bool running() const
     {
         return running_;
