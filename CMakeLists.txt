@@ -260,6 +260,9 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     else()
         message(STATUS "Docker not found. SKIPPING.")
     endif()
+
+    # Setup cpack
+    include(CPack)
 else()
     set_target_properties(metricq-core PROPERTIES EXCLUDE_FROM_ALL TRUE)
     set_target_properties(metricq-source PROPERTIES EXCLUDE_FROM_ALL TRUE)
