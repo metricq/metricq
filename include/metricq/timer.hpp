@@ -50,7 +50,7 @@ public:
     using Callback = std::function<TimerResult(std::error_code)>;
 
     Timer(asio::io_service& io_service, Callback callback = Callback())
-    : timer_(io_service), callback_(callback)
+    : timer_(io_service), callback_(callback), interval_(0)
     {
     }
 
@@ -67,9 +67,7 @@ public:
                 "metricq::Timer doesn't support sub-microseconds intervals.");
         }
 
-        running_ = true;
-        timer_.expires_after(interval_);
-        timer_.async_wait([this](auto error) { this->timer_callback(error); });
+        restart();
     }
 
     void start(Callback callback, Duration interval)
@@ -84,10 +82,16 @@ public:
         running_ = false;
     }
 
-    void restart(Duration interval)
+    void restart()
     {
-        cancel();
-        start(interval);
+        if (interval_.count() == 0)
+        {
+            throw std::logic_error("metricq::Timer interval must be set before calling restart!");
+        }
+
+        running_ = true;
+        timer_.expires_after(interval_);
+        timer_.async_wait([this](auto error) { this->timer_callback(error); });
     }
 
     bool running() const

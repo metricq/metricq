@@ -150,7 +150,7 @@ void DummySink::on_data(const AMQP::Message& message, uint64_t delivery_tag, boo
 
     if (timeout_timer_.running())
     {
-        timeout_timer_.restart(timeout_);
+        timeout_timer_.restart();
     }
 
     if (expected_chunk_count_ && chunk_count_ >= expected_chunk_count_)
