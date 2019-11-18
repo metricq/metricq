@@ -74,7 +74,12 @@ setup(
     python_requires=">=3.5",
     packages=["metricq", "metricq_proto"],
     scripts=[],
-    install_requires=["aio-pika>=5.2.3", "protobuf>=3", "yarl"],
+    install_requires=[
+        "aio-pika~=6.0,>=6.4.0",
+        "aiormq~=3.0",  # TODO: remove once aio-pika reexports ChannelInvalidStateError
+        "protobuf>=3",
+        "yarl",
+    ],
     extras_require={
         "examples": ["aiomonitor", "click", "click-log", "click-completion"]
     },
