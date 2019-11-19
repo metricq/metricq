@@ -9,5 +9,3 @@ __pycache__/
 venv/
 
 .DS_STORE
-Dockerfile-cxx
-Dockerfile-python
