@@ -89,10 +89,7 @@ class Sink(DataClient):
             try:
                 exception = task.exception()
                 if exception is None:
-                    # Resubscribed sucessfully, call the DataClient reconnect
-                    # handler. This should signal the
-                    # self.data_connection_established event
-                    super()._on_data_connection_reconnect(connection)
+                    self._data_connection_watchdog.set_established()
                 else:
                     errmsg = "Resubscription failed with an unhandled exception"
                     logger.error(

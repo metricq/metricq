@@ -37,7 +37,7 @@ import textwrap
 import time
 import traceback
 import uuid
-from typing import Optional, Awaitable
+from typing import Optional, Awaitable, Union
 from contextlib import suppress
 
 import aio_pika
@@ -46,6 +46,7 @@ from aiormq import ChannelInvalidStateError
 
 from .logging import get_logger
 from .rpc import RPCDispatcher
+from .connection_watchdog import ConnectionWatchdog
 
 logger = get_logger(__name__)
 timer = time.monotonic
@@ -62,6 +63,10 @@ class ReceivedSignalError(AgentStoppedError):
 
 
 class ConnectFailedError(AgentStoppedError):
+    pass
+
+
+class ReconnectTimeoutError(AgentStoppedError):
     pass
 
 
@@ -92,7 +97,15 @@ class RpcReplyError(PublishFailedError):
 class Agent(RPCDispatcher):
     LOG_MAX_WIDTH = 200
 
-    def __init__(self, token, management_url, event_loop=None, add_uuid=False):
+    def __init__(
+        self,
+        token,
+        management_url,
+        *,
+        connection_timeout: Union[int, float] = 60,
+        event_loop=None,
+        add_uuid=False,
+    ):
         self.token = f"{token}.{uuid.uuid4().hex}" if add_uuid else token
 
         self._event_loop = event_loop
@@ -104,7 +117,15 @@ class Agent(RPCDispatcher):
         self._management_exchange_name = "metricq.management"
 
         self._management_connection = None
-        self._management_connection_established = asyncio.Event()
+        self._management_connection_watchdog = ConnectionWatchdog(
+            on_timeout_callback=lambda watchdog: self._schedule_stop(
+                ReconnectTimeoutError(
+                    f"Failed to reestablish {watchdog.connection_name} after {watchdog.timeout} seconds"
+                )
+            ),
+            timeout=connection_timeout,
+            connection_name="management connection",
+        )
         self._management_channel = None
 
         self.management_rpc_queue = None
@@ -182,7 +203,8 @@ class Agent(RPCDispatcher):
             "{}-rpc".format(self.token), exclusive=True
         )
 
-        self._management_connection_established.set()
+        self._management_connection_watchdog.set_established()
+        self._management_connection_watchdog.start()
 
     def run(
         self, catch_signals=("SIGINT", "SIGTERM"), cancel_on_exception=False
@@ -461,6 +483,7 @@ class Agent(RPCDispatcher):
 
     async def _close(self):
         logger.info("Closing management channel and connection...")
+        await self._management_connection_watchdog.stop()
         if self._management_channel:
             await self._management_channel.close()
             self._management_channel = None
@@ -519,7 +542,7 @@ class Agent(RPCDispatcher):
                     duration,
                     textwrap.shorten(body, width=self.LOG_MAX_WIDTH),
                 )
-                await self._management_connection_established.wait()
+                await self._management_connection_watchdog.established()
                 try:
                     await self._management_channel.default_exchange.publish(
                         aio_pika.Message(
@@ -568,10 +591,8 @@ class Agent(RPCDispatcher):
             "Connection closed: {} ({})", exception, type(exception).__qualname__
         )
 
-    def _on_management_connection_reconnect(self, connection):
-        logger.info("Management connection to {} reestablished", connection)
-        self._management_connection_established.set()
+    def _on_management_connection_reconnect(self, _connection):
+        self._management_connection_watchdog.set_established()
 
-    def _on_management_connection_close(self, exception: Optional[Exception]):
-        logger.info("Management connection closed: {}", exception)
-        self._management_connection_established.clear()
+    def _on_management_connection_close(self, _exception: Optional[Exception]):
+        self._management_connection_watchdog.set_closed()

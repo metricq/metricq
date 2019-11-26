@@ -109,7 +109,7 @@ class Source(DataClient):
         don't call from anywhere other than SourceMetric
         """
         msg = aio_pika.Message(data_chunk.SerializeToString())
-        await self.data_connection_established.wait()
+        await self._data_connection_watchdog.established()
         try:
             # TOC/TOU hazard: by the time we publish, the data connection might
             # be gone again, even if we waited for it to be established before.

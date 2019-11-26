@@ -71,7 +71,7 @@ class Client(Agent):
 
     async def rpc(self, function, **kwargs):
         logger.debug("Waiting for management connection to be reestablished...")
-        await self._management_connection_established.wait()
+        await self._management_connection_watchdog.established()
         try:
             return await super().rpc(
                 function=function,
