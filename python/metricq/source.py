@@ -32,7 +32,9 @@ import asyncio
 from abc import abstractmethod
 
 import aio_pika
+from aiormq import ChannelInvalidStateError
 
+from .agent import PublishFailedError
 from .data_client import DataClient
 from .datachunk_pb2 import DataChunk
 from .logging import get_logger
@@ -41,6 +43,10 @@ from .source_metric import SourceMetric
 from .types import Timestamp
 
 logger = get_logger(__name__)
+
+
+class MetricSendError(PublishFailedError):
+    pass
 
 
 class Source(DataClient):
@@ -103,7 +109,18 @@ class Source(DataClient):
         don't call from anywhere other than SourceMetric
         """
         msg = aio_pika.Message(data_chunk.SerializeToString())
-        await self.data_exchange.publish(msg, routing_key=metric, mandatory=False)
+        await self._data_connection_watchdog.established()
+        try:
+            # TOC/TOU hazard: by the time we publish, the data connection might
+            # be gone again, even if we waited for it to be established before.
+            await self.data_exchange.publish(msg, routing_key=metric, mandatory=False)
+        except ChannelInvalidStateError as e:
+            # Trying to publish on a closed channel results in a ChannelInvalidStateError
+            # from aiormq.  Let's wrap that in a more descriptive error.
+            raise MetricSendError(
+                f"Failed to publish data chunk for metric {metric!r} "
+                f"on exchange {self.data_exchange} ({self.data_connection})"
+            ) from e
 
     @rpc_handler("config")
     async def _source_config(self, **kwargs):

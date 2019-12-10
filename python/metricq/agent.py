@@ -37,36 +37,95 @@ import textwrap
 import time
 import traceback
 import uuid
+from typing import Optional, Awaitable, Union
+from contextlib import suppress
 
 import aio_pika
 from yarl import URL
+from aiormq import ChannelInvalidStateError
 
 from .logging import get_logger
 from .rpc import RPCDispatcher
+from .connection_watchdog import ConnectionWatchdog
 
 logger = get_logger(__name__)
 timer = time.monotonic
+
+
+class AgentStoppedError(Exception):
+    pass
+
+
+class ReceivedSignalError(AgentStoppedError):
+    def __init__(self, signal, *args):
+        self.signal = signal
+        super().__init__(f"Received signal {signal} while running Agent", *args)
+
+
+class ConnectFailedError(AgentStoppedError):
+    pass
+
+
+class ReconnectTimeoutError(AgentStoppedError):
+    pass
 
 
 class RPCError(RuntimeError):
     pass
 
 
+class PublishFailedError(Exception):
+    """Exception raised when publishing to an exchange failed unexpectedly
+
+    The source exception is always attached as a cause.
+    """
+
+    pass
+
+
+class RpcRequestError(PublishFailedError):
+    """Exception raised when issuing an RPC request failed
+    """
+
+    pass
+
+
+class RpcReplyError(PublishFailedError):
+    pass
+
+
 class Agent(RPCDispatcher):
     LOG_MAX_WIDTH = 200
 
-    def __init__(self, token, management_url, event_loop=None, add_uuid=False):
+    def __init__(
+        self,
+        token,
+        management_url,
+        *,
+        connection_timeout: Union[int, float] = 60,
+        event_loop=None,
+        add_uuid=False,
+    ):
         self.token = f"{token}.{uuid.uuid4().hex}" if add_uuid else token
 
-        self._event_loop_owned = False
         self._event_loop = event_loop
-        self._event_loop_cancel_on_exception = False
+        self._stop_in_progress = False
+        self._stop_future: Optional[Awaitable[None]] = None
 
         self._management_url = management_url
         self._management_broadcast_exchange_name = "metricq.broadcast"
         self._management_exchange_name = "metricq.management"
 
         self._management_connection = None
+        self._management_connection_watchdog = ConnectionWatchdog(
+            on_timeout_callback=lambda watchdog: self._schedule_stop(
+                ReconnectTimeoutError(
+                    f"Failed to reestablish {watchdog.connection_name} after {watchdog.timeout} seconds"
+                )
+            ),
+            timeout=connection_timeout,
+            connection_name="management connection",
+        )
         self._management_channel = None
 
         self.management_rpc_queue = None
@@ -75,7 +134,7 @@ class Agent(RPCDispatcher):
         self._management_exchange = None
 
         self._rpc_response_handlers = dict()
-        logger.debug("initialized")
+        logger.debug("Initialized Agent")
 
     def add_credentials(self, address):
         """ Add the credentials from the management connection to the provided address """
@@ -112,13 +171,16 @@ class Agent(RPCDispatcher):
             }
         else:
             ssl_options = None
+
         connection = await aio_pika.connect_robust(
             url, loop=self.event_loop, reconnect_interval=30, ssl_options=ssl_options
         )
+
         # How stupid that we can't easily add the handlers *before* actually connecting.
         # We could make our own RobustConnection object, but then we loose url parsing convenience
         connection.add_reconnect_callback(self._on_reconnect)
         connection.add_close_callback(self._on_close)
+
         return connection
 
     async def connect(self):
@@ -128,15 +190,46 @@ class Agent(RPCDispatcher):
         )
 
         self._management_connection = await self.make_connection(self._management_url)
+        self._management_connection.add_close_callback(
+            self._on_management_connection_close
+        )
+
+        self._management_connection.add_reconnect_callback(
+            self._on_management_connection_reconnect
+        )
+
         self._management_channel = await self._management_connection.channel()
         self.management_rpc_queue = await self._management_channel.declare_queue(
             "{}-rpc".format(self.token), exclusive=True
         )
 
-    def run(self, catch_signals=("SIGINT", "SIGTERM"), cancel_on_exception=False):
-        self._event_loop_owned = True
-        self._event_loop_cancel_on_exception = cancel_on_exception
-        self.event_loop.set_exception_handler(self.on_exception)
+        self._management_connection_watchdog.set_established()
+        self._management_connection_watchdog.start()
+
+    def run(
+        self, catch_signals=("SIGINT", "SIGTERM"), cancel_on_exception=False
+    ) -> None:
+        """Run an Agent by calling :py:meth:`connect` and waiting for it to be
+        :py:meth:`stop`ped.
+
+        If :py:meth:`connect` raises an exception, ConnectFailedError is
+        raised, with the offending exception attached as a cause.  Any
+        exception passed to :py:meth:`stop` is reraised.
+
+        :param catch_signals:
+            Call :py:meth:`on_signal` if any of theses signals were raised.
+        :type catch_signals: list[str]
+        :param bool cancel_on_exception:
+            Stop the running Agent when an unhandled exception occurs.  The
+            exception is reraised from this method.
+
+        :raises Exception:
+            Any exception passed to :py:meth:`stop`, or any exception raised by
+            :py:meth:`connect`.
+        """
+        self.event_loop.set_exception_handler(
+            functools.partial(self.on_exception, cancel_on_exception)
+        )
         for signame in catch_signals:
             try:
                 self.event_loop.add_signal_handler(
@@ -147,11 +240,47 @@ class Agent(RPCDispatcher):
                     "failed to setup signal handler for {}: {}", signame, error
                 )
 
-        self.event_loop.create_task(self.connect())
-        logger.debug("running event loop {}", self.event_loop)
-        self.event_loop.run_forever()
-        self.event_loop.close()
-        logger.debug("event loop completed")
+        async def wait_for_stop():
+            connect_task = self.event_loop.create_task(self.connect())
+            stopped_task = self.event_loop.create_task(self.stopped())
+
+            pending = {stopped_task, connect_task}
+            while pending:
+                done, pending = await asyncio.wait(
+                    pending, return_when=asyncio.FIRST_COMPLETED
+                )
+
+                # Check for successful connection, if connect() failed with
+                # an unhandled exception, raise ConnectFailedError and attach
+                # the unhandled exception as its cause.
+                if connect_task in done:
+                    exc = connect_task.exception()
+                    if exc is not None:
+                        logger.error(
+                            "Failed to connect {}: {} ({})",
+                            type(self).__qualname__,
+                            exc,
+                            type(exc).__qualname__,
+                        )
+                        raise ConnectFailedError("Failed to connect Agent") from exc
+
+                # If the Agent was stopped explicitly, return `None`.  If it was
+                # stopped because of an exception, reraise it.
+                if stopped_task in done:
+                    return stopped_task.result()
+
+        try:
+            logger.debug("Running event loop {}...", self.event_loop)
+            self.event_loop.run_until_complete(wait_for_stop())
+        finally:
+            self.event_loop.stop()
+            self.event_loop.run_until_complete(self.event_loop.shutdown_asyncgens())
+
+            with suppress(AttributeError):  # needs python 3.7
+                all_tasks = asyncio.all_tasks(self.event_loop)
+                logger.debug("Tasks remaining when stopping Agent: {}", len(all_tasks))
+
+            logger.debug("Event loop completed, exiting...")
 
     async def rpc(
         self,
@@ -176,7 +305,8 @@ class Agent(RPCDispatcher):
         Remember that we use javaScriptSnakeCase
         :return:
         """
-        if "function" not in kwargs:
+        function = kwargs.get("function")
+        if function is None:
             raise KeyError('all RPCs must contain a "function" argument')
 
         time_begin = timer()
@@ -185,7 +315,7 @@ class Agent(RPCDispatcher):
         body = json.dumps(kwargs)
         logger.info(
             "sending RPC {}, ex: {}, rk: {}, ci: {}, args: {}",
-            kwargs["function"],
+            function,
             exchange.name,
             routing_key,
             correlation_id,
@@ -200,7 +330,7 @@ class Agent(RPCDispatcher):
         )
 
         if response_callback is None:
-            request_future = asyncio.Future(loop=self.event_loop)
+            request_future = self.event_loop.create_future()
 
             if not cleanup_on_response:
                 # We must cleanup when we use the future otherwise we get errors
@@ -210,7 +340,7 @@ class Agent(RPCDispatcher):
                     "no cleanup_on_response requested while no response callback is given"
                 )
 
-            def response_callback(**response_kwargs):
+            def default_response_callback(**response_kwargs):
                 assert not request_future.done()
                 logger.info("rpc completed in {} s", timer() - time_begin)
                 if "error" in response_kwargs:
@@ -218,6 +348,7 @@ class Agent(RPCDispatcher):
                 else:
                     request_future.set_result(response_kwargs)
 
+            response_callback = default_response_callback
         else:
             request_future = None
 
@@ -225,18 +356,16 @@ class Agent(RPCDispatcher):
             response_callback,
             cleanup_on_response,
         )
-        await exchange.publish(msg, routing_key=routing_key)
 
-        if timeout:
+        try:
+            await exchange.publish(msg, routing_key=routing_key)
+        except ChannelInvalidStateError as e:
+            errmsg = f"Failed to issue RPC request {function!r} to exchange {exchange}"
+            logger.error("{}: {}", errmsg, e)
+            raise RpcRequestError(errmsg) from e
 
-            def cleanup():
-                try:
-                    del self._rpc_response_handlers[correlation_id]
-                except KeyError:
-                    pass
-
-            if not request_future:
-                self.event_loop.call_later(timeout, cleanup)
+        def cleanup():
+            self._rpc_response_handlers.pop(correlation_id, None)
 
         if request_future:
             try:
@@ -247,6 +376,8 @@ class Agent(RPCDispatcher):
                 )
                 cleanup()
                 raise te
+        elif timeout:
+            self.event_loop.call_later(timeout, cleanup)
 
     async def rpc_consume(self, extra_queues=[]):
         """
@@ -263,36 +394,96 @@ class Agent(RPCDispatcher):
         )
 
     def on_signal(self, signal):
-        logger.info("received signal {}, calling stop()", signal)
-        self.event_loop.create_task(self.stop())
+        logger.info("Received signal {}, stopping...", signal)
+        self._schedule_stop(
+            exception=None if signal == "SIGINT" else ReceivedSignalError(signal)
+        )
 
-    def on_exception(self, loop, context):
-        logger.error("exception in event loop: {}".format(context["message"]))
-        try:
+    def on_exception(
+        self, cancel_on_exception: bool, loop: asyncio.AbstractEventLoop, context
+    ):
+        logger.error("Exception in event loop: {}".format(context["message"]))
+
+        with suppress(KeyError):
             logger.error("Future: {}", context["future"])
-        except KeyError:
-            pass
-        try:
-            logger.error("Handle: {}", context["handle"])
-        except KeyError:
-            pass
-        try:
-            ex = context["exception"]
-            if isinstance(ex, KeyboardInterrupt):
-                logger.info("stopping Agent on KeyboardInterrupt")
-                loop.create_task(self.stop())
-            else:
-                logger.error("Exception: {} ({})", ex, type(ex).__qualname__)
-                # TODO figure out how to logger
-                traceback.print_tb(ex.__traceback__)
-                if self._event_loop_cancel_on_exception:
-                    logger.error("stopping Agent on unhandled exception")
-                    loop.create_task(self.stop())
-        except KeyError:
-            pass
 
-    async def stop(self):
-        logger.info("closing management channel and connection.")
+        with suppress(KeyError):
+            logger.error("Handle: {}", context["handle"])
+
+        ex: Optional[Exception] = context.get("exception")
+        if ex is not None:
+            logger.critical(
+                f"Agent {type(self).__qualname__} encountered an unhandled exception",
+                exc_info=(ex.__class__, ex, ex.__traceback__),
+            )
+
+            is_keyboard_interrupt = isinstance(ex, KeyboardInterrupt)
+            if cancel_on_exception or is_keyboard_interrupt:
+                if not is_keyboard_interrupt:
+                    logger.error(
+                        "Stopping Agent on unhandled exception ({})",
+                        type(ex).__qualname__,
+                    )
+                self._schedule_stop(exception=ex, loop=loop)
+
+    def _schedule_stop(
+        self,
+        exception: Optional[Exception] = None,
+        loop: asyncio.AbstractEventLoop = None,
+    ):
+        loop = self.event_loop if loop is None else loop
+        loop.create_task(self.stop(exception=exception))
+
+    async def stop(self, exception: Optional[Exception] = None):
+        """Stop a :py:meth:`run`ning Agent.
+
+        :param exception:
+            An optional exception that will be raised by :py:meth:`run` if given.
+            If the Agent was not started from :py:meth:`run`, see :py:meth:`stopped`
+            how to retrieve the exception.
+        """
+        if self._stop_in_progress:
+            logger.debug("Stop in progress! ({})", exception)
+            return
+        else:
+            self._stop_in_progress = True
+
+            logger.info("Stopping Agent {} ({})...", type(self).__qualname__, exception)
+
+            await asyncio.shield(self._close())
+
+            if self._stop_future is None:
+                # No task is waiting for the Agent to stop.
+                if exception is not None:
+                    # Wrap the exception (to preserve traceback information)
+                    # and reraise it.
+                    raise AgentStoppedError("Agent stopped unexpectedly") from exception
+                else:
+                    return
+            else:
+                assert not self._stop_future.done()
+                if exception is None:
+                    self._stop_future.set_result(None)
+                else:
+                    self._stop_future.set_exception(exception)
+
+    async def stopped(self):
+        """Wait for the :py:class:`Agent` to stop.
+
+        If the agent stopped unexpectedly, this method raises an exception.
+
+        :raises AgentStoppedError:
+            if the Agent was :py:meth:`stop`ped with an exception
+        :raises Exception:
+            if the Agent encountered any other unhandled exception
+        """
+        if self._stop_future is None:
+            self._stop_future = self.event_loop.create_future()
+        await self._stop_future
+
+    async def _close(self):
+        logger.info("Closing management channel and connection...")
+        await self._management_connection_watchdog.stop()
         if self._management_channel:
             await self._management_channel.close()
             self._management_channel = None
@@ -301,21 +492,6 @@ class Agent(RPCDispatcher):
             self._management_connection = None
         self._management_broadcast_exchange = None
         self._management_exchange = None
-
-        if self._event_loop_owned:
-            try:
-                logger.debug(
-                    "remaining tasks when stopping event loop {}",
-                    asyncio.all_tasks(self.event_loop),
-                )
-            except AttributeError:
-                # needs python 3.7
-                pass
-            self.event_loop.stop()
-        else:
-            logger.debug(
-                "stop completed, we do not own the event loop, so it is not stopped"
-            )
 
     def _make_correlation_id(self):
         return "metricq-rpc-py-{}-{}".format(self.token, uuid.uuid4().hex)
@@ -341,14 +517,15 @@ class Agent(RPCDispatcher):
             arguments = json.loads(body)
             arguments["from_token"] = from_token
 
-            if "function" in arguments:
+            function = arguments.get("function")
+            if function is not None:
                 logger.debug("message is an RPC")
                 try:
                     response = await self.rpc_dispatch(**arguments)
                 except Exception as e:
                     logger.error(
                         "error handling RPC {} ({}): {}",
-                        arguments["function"],
+                        function,
                         type(e),
                         traceback.format_exc(),
                     )
@@ -365,15 +542,23 @@ class Agent(RPCDispatcher):
                     duration,
                     textwrap.shorten(body, width=self.LOG_MAX_WIDTH),
                 )
-                await self._management_channel.default_exchange.publish(
-                    aio_pika.Message(
-                        body=body.encode(),
-                        correlation_id=correlation_id,
-                        content_type="application/json",
-                        app_id=self.token,
-                    ),
-                    routing_key=message.reply_to,
-                )
+                await self._management_connection_watchdog.established()
+                try:
+                    await self._management_channel.default_exchange.publish(
+                        aio_pika.Message(
+                            body=body.encode(),
+                            correlation_id=correlation_id,
+                            content_type="application/json",
+                            app_id=self.token,
+                        ),
+                        routing_key=message.reply_to,
+                    )
+                except ChannelInvalidStateError as e:
+                    errmsg = (
+                        "Failed to reply to {message.reply_to} for RPC {function!r}"
+                    )
+                    logger.error("{}: {}", errmsg, e)
+                    raise RpcReplyError(errmsg) from e
             else:
                 logger.debug("message is an RPC response")
                 try:
@@ -399,7 +584,15 @@ class Agent(RPCDispatcher):
                     await r
 
     def _on_reconnect(self, connection):
-        logger.info("reconnected to {}", connection)
+        logger.info("Reconnected to {}", connection)
 
-    def _on_close(self, connection):
-        logger.info("closing connection to {}", connection)
+    def _on_close(self, exception):
+        logger.info(
+            "Connection closed: {} ({})", exception, type(exception).__qualname__
+        )
+
+    def _on_management_connection_reconnect(self, _connection):
+        self._management_connection_watchdog.set_established()
+
+    def _on_management_connection_close(self, _exception: Optional[Exception]):
+        self._management_connection_watchdog.set_closed()

@@ -30,6 +30,7 @@ import asyncio
 import uuid
 from collections import namedtuple
 from enum import Enum
+from typing import Optional
 
 import aio_pika
 
@@ -225,16 +226,16 @@ class HistoryClient(Client):
 
         await self._history_consume()
 
-    async def stop(self, reason=None):
+    async def stop(self, exception: Optional[Exception]):
         logger.info("closing history channel and connection.")
         if self.history_channel:
             await self.history_channel.close()
             self.history_channel = None
         if self.history_connection:
-            await self.history_connection.close()
+            await self.history_connection.close(exception)
             self.history_connection = None
         self.history_exchange = None
-        await super().stop()
+        await super().stop(exception)
 
     async def history_data_request(
         self,
