@@ -91,7 +91,7 @@ class Client(Agent):
         t = datetime.now()
         return {
             "alive": True,
-            "uptime": Timedelta(t - self.starting_time).ns,
+            "uptime": Timedelta.from_timedelta(t - self.starting_time).ns,
             "time": Timestamp.from_datetime(t).posix_ns,
         }
 
