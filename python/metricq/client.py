@@ -31,12 +31,16 @@
 from datetime import datetime
 from typing import Optional, Sequence, Union
 
-from .agent import Agent
+from .agent import Agent, RpcRequestError
 from .logging import get_logger
 from .rpc import rpc_handler
 from .types import Timedelta, Timestamp
 
 logger = get_logger(__name__)
+
+
+class ManagementRpcPublishError(RpcRequestError):
+    pass
 
 
 class Client(Agent):
@@ -66,13 +70,20 @@ class Client(Agent):
         await self.rpc_consume()
 
     async def rpc(self, function, **kwargs):
-        return await super().rpc(
-            function=function,
-            exchange=self._management_exchange,
-            routing_key=function,
-            cleanup_on_response=True,
-            **kwargs,
-        )
+        logger.debug("Waiting for management connection to be reestablished...")
+        await self._management_connection_watchdog.established()
+        try:
+            return await super().rpc(
+                function=function,
+                exchange=self._management_exchange,
+                routing_key=function,
+                cleanup_on_response=True,
+                **kwargs,
+            )
+        except RpcRequestError as e:
+            raise ManagementRpcPublishError(
+                f"Failed to send management RPC request {function!r}"
+            ) from e
 
     @rpc_handler("discover")
     async def _on_discover(self, **kwargs):
@@ -80,7 +91,7 @@ class Client(Agent):
         t = datetime.now()
         return {
             "alive": True,
-            "uptime": Timedelta(t - self.starting_time).ns,
+            "uptime": Timedelta.from_timedelta(t - self.starting_time).ns,
             "time": Timestamp.from_datetime(t).posix_ns,
         }
 
@@ -90,12 +101,18 @@ class Client(Agent):
         metadata: bool = True,
         historic: Optional[bool] = None,
         timeout: Optional[float] = None,
+        prefix: Optional[str] = None,
+        infix: Optional[str] = None,
+        limit: Optional[int] = None,
     ) -> Union[Sequence[str], Sequence[dict]]:
         """
         :param selector: regex for partial matching the metric name or sequence of possible metric names
         :param historic: filter by historic flag
         :param metadata: if true, metadata is included in response
         :param timeout: timeout for the RPC in seconds
+        :param prefix: filter results by prefix on the key
+        :param infix: filter results by infix on the key
+        :param limit: limit the number of results to return
         :return: either a {name: metadata} dict (metadata=True) or a list of metric names (metadata=False)
         """
         arguments = {"format": "object" if metadata else "array"}
@@ -105,5 +122,14 @@ class Client(Agent):
             arguments["timeout"] = timeout
         if historic is not None:
             arguments["historic"] = historic
+        if prefix is not None:
+            arguments["prefix"] = prefix
+        if infix is not None:
+            arguments["infix"] = infix
+        if limit is not None:
+            arguments["limit"] = limit
+
+        # Note: checks are done in the manager (e.g. must not have prefix and historic/selector at the same time)
+
         result = await self.rpc("get_metrics", **arguments)
         return result["metrics"]

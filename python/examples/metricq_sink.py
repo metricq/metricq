@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 201, ZIH, Technische Universitaet Dresden, Federal Republic of Germany
+# Copyright (c) 2019, ZIH, Technische Universitaet Dresden, Federal Republic of Germany
 #
 # All rights reserved.
 #

@@ -26,9 +26,13 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from typing import Optional
+
 from yarl import URL
 
+from .agent import ReconnectTimeoutError
 from .client import Client
+from .connection_watchdog import ConnectionWatchdog
 from .logging import get_logger
 
 logger = get_logger(__name__)
@@ -42,6 +46,15 @@ class DataClient(Client):
         self.data_connection = None
         self.data_channel = None
         self.data_exchange = None
+        self._data_connection_watchdog = ConnectionWatchdog(
+            on_timeout_callback=lambda watchdog: self._schedule_stop(
+                ReconnectTimeoutError(
+                    f"Failed to reestablish {watchdog.connection_name} after {watchdog.timeout} seconds"
+                )
+            ),
+            timeout=kwargs.get("connection_timeout", 60),
+            connection_name="data connection",
+        )
 
     async def data_config(self, dataServerAddress, **kwargs):
         """
@@ -66,6 +79,12 @@ class DataClient(Client):
             )
             self.data_server_address = dataServerAddress
             self.data_connection = await self.make_connection(self.data_server_address)
+
+            self.data_connection.add_close_callback(self._on_data_connection_close)
+            self.data_connection.add_reconnect_callback(
+                self._on_data_connection_reconnect
+            )
+
             # publisher confirms seem to be buggy, disable for now
             self.data_channel = await self.data_connection.channel(
                 publisher_confirms=False
@@ -73,13 +92,23 @@ class DataClient(Client):
             # TODO configurable prefetch count
             await self.data_channel.set_qos(prefetch_count=400)
 
-    async def stop(self):
+            self._data_connection_watchdog.start()
+            self._data_connection_watchdog.set_established()
+
+    async def stop(self, exception: Optional[Exception]):
         logger.info("closing data channel and connection.")
+        await self._data_connection_watchdog.stop()
         if self.data_channel:
             await self.data_channel.close()
             self.data_channel = None
         if self.data_connection:
-            await self.data_connection.close()
+            await self.data_connection.close(exception)
             self.data_connection = None
         self.data_exchange = None
-        await super().stop()
+        await super().stop(exception)
+
+    def _on_data_connection_close(self, _exception: Optional[Exception]):
+        self._data_connection_watchdog.set_closed()
+
+    def _on_data_connection_reconnect(self, _connection):
+        self._data_connection_watchdog.set_established()

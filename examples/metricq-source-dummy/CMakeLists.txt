@@ -10,7 +10,7 @@ target_link_libraries(metricq-source-dummy
     PRIVATE
         metricq::source
         metricq::logger-nitro
-        Nitro::core
+        Nitro::broken-options
 )
 
 install(TARGETS metricq-source-dummy RUNTIME DESTINATION bin)

@@ -51,10 +51,20 @@ int main(int argc, char* argv[])
     parser.toggle("trace").short_name("t");
     parser.toggle("quiet").short_name("q");
     parser.toggle("help").short_name("h");
+    parser
+        .option("timeout",
+                "Timeout for receiving messages in seconds. Set to 0 to deactivate timeout.")
+        .default_value("0");
+    parser
+        .option("count",
+                "Expected chunk count. Stops when received <count> chunks. Set to 0 to deactivate.")
+        .short_name("c")
+        .default_value("0");
 
     try
     {
         auto options = parser.parse(argc, argv);
+        metricq::Duration timeout;
 
         if (options.given("help"))
         {
@@ -77,13 +87,24 @@ int main(int argc, char* argv[])
 
         metricq::logger::nitro::initialize();
 
+        try
+        {
+            timeout = metricq::duration_parse(options.get("timeout"));
+        }
+        catch (const std::invalid_argument&)
+        {
+            std::cerr << "Invalid input for timeout: " << options.get("timeout") << '\n';
+            return 1;
+        }
+
         std::vector<std::string> metrics;
         for (size_t i = 0; i < options.count("metrics"); ++i)
         {
             metrics.push_back(options.get("metrics", i));
         }
-        DummySink sink(options.get("server"), options.get("token"), metrics);
-        Log::debug() << "starting main loop.";
+        DummySink sink(options.get("server"), options.get("token"), metrics, timeout,
+                       options.as<std::size_t>("count"));
+        Log::info() << "starting main loop.";
         sink.main_loop();
         auto end = metricq::Clock::now();
         Log::debug() << "exiting main loop.";
@@ -102,5 +123,6 @@ int main(int argc, char* argv[])
     catch (std::exception& e)
     {
         Log::error() << "Unhandled exception: " << e.what();
+        return 2;
     }
 }

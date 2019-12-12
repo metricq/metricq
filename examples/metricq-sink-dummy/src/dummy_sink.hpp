@@ -39,7 +39,8 @@ class DummySink : public metricq::Sink
 {
 public:
     DummySink(const std::string& manager_host, const std::string& token,
-              const std::vector<std::string>& metrics);
+              const std::vector<std::string>& metrics, metricq::Duration timeout,
+              std::size_t expected_chunk_count);
 
 protected:
     void on_error(const std::string& message) override;
@@ -63,11 +64,16 @@ public:
     std::size_t message_count = 0;
 
 private:
+    metricq::Duration timeout_;
+    std::size_t expected_chunk_count_;
+
     std::size_t message_count_last_step_ = 0;
+    std::size_t chunk_count_ = 0;
     metricq::TimePoint start_time_;
     metricq::TimePoint step_time_;
 
     metricq::Timer timer_;
+    metricq::Timer timeout_timer_;
 
     std::atomic<bool> stop_requested_ = false;
 };

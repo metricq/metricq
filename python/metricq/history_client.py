@@ -30,6 +30,7 @@ import asyncio
 import uuid
 from collections import namedtuple
 from enum import Enum
+from typing import Optional
 
 import aio_pika
 
@@ -46,6 +47,7 @@ class HistoryRequestType:
     AGGREGATE_TIMELINE = history_pb2.HistoryRequest.AGGREGATE_TIMELINE
     AGGREGATE = history_pb2.HistoryRequest.AGGREGATE
     LAST_VALUE = history_pb2.HistoryRequest.LAST_VALUE
+    FLEX_TIMELINE = history_pb2.HistoryRequest.FLEX_TIMELINE
 
 
 class HistoryResponseType(Enum):
@@ -150,10 +152,22 @@ class HistoryResponse:
                 )
             )
 
+        if len(self) == 0:
+            return
+
         if self._mode == HistoryResponseType.VALUES:
-            for time_delta, value in zip(self._proto.time_delta, self._proto.value):
+            time_ns = self._proto.time_delta[0]
+            previous_timestamp = Timestamp(time_ns)
+            # First interval is useless here
+            for time_delta, value in zip(
+                self._proto.time_delta[1:], self._proto.value[1:]
+            ):
                 time_ns = time_ns + time_delta
-                yield TimeAggregate.from_value(Timestamp(time_ns), value)
+                timestamp = Timestamp(time_ns)
+                yield TimeAggregate.from_value_pair(
+                    previous_timestamp, timestamp, value
+                )
+                previous_timestamp = timestamp
             return
 
         if self._mode == HistoryResponseType.LEGACY:
@@ -165,6 +179,7 @@ class HistoryResponse:
             ):
                 time_ns = time_ns + time_delta
                 # That of course only makes sense if you just use mean or mean_sum
+                # We don't do the nice intervals here...
                 yield TimeAggregate(
                     timestamp=Timestamp(time_ns),
                     minimum=minimum,
@@ -211,16 +226,16 @@ class HistoryClient(Client):
 
         await self._history_consume()
 
-    async def stop(self, reason=None):
+    async def stop(self, exception: Optional[Exception]):
         logger.info("closing history channel and connection.")
         if self.history_channel:
             await self.history_channel.close()
             self.history_channel = None
         if self.history_connection:
-            await self.history_connection.close()
+            await self.history_connection.close(exception)
             self.history_connection = None
         self.history_exchange = None
-        await super().stop()
+        await super().stop(exception)
 
     async def history_data_request(
         self,
@@ -235,7 +250,7 @@ class HistoryClient(Client):
             raise ValueError("metric must be a non-empty string")
         correlation_id = "mq-history-py-{}-{}".format(self.token, uuid.uuid4().hex)
 
-        logger.info(
+        logger.debug(
             "running history request for {} ({}-{},{}) with correlation id {}",
             metric,
             start_time,
@@ -317,9 +332,9 @@ class HistoryClient(Client):
             body = message.body
             from_token = message.app_id
             correlation_id = message.correlation_id
-            request_duration = message.headers.get("x-request-duration", "-1")
+            request_duration = float(message.headers.get("x-request-duration", "-1"))
 
-            logger.info(
+            logger.debug(
                 "received message from {}, correlation id: {}, reply_to: {}",
                 from_token,
                 correlation_id,

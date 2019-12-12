@@ -9,8 +9,8 @@ target_compile_options(metricq-source-stress-test PRIVATE -Wall -Wextra -pedanti
 target_link_libraries(metricq-source-stress-test
     PRIVATE
         metricq::source
-        Nitro::core
-        metricq-logger-nitro
+        metricq::logger-nitro
+        Nitro::broken-options
 )
 
 install(TARGETS metricq-source-stress-test RUNTIME DESTINATION bin)

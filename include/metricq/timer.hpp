@@ -50,7 +50,7 @@ public:
     using Callback = std::function<TimerResult(std::error_code)>;
 
     Timer(asio::io_service& io_service, Callback callback = Callback())
-    : timer_(io_service), callback_(callback)
+    : timer_(io_service), callback_(callback), interval_(0)
     {
     }
 
@@ -67,10 +67,7 @@ public:
                 "metricq::Timer doesn't support sub-microseconds intervals.");
         }
 
-        canceled_ = false;
-        running_ = true;
-        timer_.expires_from_now(interval_);
-        timer_.async_wait([this](auto error) { this->timer_callback(error); });
+        restart();
     }
 
     void start(Callback callback, Duration interval)
@@ -82,8 +79,19 @@ public:
     void cancel()
     {
         timer_.cancel();
-        canceled_ = true;
         running_ = false;
+    }
+
+    void restart()
+    {
+        if (interval_.count() == 0)
+        {
+            throw std::logic_error("metricq::Timer interval must be set before calling restart!");
+        }
+
+        running_ = true;
+        timer_.expires_after(interval_);
+        timer_.async_wait([this](auto error) { this->timer_callback(error); });
     }
 
     bool running() const
@@ -94,9 +102,16 @@ public:
 private:
     void timer_callback(std::error_code err)
     {
+        // Calling start() for an already running or recently canceled timer will cancel all
+        // callbacks on the event loop. So we get the error code operation_aborted here.
+        if (err == asio::error::operation_aborted)
+        {
+            return;
+        }
+
         auto res = callback_(err);
 
-        if (res == TimerResult::repeat && !canceled_)
+        if (res == TimerResult::repeat)
         {
             timer_.expires_at(timer_.expires_at() + interval_);
             timer_.async_wait([this](auto error) { this->timer_callback(error); });
@@ -111,7 +126,6 @@ private:
     asio::basic_waitable_timer<std::chrono::system_clock> timer_;
     Callback callback_;
     std::chrono::microseconds interval_;
-    bool canceled_ = false;
     bool running_ = false;
 };
 

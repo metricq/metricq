@@ -84,7 +84,7 @@ std::string Clock::format_iso(metricq::Clock::time_point tp)
 Duration duration_parse(const std::string& str)
 {
     // Note that regex_match only considers full matches, so no ^$ needed
-    static std::regex number_and_unit("([+-]?\\d*[.,]?\\d+)\\s*([^\\d]*)");
+    static std::regex number_and_unit("\\s*([+-]?\\d*[.,]?\\d+)\\s*([^\\d]*)\\s*");
     std::smatch match;
     if (!std::regex_match(str, match, number_and_unit))
     {
@@ -121,6 +121,10 @@ Duration duration_parse(const std::string& str)
     if (unit == "h" or unit == "hour" or unit == "hours")
     {
         return duration_cast(std::chrono::duration<double, std::ratio<3600>>(value));
+    }
+    if (unit == "d" or unit == "day" or unit == "days")
+    {
+        return duration_cast(std::chrono::duration<double, std::ratio<3600 * 24>>(value));
     }
     throw std::invalid_argument("invalid duration unit \"" + unit + "\"");
 }

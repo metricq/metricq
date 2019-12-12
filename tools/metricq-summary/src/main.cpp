@@ -32,6 +32,7 @@
 #include <nitro/broken_options/parser.hpp>
 
 #include <metricq/logger/nitro.hpp>
+#include <metricq/ostream.hpp>
 #include <metricq/simple.hpp>
 
 #include <iomanip>
@@ -44,7 +45,9 @@ struct Config
 {
     std::string url;
     std::string token;
-    std::chrono::minutes timeout;
+    metricq::Duration timeout;
+    metricq::Duration start_delta;
+    metricq::Duration stop_delta;
     std::vector<std::string> metrics;
     std::vector<std::string> cmdline;
 
@@ -58,17 +61,21 @@ Config::Config(int argc, const char* argv[])
     nitro::broken_options::parser parser;
     parser.option("server", "The metricq management server to connect to.")
         .default_value("amqp://localhost")
+        .env("METRICQ_SERVER")
         .short_name("s");
     parser.option("token", "Token used for source authentication against the metricq manager.")
         .default_value("summary");
-    parser.multi_option("metrics", "MetricQ metrics!").short_name("m");
-    parser.option("timeout", "Time-To-Live for data queue (in minutes)")
-        .default_value("30")
-        .short_name("T");
+    parser.multi_option("metrics", "MetricQ metrics!").short_name("m").env("METRICQ_METRICS");
+    parser.option("timeout", "Time-To-Live for data queue").default_value("30 min").short_name("T");
+    parser.option("start-delta", "Delete delta from start of the data queue").default_value("0");
+    parser.option("stop-delta", "Delete delta till stop of the data queue").default_value("0");
     parser.toggle("verbose").short_name("v");
     parser.toggle("trace").short_name("t");
     parser.toggle("quiet").short_name("q");
     parser.toggle("help").short_name("h");
+
+    parser.accept_positionals();
+    parser.positional_name("command [args]");
 
     try
     {
@@ -101,11 +108,31 @@ Config::Config(int argc, const char* argv[])
 
         try
         {
-            timeout = std::chrono::minutes(std::stoul(options.get("timeout")));
+            timeout = metricq::duration_parse(options.get("timeout"));
         }
         catch (const std::logic_error&)
         {
             std::cerr << "Invalid timeout: " << options.get("timeout") << '\n';
+            std::exit(EXIT_FAILURE);
+        }
+
+        try
+        {
+            start_delta = metricq::duration_parse(options.get("start-delta"));
+        }
+        catch (const std::logic_error&)
+        {
+            std::cerr << "Invalid start-delta: " << options.get("start-delta") << '\n';
+            std::exit(EXIT_FAILURE);
+        }
+
+        try
+        {
+            stop_delta = metricq::duration_parse(options.get("stop-delta"));
+        }
+        catch (const std::logic_error&)
+        {
+            std::cerr << "Invalid stop-delta: " << options.get("stop-delta") << '\n';
             std::exit(EXIT_FAILURE);
         }
 
@@ -132,7 +159,8 @@ Config::Config(int argc, const char* argv[])
 }
 
 void summary_csv_print(std::ostream& os,
-                       std::unordered_map<std::string, std::vector<metricq::TimeValue>>&& stats)
+                       std::unordered_map<std::string, std::vector<metricq::TimeValue>>&& stats,
+                       metricq::Duration start_delta, metricq::Duration stop_delta)
 {
     std::cout << "metric,"
                  "num_timepoints,"
@@ -149,13 +177,11 @@ void summary_csv_print(std::ostream& os,
             continue;
         }
 
-        Summary sum = Summary::calculate(std::move(values));
-        auto duration_ns =
-            std::chrono::duration_cast<std::chrono::nanoseconds>(sum.duration).count();
+        Summary sum = Summary::calculate(std::move(values), start_delta, stop_delta);
         // clang-format off
         os << std::quoted(metric) << ','
            << sum.num_timepoints << ','
-           << duration_ns << ','
+           << sum.duration << ','
            << sum.average << ','
            << sum.stddev << ','
            << sum.absdev << ','
@@ -183,7 +209,7 @@ int main(int argc, const char* argv[])
         Log::info() << "Draining queue " << queue;
         auto stats = metricq::drain(cfg.url, cfg.token, cfg.metrics, queue);
 
-        summary_csv_print(std::cout, std::move(stats));
+        summary_csv_print(std::cout, std::move(stats), cfg.start_delta, cfg.stop_delta);
 
         return status;
     }

@@ -28,12 +28,26 @@
 
 #include "summary.hpp"
 
-Summary Summary::calculate(std::vector<metricq::TimeValue>&& tv_pairs)
+Summary Summary::calculate(std::vector<metricq::TimeValue>&& tv_pairs,
+                           metricq::Duration start_delta, metricq::Duration stop_delta)
 {
-    assert(tv_pairs.size() > 0);
-
     auto begin = tv_pairs.begin();
     auto end = tv_pairs.end();
+
+    auto start = tv_pairs.front().time;
+    auto stop = tv_pairs.back().time;
+
+    tv_pairs.erase(std::remove_if(begin, end,
+                                  [&start, stop, start_delta, stop_delta](metricq::TimeValue& tv) {
+                                      return tv.time <= start + start_delta ||
+                                             tv.time >= stop - stop_delta;
+                                  }),
+                   end);
+
+    begin = tv_pairs.begin();
+    end = tv_pairs.end();
+
+    assert(tv_pairs.size() > 0);
 
     Summary summary{};
 

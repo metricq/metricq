@@ -22,6 +22,7 @@ target_link_libraries(metricq-summary
     PUBLIC
         metricq::sink
         metricq-logger-nitro
+        Nitro::broken-options
 )
 
 install(TARGETS metricq-summary RUNTIME DESTINATION bin)

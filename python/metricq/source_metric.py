@@ -35,28 +35,43 @@ from .types import Timestamp
 
 
 class SourceMetric:
-    def __init__(self, id, source):
+    def __init__(self, id, source, chunk_size=1):
         self.id = id
         self.source = source
 
-        self.chunk_size = 1
+        self.chunk_size = chunk_size
         self.previous_timestamp = 0
         self.chunk = DataChunk()
 
-    async def send(self, time: Timestamp, value):
+    def append(self, time: Timestamp, value):
+        """
+        Like send, but synchronous and will never flush
+        """
         timestamp = time.posix_ns
         self.chunk.time_delta.append(timestamp - self.previous_timestamp)
         self.previous_timestamp = timestamp
         self.chunk.value.append(value)
 
         assert len(self.chunk.time_delta) == len(self.chunk.value)
-        if 0 < self.chunk_size == len(self.chunk.time_delta):
+
+    async def send(self, time: Timestamp, value):
+        self.append(time, value)
+        if 0 < self.chunk_size <= len(self.chunk.time_delta):
             await self.flush()
 
     async def error(self, time: Timestamp):
         await self.send(time, math.nan)
 
+    @property
+    def empty(self):
+        assert len(self.chunk.time_delta) == len(self.chunk.value)
+        return len(self.chunk.time_delta) == 0
+
     async def flush(self):
+        assert len(self.chunk.time_delta) == len(self.chunk.value)
+        if len(self.chunk.time_delta) == 0:
+            return
+
         await self.source._send(self.id, self.chunk)
         del self.chunk.time_delta[:]
         del self.chunk.value[:]
