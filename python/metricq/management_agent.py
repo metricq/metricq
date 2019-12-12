@@ -27,7 +27,8 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+import json
+import os
 from itertools import islice
 
 import aio_pika
@@ -46,6 +47,7 @@ class ManagementAgent(Agent):
         self,
         token,
         management_url,
+        config_path,
         couchdb_url,
         couchdb_user,
         couchdb_password,
@@ -61,6 +63,8 @@ class ManagementAgent(Agent):
         )
         self.couchdb_db_config: database.Database = None
         self.couchdb_db_metadata: database.Database = None
+
+        self.config_path = config_path
 
     async def connect(self):
         # First, connect to couchdb
@@ -85,6 +89,14 @@ class ManagementAgent(Agent):
             type=aio_pika.ExchangeType.FANOUT,
             durable=True,
         )
+
+    async def read_config(self, token):
+        try:
+            return (await self.couchdb_db_config[token]).data
+        except KeyError:
+            # TODO use aiofile
+            with open(os.path.join(self.config_path, token + ".json"), "r") as f:
+                return json.load(f)
 
     async def get_metrics(
         self,
