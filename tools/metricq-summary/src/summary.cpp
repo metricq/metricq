@@ -28,6 +28,8 @@
 
 #include "summary.hpp"
 
+#include <algorithm>
+
 Summary Summary::calculate(std::vector<metricq::TimeValue>&& tv_pairs,
                            metricq::Duration start_delta, metricq::Duration stop_delta)
 {
