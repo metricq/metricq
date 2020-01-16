@@ -61,7 +61,9 @@ class DummySink(metricq.Sink):
         # First, let the actual connect() happen
         await super().connect()
 
-        # After that is done, we subscribe to the list of requested metrics
+        # After the connection is established, we subscribe to the list of requested metrics
+        # We will receive every data points for every subscribed metric, which will be submitted
+        # into MetricQ from this time on.
         await self.subscribe(self._metrics)
 
     # The data handler, this method is called for every received data point
