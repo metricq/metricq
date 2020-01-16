@@ -28,7 +28,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import logging
-from datetime import datetime
 
 import click
 
@@ -41,8 +40,6 @@ logger = get_logger()
 
 click_log.basic_config(logger)
 logger.setLevel("INFO")
-# Use this if we ever use threads
-# logger.handlers[0].formatter = logging.Formatter(fmt='%(asctime)s %(threadName)-16s %(levelname)-8s %(message)s')
 logger.handlers[0].formatter = logging.Formatter(
     fmt="%(asctime)s [%(levelname)-8s] [%(name)-20s] %(message)s"
 )
@@ -50,17 +47,27 @@ logger.handlers[0].formatter = logging.Formatter(
 click_completion.init()
 
 
+# To implement a MetricQ Sink, define a custom class and derive from metricq.Sink
 class DummySink(metricq.Sink):
+
+    # The constructor extracts metrics parameter
     def __init__(self, metrics, *args, **kwargs):
         logger.info("initializing DummySink")
         self._metrics = metrics
         super().__init__(*args, **kwargs)
 
+    # We override connect() to fiddle with the connection process
     async def connect(self):
+        # First, let the actual connect() happen
         await super().connect()
+
+        # After that is done, we subscribe to the list of requested metrics
         await self.subscribe(self._metrics)
 
+    # The data handler, this method is called for every received data point
     async def on_data(self, metric, timestamp, value):
+
+        # For thisexample, we just print the datapoints to the console
         click.echo(
             click.style("{}: {}, {}".format(metric, timestamp, value), fg="bright_blue")
         )
@@ -72,7 +79,10 @@ class DummySink(metricq.Sink):
 @click.option("-m", "--metrics", multiple=True, required=True)
 @click_log.simple_verbosity_option(logger)
 def source(server, token, metrics):
+    # initialize the DummySink class
     src = DummySink(metrics=metrics, token=token, management_url=server)
+
+    # run the sink. This call will block until the connection is closed.
     src.run()
 
 
