@@ -29,6 +29,7 @@
 #include "summary.hpp"
 
 #include <algorithm>
+#include <cmath>
 
 Summary Summary::calculate(std::vector<metricq::TimeValue>&& tv_pairs,
                            metricq::Duration start_delta, metricq::Duration stop_delta)
@@ -67,10 +68,10 @@ Summary Summary::calculate(std::vector<metricq::TimeValue>&& tv_pairs,
 
     summary.average = sum_over_nths([](metricq::Value v) { return v; });
 
-    summary.stddev = sum_over_nths([&summary](metricq::Value v) {
+    summary.stddev = std::sqrt(sum_over_nths([&summary](metricq::Value v) {
         double centered = v - summary.average;
         return centered * centered;
-    });
+    }));
 
     summary.absdev =
         sum_over_nths([&summary](metricq::Value v) { return std::abs(v - summary.average); });
