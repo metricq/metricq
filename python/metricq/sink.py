@@ -27,8 +27,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from abc import abstractmethod
-from asyncio import Task, CancelledError
-from typing import Set, Optional
+from asyncio import CancelledError, Task
+from typing import Optional, Set
 
 import aio_pika
 from aio_pika.queue import Queue
@@ -92,9 +92,7 @@ class Sink(DataClient):
                     self._data_connection_watchdog.set_established()
                 else:
                     errmsg = "Resubscription failed with an unhandled exception"
-                    logger.error(
-                        "{}: {}", errmsg, exception,
-                    )
+                    logger.error("{}: {}", errmsg, exception)
                     raise SinkResubscribeError(errmsg) from exception
             except CancelledError:
                 logger.warning("Resubscribe task was cancelled!")
@@ -112,7 +110,7 @@ class Sink(DataClient):
             self._subscribe_args,
         )
         response = await self.rpc(
-            "sink.subscribe", metrics=metrics, **self._subscribe_args,
+            "sink.subscribe", metrics=metrics, **self._subscribe_args
         )
         await self._declare_data_queue(response["dataQueue"])
 

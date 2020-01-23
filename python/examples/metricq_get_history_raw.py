@@ -76,7 +76,7 @@ async def aget_history(server, token, metric):
             start_time=chunk_begin,
             end_time=chunk_end,
             interval_max=interval_max_raw,
-            request_type=HistoryRequestType.FLEX_TIMELINE
+            request_type=HistoryRequestType.FLEX_TIMELINE,
         )
         for tv in result.values():
             # The DB can give you one value before the requested begin timestamp

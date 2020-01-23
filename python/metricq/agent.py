@@ -37,16 +37,16 @@ import textwrap
 import time
 import traceback
 import uuid
-from typing import Optional, Awaitable, Union
 from contextlib import suppress
+from typing import Awaitable, Optional, Union
 
 import aio_pika
-from yarl import URL
 from aiormq import ChannelInvalidStateError
+from yarl import URL
 
+from .connection_watchdog import ConnectionWatchdog
 from .logging import get_logger
 from .rpc import RPCDispatcher
-from .connection_watchdog import ConnectionWatchdog
 
 logger = get_logger(__name__)
 timer = time.monotonic

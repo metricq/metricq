@@ -32,8 +32,8 @@ from yarl import URL
 
 from .agent import ReconnectTimeoutError
 from .client import Client
-from .logging import get_logger
 from .connection_watchdog import ConnectionWatchdog
+from .logging import get_logger
 
 logger = get_logger(__name__)
 
