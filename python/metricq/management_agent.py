@@ -106,12 +106,16 @@ class ManagementAgent(Agent):
         prefix=None,
         infix=None,
         limit=None,
+        source=None,
     ):
         if format not in ("array", "object"):
             raise AttributeError("unknown format requested: {}".format(format))
 
         if infix is not None and prefix is not None:
             raise AttributeError('cannot get_metrics with both "prefix" and "infix"')
+
+        if source is not None and historic is not None:
+            raise AttributeError('cannot get_metrics with both "historic" and "source"')
 
         selector_dict = dict()
         if selector is not None:
@@ -159,6 +163,9 @@ class ManagementAgent(Agent):
                 request_prefix = prefix
                 if historic is not None:
                     endpoint = self.couchdb_db_metadata.view("index", "historic")
+                elif source is not None:
+                    endpoint = self.couchdb_db_metadata.view("index", "source")
+                    request_prefix = source
                 else:
                     endpoint = self.couchdb_db_metadata.all_docs
             else:
