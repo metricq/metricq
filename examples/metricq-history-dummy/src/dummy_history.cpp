@@ -38,8 +38,9 @@
 
 using Log = metricq::logger::nitro::Log;
 
-DummyHistory::DummyHistory(const std::string& manager_host, const std::string& token)
-: metricq::HistoryClient(token), signals_(io_service, SIGINT, SIGTERM)
+DummyHistory::DummyHistory(const std::string& manager_host, const std::string& token,
+                           const std::vector<std::string>& metrics)
+: metricq::HistoryClient(token), metrics_(metrics), signals_(io_service, SIGINT, SIGTERM)
 {
     Log::debug() << "DummyHistory::DummyHistory() called";
 
@@ -71,11 +72,14 @@ void DummyHistory::on_history_ready()
 
     auto now = metricq::Clock::now();
 
-    // request last 100 seconds
-    auto id = history_request("dummy.source", now - metricq::Duration(100000000000), now,
-                              metricq::Duration(1000000000));
+    // request last 100 seconds for each metric
+    for (auto& metric : metrics_)
+    {
+        auto id = history_request(metric, now - metricq::Duration(100000000000), now,
+                                  metricq::Duration(10000000000));
 
-    Log::info() << "Created HistoryRequest: " << id;
+        Log::info() << "Created HistoryRequest: " << id;
+    }
 }
 
 void DummyHistory::on_error(const std::string& message)
@@ -92,15 +96,32 @@ void DummyHistory::on_closed()
 }
 
 void DummyHistory::on_history_response(const std::string& id,
-                                       const metricq::HistoryResponse& response)
+                                       const metricq::HistoryResponseValueView& response)
 {
     Log::debug() << "DummyHistory::on_history_response() called";
 
-    Log::info() << "Got HistoryRepsonse for metric: " << response.metric() << "(" << id << ")";
+    Log::info() << "Got HistoryResponseValue for metric: " << response.metric() << "(" << id << ")";
+
+    for (auto tv : response)
+    {
+        Log::info() << tv.time << ": " << tv.value;
+    }
+
+    io_service.post([this]() { this->stop(); });
+}
+
+void DummyHistory::on_history_response(const std::string& id,
+                                       const metricq::HistoryResponseAggregateView& response)
+{
+    Log::debug() << "DummyHistory::on_history_response() called";
+
+    Log::info() << "Got HistoryResponseAggregate for metric: " << response.metric() << "(" << id
+                << ")";
 
     for (auto tva : response)
     {
-        Log::info() << tva.time << ": " << tva.avg << " (" << tva.min << " - " << tva.max << ")";
+        Log::info() << tva.time << ": " << tva.mean() << " (" << tva.min << " - " << tva.max
+                    << ") @ " << tva.count;
     }
 
     io_service.post([this]() { this->stop(); });

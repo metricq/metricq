@@ -39,6 +39,8 @@
 namespace metricq
 {
 class BaseConnectionHandler;
+class HistoryResponseValueView;
+class HistoryResponseAggregateView;
 
 class HistoryClient : public Connection
 {
@@ -53,7 +55,11 @@ public:
                                 Duration interval);
 
 protected:
-    virtual void on_history_response(const std::string&, const HistoryResponse& response) = 0;
+    virtual void on_history_response(const std::string& id, const HistoryResponse& response);
+    virtual void on_history_response(const std::string& id,
+                                     const HistoryResponseValueView& response) = 0;
+    virtual void on_history_response(const std::string& id,
+                                     const HistoryResponseAggregateView& response) = 0;
     virtual void on_history_config(const json& config) = 0;
     virtual void on_history_ready() = 0;
 

@@ -50,6 +50,9 @@ int main(int argc, char* argv[])
     parser.toggle("trace").short_name("t");
     parser.toggle("quiet").short_name("q");
     parser.toggle("help").short_name("h");
+    parser.multi_option("metrics", "The list of metrics to subscribe")
+        .short_name("m")
+        .default_value({ "dummy.source" });
 
     try
     {
@@ -76,7 +79,8 @@ int main(int argc, char* argv[])
 
         metricq::logger::nitro::initialize();
 
-        DummyHistory history(options.get("server"), options.get("token"));
+        DummyHistory history(options.get("server"), options.get("token"),
+                             options.get_all("metrics"));
         Log::info() << "starting main loop.";
         history.main_loop();
         Log::info() << "exiting main loop.";
