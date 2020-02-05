@@ -107,4 +107,9 @@ void Source::declare_metrics()
         },
         payload);
 }
+
+void Source::clear_metrics()
+{
+    metrics_.clear();
+}
 } // namespace metricq
