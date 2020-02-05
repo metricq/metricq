@@ -178,6 +178,7 @@ class [[deprecated]] HistoryRepsonseIter
 public:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated"
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     HistoryRepsonseIter(
         google::protobuf::RepeatedField<const google::protobuf::int64>::iterator iter_time,
         google::protobuf::RepeatedField<const double>::iterator iter_value_min,
