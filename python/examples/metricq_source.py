@@ -68,7 +68,7 @@ class DummySource(metricq.IntervalSource):
         await self.declare_metrics({"test.py.dummy": meta})
 
     async def update(self):
-        await self["test.py.dummy"].send(metricq.Timestamp.now(), random.random())
+        await self.send("test.py.dummy", metricq.Timestamp.now(), random.random())
 
 
 @click.command()
