@@ -85,16 +85,19 @@ void Transformer::configure(const json& config)
 
 void Transformer::on_register_response(const json& response)
 {
-    if (!data_exchange_.empty() && response["dataExchange"] != data_exchange_)
+    // TODO: check if there's a better error to throw than what at() and get() throw in case any of
+    // the required fields is missing.
+    auto data_exchange = response.at("dataExchange").get<std::string>();
+    auto config = response.at("config");
+
+    if (!this->data_exchange_.empty() && data_exchange != this->data_exchange_)
     {
         log::fatal("changing dataExchange on the fly is not currently supported");
         std::abort();
     }
 
-    data_exchange_ = response["dataExchange"];
-
-    assert(response.count("config"));
-    this->configure(response["config"]);
+    this->data_exchange_ = data_exchange;
+    this->configure(config);
 }
 
 void Transformer::declare_metrics()

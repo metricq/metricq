@@ -71,20 +71,21 @@ void Source::send(const std::string& id, TimeValue tv)
 
 void Source::on_register_response(const json& response)
 {
+    // TODO: check if there's a better error to throw than what at() and get() throw in case any of
+    // the required fields is missing.
+    auto data_exchange = response.at("dataExchange").get<std::string>();
+    auto config = response.at("config");
+
     data_config(response);
 
-    if (!data_exchange_.empty() && response["dataExchange"] != data_exchange_)
+    if (!this->data_exchange_.empty() && data_exchange != this->data_exchange_)
     {
         log::fatal("changing dataExchange on the fly is not currently supported");
         std::abort();
     }
 
-    data_exchange_ = response["dataExchange"];
-
-    if (auto config_it = response.find("config"); config_it != response.end())
-    {
-        on_source_config(*config_it);
-    }
+    this->data_exchange_ = data_exchange;
+    this->on_source_config(config);
 }
 
 void Source::on_data_channel_ready()
