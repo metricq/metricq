@@ -71,7 +71,7 @@ setup(
         "License :: OSI Approved :: BSD License",
         "Programming Language :: Python :: 3",
     ],
-    python_requires=">=3.5",
+    python_requires=">=3.6",
     packages=["metricq", "metricq_proto"],
     scripts=[],
     install_requires=[
