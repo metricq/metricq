@@ -32,7 +32,7 @@ jobs:
         
   release:
     needs: [build]
-    
+    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/python-v')
     runs-on: ubuntu-latest
     
     steps:
@@ -51,8 +51,24 @@ jobs:
     - name: Build Python distribution
       run: python setup.py sdist bdist_wheel
     - name: Publish a Python distribution to PyPI
-      if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/python-v')
       uses: pypa/gh-action-pypi-publish@master
       with:
         user: __token__
         password: ${{ secrets.pypi_password }}
+    - name: Reformate version number
+      id: reformate_release
+      uses: frabert/replace-string-action@v1.1
+      with:
+        pattern: 'refs\/tags\/python-v([0-9.]+)'
+        string: ${{ github.ref }}
+        replace-with: '$1'
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Python Release ${{ steps.reformate_release.output.replaced }}
+        draft: false
+        prerelease: false
