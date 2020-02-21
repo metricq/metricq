@@ -10,7 +10,7 @@ jobs:
 
     strategy:
       matrix:
-        compiler: [g++-7, g++-8, g++-9, clang++, clang++-8, clang++-9]
+        compiler: [g++-7, g++-8, g++-9, clang++-6.0, clang++-8, clang++-9]
 
     steps:
     - uses: actions/checkout@v2
@@ -39,11 +39,11 @@ jobs:
     - uses: actions/checkout@v2
     - name: Install Protobuf
       run: |
-        brew install protobuf
+        brew install protobuf openssl@1.1
     - name: Run CMake configure
       env:
         CXX: ${{ matrix.compiler }}
-      run: cmake .
+      run: cmake . -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl@1.1/
     - name: Build
       run: make
     - name: Run CTest
