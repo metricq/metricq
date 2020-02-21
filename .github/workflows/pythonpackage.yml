@@ -32,11 +32,16 @@ jobs:
         
   release:
     needs: [build]
-    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/python-v')
+    
     runs-on: ubuntu-latest
     
     steps:
+      - name: Install Protoc
+        uses: Arduino/actions/setup-protoc@master
+      - name: Build Python distribution
+        run: python setup.py sdist bdist_wheel
       - name: Publish a Python distribution to PyPI
+        if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/python-v')
         uses: pypa/gh-action-pypi-publish@master
         with:
           user: __token__
