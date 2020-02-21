@@ -63,7 +63,7 @@ class ProtoDevelop(develop):
 
 setup(
     name="metricq",
-    version="1.1.1",
+    version="1.1.2",
     author="TU Dresden",
     description="A highly-scalable, distributed metric data processing framework based on RabbitMQ",
     url="https://github.com/metricq/metricq",
