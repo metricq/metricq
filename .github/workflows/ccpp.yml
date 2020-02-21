@@ -2,11 +2,16 @@ name: C++ Interface
 
 on: [push]
 
+
 jobs:
-  build:
+  build-ubuntu:
 
     runs-on: ubuntu-latest
-    
+
+    strategy:
+      matrix:
+        compiler: [g++-7, g++-8, g++-9, clang++-6, clang++-8, clang++-9]
+
     steps:
     - uses: actions/checkout@v2
     - name: Install Protobuf
@@ -14,6 +19,30 @@ jobs:
         sudo apt update
         sudo apt install libprotoc-dev protobuf-compiler
     - name: Run CMake configure
+      env:
+        CC: ${{ matrix.compiler }}
+      run: cmake .
+    - name: Build
+      run: make
+    - name: Run CTest
+      run: ctest .
+
+  build-macos:
+
+    runs-on: macos
+
+    strategy:
+      matrix:
+        compiler: [g++-8, g++-9, c++, clang++-8, clang++-9]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Protobuf
+      run: |
+        brew install protobuf
+    - name: Run CMake configure
+      env:
+        CC: ${{ matrix.compiler }}
       run: cmake .
     - name: Build
       run: make
