@@ -16,6 +16,8 @@ jobs:
       uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python-version }}
+    - name: Install Protoc
+      uses: Arduino/actions/setup-protoc@master
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
