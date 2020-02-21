@@ -1,0 +1,19 @@
+name: Build C++ Interface
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Protoc
+      uses: Arduino/actions/setup-protoc@master
+    - name: Run CMake configure
+      run: cmake .
+    - name: Build
+      run: make
+    - name: Run CTest
+      run: ctest .
