@@ -33,7 +33,7 @@ jobs:
 
     strategy:
       matrix:
-        xcode: [default, 11.3, 11.2, 11.1, 11.0]
+        xcode: [default]
 
     steps:
     - uses: actions/checkout@v2
