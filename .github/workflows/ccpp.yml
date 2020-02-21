@@ -33,7 +33,7 @@ jobs:
 
     strategy:
       matrix:
-        compiler: [g++-8, g++-9, c++, clang++-9]
+        compiler: [g++-8, g++-9, c++]
 
     steps:
     - uses: actions/checkout@v2
