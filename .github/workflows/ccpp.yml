@@ -33,16 +33,18 @@ jobs:
 
     strategy:
       matrix:
-        compiler: [g++-8, g++-9, c++]
+        xcode: [default, 11.3, 11.2, 11.1, 11.0]
 
     steps:
     - uses: actions/checkout@v2
     - name: Install Protobuf
       run: |
         brew install protobuf openssl@1.1
+    - name: Select XCode
+      run: sudo xcode-select -s /Applications/Xcode_{{ matrix.xcode }}.app/Contents/Developer
+      exclude:
+        - xcode: default
     - name: Run CMake configure
-      env:
-        CXX: ${{ matrix.compiler }}
       run: cmake . -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl@1.1/
     - name: Build
       run: make
