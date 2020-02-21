@@ -20,7 +20,7 @@ jobs:
         sudo apt install libprotoc-dev protobuf-compiler
     - name: Run CMake configure
       env:
-        CC: ${{ matrix.compiler }}
+        CXX: ${{ matrix.compiler }}
       run: cmake .
     - name: Build
       run: make
@@ -42,7 +42,7 @@ jobs:
         brew install protobuf
     - name: Run CMake configure
       env:
-        CC: ${{ matrix.compiler }}
+        CXX: ${{ matrix.compiler }}
       run: cmake .
     - name: Build
       run: make
