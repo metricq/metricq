@@ -159,13 +159,15 @@ class ManagementAgent(Agent):
 
         else:  # No selector dict, all *fix / historic filtering
             request_limit = limit
+            request_params = {}
             if infix is None:
                 request_prefix = prefix
                 if historic is not None:
                     endpoint = self.couchdb_db_metadata.view("index", "historic")
                 elif source is not None:
                     endpoint = self.couchdb_db_metadata.view("index", "source")
-                    request_prefix = source
+                    request_prefix = None
+                    request_params["key"] = f'"{source}"'
                 else:
                     endpoint = self.couchdb_db_metadata.all_docs
             else:
@@ -194,7 +196,7 @@ class ManagementAgent(Agent):
                 metrics = {
                     doc["_id"]: doc.data
                     async for doc in endpoint.docs(
-                        prefix=request_prefix, limit=request_limit
+                        prefix=request_prefix, limit=request_limit, **request_params
                     )
                 }
                 if request_limit != limit:
