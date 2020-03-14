@@ -587,6 +587,9 @@ class Agent(RPCDispatcher):
         logger.info("Reconnected to {}", connection)
 
     def _on_close(self, exception):
+        if isinstance(exception, asyncio.CancelledError):
+            logger.debug("Connection closed regularly")
+            return
         logger.info(
             "Connection closed: {} ({})", exception, type(exception).__qualname__
         )
