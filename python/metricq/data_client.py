@@ -92,7 +92,7 @@ class DataClient(Client):
             # TODO configurable prefetch count
             await self.data_channel.set_qos(prefetch_count=400)
 
-            self._data_connection_watchdog.start()
+            self._data_connection_watchdog.start(loop=self.event_loop)
             self._data_connection_watchdog.set_established()
 
     async def stop(self, exception: Optional[Exception] = None):
