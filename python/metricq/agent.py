@@ -203,8 +203,8 @@ class Agent(RPCDispatcher):
             "{}-rpc".format(self.token), exclusive=True
         )
 
+        self._management_connection_watchdog.start(loop=self.event_loop)
         self._management_connection_watchdog.set_established()
-        self._management_connection_watchdog.start()
 
     def run(
         self, catch_signals=("SIGINT", "SIGTERM"), cancel_on_exception=False
