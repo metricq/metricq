@@ -96,12 +96,10 @@ class ConnectionWatchdog:
 
     def set_closed(self):
         """Signal that the connection has been closed.
+        Note: Can be called when the watchdog is already stopped, so we need to check here
         """
-        assert (
-            self._closed_event is not None
-            and self._established_event is not None
-            and self._watchdog_task is not None
-        ), "attempting to operate with a watchdog that is not yet started"
+        if self._closed_event is None:
+            return
         self._established_event.clear()
         self._closed_event.set()
 
