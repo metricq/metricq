@@ -102,7 +102,8 @@ class DataClient(Client):
             await self.data_channel.close()
             self.data_channel = None
         if self.data_connection:
-            await self.data_connection.close(exception)
+            # We need not pass anything as exception to this close. It will only hurt.
+            await self.data_connection.close()
             self.data_connection = None
         self.data_exchange = None
         await super().stop(exception)
