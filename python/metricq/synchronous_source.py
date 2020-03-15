@@ -119,12 +119,13 @@ class SynchronousSource:
             if exception:
                 logger.error("[SynchronousSource] failed to send data {}", exception)
 
-    def stop(self):
+    def stop(self, timeout=60):
         logger.info("[SynchronousSource] stopping")
-        asyncio.run_coroutine_threadsafe(self._source.stop(), self._source.event_loop)
-        # We cannot wait for the future because stop never finishes completion as
-        # it kills the event loop before returning
-        # It's ok though because join will block until the event loop is done
+        f = asyncio.run_coroutine_threadsafe(self._source.stop(), self._source.event_loop)
+        exception = f.exception(timeout=timeout)
+        if exception:
+            logger.error("[SynchronousSource] stop call failed {}", exception)
+
         logger.debug("[SynchronousSource] underlying source stopped")
         self._thread.join()
         logger.info("[SynchronousSource] thread joined")
