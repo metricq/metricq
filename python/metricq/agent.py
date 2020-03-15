@@ -412,11 +412,6 @@ class Agent(RPCDispatcher):
 
         ex: Optional[Exception] = context.get("exception")
         if ex is not None:
-            logger.critical(
-                f"Agent {type(self).__qualname__} encountered an unhandled exception",
-                exc_info=(ex.__class__, ex, ex.__traceback__),
-            )
-
             is_keyboard_interrupt = isinstance(ex, KeyboardInterrupt)
             if self._cancel_on_exception or is_keyboard_interrupt:
                 if not is_keyboard_interrupt:
@@ -425,6 +420,11 @@ class Agent(RPCDispatcher):
                         type(ex).__qualname__,
                     )
                 self._schedule_stop(exception=ex, loop=loop)
+            else:
+                logger.error(
+                    f"Agent {type(self).__qualname__} encountered an unhandled exception",
+                    exc_info=(ex.__class__, ex, ex.__traceback__),
+                )
 
     def _schedule_stop(
         self,
