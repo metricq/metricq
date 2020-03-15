@@ -232,7 +232,8 @@ class HistoryClient(Client):
             await self.history_channel.close()
             self.history_channel = None
         if self.history_connection:
-            await self.history_connection.close(exception)
+            # We need not pass anything as exception to this close. It will only hurt.
+            await self.history_connection.close()
             self.history_connection = None
         self.history_exchange = None
         await super().stop(exception)
