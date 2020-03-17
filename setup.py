@@ -63,7 +63,7 @@ class ProtoDevelop(develop):
 
 setup(
     name="metricq",
-    version="1.1.0",
+    version="1.1.2",
     author="TU Dresden",
     description="A highly-scalable, distributed metric data processing framework based on RabbitMQ",
     url="https://github.com/metricq/metricq",
@@ -71,7 +71,7 @@ setup(
         "License :: OSI Approved :: BSD License",
         "Programming Language :: Python :: 3",
     ],
-    python_requires=">=3.5",
+    python_requires=">=3.6",
     packages=["metricq", "metricq_proto"],
     scripts=[],
     install_requires=[

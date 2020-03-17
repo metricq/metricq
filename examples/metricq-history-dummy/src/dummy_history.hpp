@@ -31,10 +31,14 @@
 
 #include <asio/signal_set.hpp>
 
+#include <string>
+#include <vector>
+
 class DummyHistory : public metricq::HistoryClient
 {
 public:
-    DummyHistory(const std::string& manager_host, const std::string& token);
+    DummyHistory(const std::string& manager_host, const std::string& token,
+                 const std::vector<std::string>& metrics);
     ~DummyHistory();
 
     void on_error(const std::string& message) override;
@@ -43,8 +47,11 @@ public:
 private:
     void on_history_config(const metricq::json& config) override;
     void on_history_ready() override;
-    void on_history_response(const std::string& id,
-                             const metricq::HistoryResponse& response) override;
+    void on_history_response(const std::string& metric,
+                             const metricq::HistoryResponseValueView& response) override;
+    void on_history_response(const std::string& metric,
+                             const metricq::HistoryResponseAggregateView& response) override;
 
+    std::vector<std::string> metrics_;
     asio::signal_set signals_;
 };

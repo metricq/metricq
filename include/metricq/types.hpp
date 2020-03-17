@@ -57,7 +57,46 @@ struct TimeValue
     }
 };
 
-struct TimeValueAggregate
+struct Aggregate
+{
+    Aggregate() = default;
+
+    constexpr Aggregate(TimePoint t, Value min, Value max, Value sum, uint64_t count,
+                        Value integral, Duration active_time)
+    : time(t), min(min), max(max), sum(sum), count(count), integral(integral),
+      active_time(active_time)
+    {
+    }
+
+    Value mean_sum() const
+    {
+        return sum / count;
+    }
+
+    Value mean_integral() const
+    {
+        return integral / active_time.count();
+    }
+
+    Value mean() const
+    {
+        if (active_time.count())
+        {
+            return mean_integral();
+        }
+        return mean_sum();
+    }
+
+    TimePoint time;
+    Value min;
+    Value max;
+    Value sum;
+    uint64_t count;
+    Value integral;
+    Duration active_time;
+};
+
+struct [[deprecated]] TimeValueAggregate
 {
     TimeValueAggregate() = default;
 
@@ -129,9 +168,17 @@ inline DataChunkIter end(const DataChunk& dc)
     return { dc.time_delta().end(), dc.value().end() };
 }
 
-class HistoryRepsonseIter
+// Note for the remainder of this file:
+// We provide a deprecated interface to the deprecated protobuf fields.
+// As we are aware of that and marked the interface itself as deprecated, we will ignore the
+// deprecation of the protobuf here
+
+class [[deprecated]] HistoryRepsonseIter
 {
 public:
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated"
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     HistoryRepsonseIter(
         google::protobuf::RepeatedField<const google::protobuf::int64>::iterator iter_time,
         google::protobuf::RepeatedField<const double>::iterator iter_value_min,
@@ -147,6 +194,7 @@ public:
         return { metricq::TimePoint(metricq::Duration(timestamp + *iter_time)), *iter_value_min,
                  *iter_value_max, *iter_value_avg };
     }
+#pragma GCC diagnostic pop
 
     HistoryRepsonseIter& operator++()
     {
@@ -165,21 +213,139 @@ public:
 
 private:
     google::protobuf::RepeatedField<const google::protobuf::int64>::iterator iter_time;
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated"
     google::protobuf::RepeatedField<const double>::iterator iter_value_min;
     google::protobuf::RepeatedField<const double>::iterator iter_value_max;
     google::protobuf::RepeatedField<const double>::iterator iter_value_avg;
+#pragma GCC diagnostic pop
+
     int64_t timestamp = 0;
 };
 
-inline HistoryRepsonseIter begin(const HistoryResponse& hr)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated"
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+[[deprecated]] inline HistoryRepsonseIter begin(const HistoryResponse& hr)
 {
     return { hr.time_delta().begin(), hr.value_min().begin(), hr.value_max().begin(),
              hr.value_avg().begin() };
 }
 
-inline HistoryRepsonseIter end(const HistoryResponse& hr)
+[[deprecated]] inline HistoryRepsonseIter end(const HistoryResponse& hr)
 {
     return { hr.time_delta().end(), hr.value_min().end(), hr.value_max().end(),
              hr.value_avg().end() };
 }
+#pragma GCC diagnostic pop
+
+class HistoryResponseValueIterator
+{
+public:
+    HistoryResponseValueIterator(
+        google::protobuf::RepeatedField<const google::protobuf::int64>::iterator iter_time,
+        google::protobuf::RepeatedField<const double>::iterator iter_value)
+    : iter_time(iter_time), iter_value(iter_value)
+    {
+    }
+
+    metricq::TimeValue operator*() const
+    {
+        return {
+            metricq::TimePoint(metricq::Duration(timestamp + *iter_time)),
+            *iter_value,
+        };
+    }
+
+    HistoryResponseValueIterator& operator++()
+    {
+        timestamp += *iter_time;
+        iter_time++;
+        iter_value++;
+        return *this;
+    }
+
+    bool operator!=(const HistoryResponseValueIterator& other)
+    {
+        return iter_time != other.iter_time;
+    }
+
+private:
+    google::protobuf::RepeatedField<const google::protobuf::int64>::iterator iter_time;
+    google::protobuf::RepeatedField<const double>::iterator iter_value;
+
+    int64_t timestamp = 0;
+};
+
+class HistoryResponseAggregateIterator
+{
+public:
+    HistoryResponseAggregateIterator(
+        google::protobuf::RepeatedField<const google::protobuf::int64>::iterator iter_time,
+        google::protobuf::RepeatedPtrField<HistoryResponse::Aggregate>::const_iterator
+            iter_aggregate)
+    : iter_time(iter_time), iter_aggregate(iter_aggregate)
+    {
+    }
+
+    metricq::Aggregate operator*() const
+    {
+        return { metricq::TimePoint(metricq::Duration(timestamp + *iter_time)),
+                 iter_aggregate->minimum(),
+                 iter_aggregate->maximum(),
+                 iter_aggregate->sum(),
+                 iter_aggregate->count(),
+                 iter_aggregate->integral(),
+                 Duration(iter_aggregate->active_time()) };
+    }
+
+    HistoryResponseAggregateIterator& operator++()
+    {
+        timestamp += *iter_time;
+        iter_time++;
+        iter_aggregate++;
+        return *this;
+    }
+
+    bool operator!=(const HistoryResponseAggregateIterator& other)
+    {
+        return iter_time != other.iter_time;
+    }
+
+private:
+    google::protobuf::RepeatedField<const google::protobuf::int64>::iterator iter_time;
+    google::protobuf::RepeatedPtrField<HistoryResponse::Aggregate>::const_iterator iter_aggregate;
+
+    int64_t timestamp = 0;
+};
+
+class HistoryResponseValueView : public HistoryResponse
+{
+};
+
+inline HistoryResponseValueIterator begin(const HistoryResponseValueView& hr)
+{
+    return { hr.time_delta().begin(), hr.value().begin() };
+}
+
+inline HistoryResponseValueIterator end(const HistoryResponseValueView& hr)
+{
+    return { hr.time_delta().end(), hr.value().end() };
+}
+
+class HistoryResponseAggregateView : public HistoryResponse
+{
+};
+
+inline HistoryResponseAggregateIterator begin(const HistoryResponseAggregateView& hr)
+{
+    return { hr.time_delta().begin(), hr.aggregate().begin() };
+}
+
+inline HistoryResponseAggregateIterator end(const HistoryResponseAggregateView& hr)
+{
+    return { hr.time_delta().end(), hr.aggregate().end() };
+}
+
 } // namespace metricq

@@ -75,6 +75,7 @@ protected:
     virtual void on_source_ready() = 0;
 
     void declare_metrics();
+    void clear_metrics();
 
 private:
     void config(const json& config);

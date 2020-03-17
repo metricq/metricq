@@ -27,8 +27,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from abc import abstractmethod
-from asyncio import Task, CancelledError
-from typing import Set, Optional
+from asyncio import CancelledError, Task
+from typing import Optional, Set
 
 import aio_pika
 from aio_pika.queue import Queue

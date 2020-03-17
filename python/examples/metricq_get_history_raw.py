@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2019, ZIH, Technische Universitaet Dresden, Federal Republic of Germany
+# Copyright (c) 2018, ZIH, Technische Universitaet Dresden, Federal Republic of Germany
 #
 # All rights reserved.
 #
@@ -27,19 +27,24 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import asyncio
 import logging
+import pprint
+from datetime import timedelta
 
 import click
 
 import click_completion
 import click_log
 import metricq
-from metricq.logging import get_logger
+from metricq.history_client import HistoryRequestType
 
-logger = get_logger()
+logger = metricq.get_logger()
 
 click_log.basic_config(logger)
 logger.setLevel("INFO")
+# Use this if we ever use threads
+# logger.handlers[0].formatter = logging.Formatter(fmt='%(asctime)s %(threadName)-16s %(levelname)-8s %(message)s')
 logger.handlers[0].formatter = logging.Formatter(
     fmt="%(asctime)s [%(levelname)-8s] [%(name)-20s] %(message)s"
 )
@@ -47,46 +52,51 @@ logger.handlers[0].formatter = logging.Formatter(
 click_completion.init()
 
 
-# To implement a MetricQ Sink, define a custom class and derive from metricq.Sink
-class DummySink(metricq.Sink):
+async def aget_history(server, token, metric):
+    client = metricq.HistoryClient(
+        token=token, management_url=server, event_loop=asyncio.get_running_loop()
+    )
+    await client.connect()
 
-    # The constructor extracts metrics parameter
-    def __init__(self, metrics, *args, **kwargs):
-        logger.info("initializing DummySink")
-        self._metrics = metrics
-        super().__init__(*args, **kwargs)
+    click.echo("connected")
 
-    # We override connect() to fiddle with the connection process
-    async def connect(self):
-        # First, let the actual connect() happen
-        await super().connect()
+    total_begin = metricq.Timestamp.from_iso8601("2020-01-01T00:00:00.0Z")
+    total_end = metricq.Timestamp.now()
+    chunk_duration = metricq.Timedelta.from_timedelta(timedelta(days=1))
+    interval_max_raw = metricq.Timedelta(0)
 
-        # After the connection is established, we subscribe to the list of requested metrics
-        # We will receive every data points for every subscribed metric, which will be submitted
-        # into MetricQ from this time on.
-        await self.subscribe(self._metrics)
+    chunk_begin = total_begin
+    while chunk_begin < total_end:
+        chunk_end = chunk_begin + chunk_duration
+        chunk_end = min(chunk_end, total_end)
+        click.echo(f"Requesting chunk from {chunk_begin} to {chunk_end}")
 
-    # The data handler, this method is called for every received data point
-    async def on_data(self, metric, timestamp, value):
-
-        # For thisexample, we just print the datapoints to the console
-        click.echo(
-            click.style("{}: {}, {}".format(metric, timestamp, value), fg="bright_blue")
+        result = await client.history_data_request(
+            metric,
+            start_time=chunk_begin,
+            end_time=chunk_end,
+            interval_max=interval_max_raw,
+            request_type=HistoryRequestType.FLEX_TIMELINE,
         )
+        for tv in result.values():
+            # The DB can give you one value before the requested begin timestamp
+            if tv.timestamp < chunk_begin:
+                continue
+            click.echo(f"{tv.timestamp} {tv.value}")
+
+        chunk_begin = chunk_end
+
+    await client.stop(None)
 
 
 @click.command()
 @click.option("--server", default="amqp://localhost/")
-@click.option("--token", default="sink-py-dummy")
-@click.option("-m", "--metrics", multiple=True, required=True)
+@click.option("--token", default="history-py-dummy")
+@click.argument("metric")
 @click_log.simple_verbosity_option(logger)
-def source(server, token, metrics):
-    # initialize the DummySink class
-    src = DummySink(metrics=metrics, token=token, management_url=server)
-
-    # run the sink. This call will block until the connection is closed.
-    src.run()
+def get_history(server, token, metric):
+    asyncio.run(aget_history(server, token, metric))
 
 
 if __name__ == "__main__":
-    source()
+    get_history()

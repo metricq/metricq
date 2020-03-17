@@ -226,7 +226,7 @@ class HistoryClient(Client):
 
         await self._history_consume()
 
-    async def stop(self, exception: Optional[Exception]):
+    async def stop(self, exception: Optional[Exception] = None):
         logger.info("closing history channel and connection.")
         if self.history_channel:
             await self.history_channel.close()

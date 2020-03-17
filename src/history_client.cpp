@@ -30,6 +30,7 @@
 
 #include <metricq/chrono.hpp>
 #include <metricq/history_client.hpp>
+#include <metricq/types.hpp>
 
 #include "connection_handler.hpp"
 #include "log.hpp"
@@ -64,6 +65,8 @@ std::string HistoryClient::history_request(const std::string& id, TimePoint begi
     request.set_start_time(begin.time_since_epoch().count());
     request.set_end_time(end.time_since_epoch().count());
     request.set_interval_max(interval.count());
+    // TODO expose the request type to the user. For now it's fine.
+    request.set_type(HistoryRequest::FLEX_TIMELINE);
 
     auto correlation_id = std::string("metricq-history-") + token() + "-" + uuid();
 
@@ -188,6 +191,18 @@ void HistoryClient::close()
         log::info("closed history_connection");
         Connection::close();
     });
+}
+
+void HistoryClient::on_history_response(const std::string& id, const HistoryResponse& response)
+{
+    if (response.value_size() > 0)
+    {
+        on_history_response(id, *static_cast<const HistoryResponseValueView*>(&response));
+    }
+    else
+    {
+        on_history_response(id, *static_cast<const HistoryResponseAggregateView*>(&response));
+    }
 }
 
 } // namespace metricq

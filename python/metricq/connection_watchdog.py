@@ -1,5 +1,4 @@
-from asyncio import (CancelledError, Event, Task, TimeoutError, create_task,
-                     wait_for)
+from asyncio import CancelledError, Event, Task, TimeoutError, ensure_future, wait_for
 from typing import Callable, Optional, Union
 
 from .logging import get_logger
@@ -77,7 +76,7 @@ class ConnectionWatchdog:
                 logger.debug("Cancelled {} watchdog", self.connection_name)
                 return
 
-        self._watchdog_task = create_task(watchdog())
+        self._watchdog_task = ensure_future(watchdog())
 
     def set_established(self):
         """Signal that the connection has been established.
