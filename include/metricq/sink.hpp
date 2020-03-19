@@ -64,7 +64,7 @@ protected:
         DataCompletion(const DataCompletion&) = delete;
         DataCompletion(DataCompletion&&) = default;
         DataCompletion& operator=(const DataCompletion&) = delete;
-        DataCompletion& operator=(DataCompletion&&) = default;
+        DataCompletion& operator=(DataCompletion&&) = delete;
 
         void operator()();
 

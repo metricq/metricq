@@ -67,7 +67,7 @@ protected:
         ConfigCompletion(const ConfigCompletion&) = delete;
         ConfigCompletion(ConfigCompletion&&) = default;
         ConfigCompletion& operator=(const ConfigCompletion&) = delete;
-        ConfigCompletion& operator=(ConfigCompletion&&) = default;
+        ConfigCompletion& operator=(ConfigCompletion&&) = delete;
 
         void operator()();
 
@@ -96,7 +96,7 @@ protected:
         HistoryCompletion(const HistoryCompletion&) = delete;
         HistoryCompletion(HistoryCompletion&&) = default;
         HistoryCompletion& operator=(const HistoryCompletion&) = delete;
-        HistoryCompletion& operator=(HistoryCompletion&&) = default;
+        HistoryCompletion& operator=(HistoryCompletion&&) = delete;
 
         void begin_processing()
         {
