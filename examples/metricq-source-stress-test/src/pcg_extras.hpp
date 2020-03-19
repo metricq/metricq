@@ -1,3 +1,4 @@
+// clang-format off
 /*
  * PCG Random Number Generation for C++
  *
