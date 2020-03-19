@@ -93,7 +93,8 @@ void StressTestSource::on_source_config(const nlohmann::json& config)
     interval_ = std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::nanoseconds(1000000000ll) / (rate / chunk_size_));
 
-    Log::info() << "Rate: " << rate << " chunk size: " << chunk_size_ << " timer interval: " << interval_.count() << "ns";
+    Log::info() << "Rate: " << rate << " chunk size: " << chunk_size_
+                << " timer interval: " << interval_.count() << "ns";
 
     if (config.count("duration"))
     {
@@ -185,7 +186,8 @@ metricq::Timer::TimerResult StressTestSource::timeout_cb(std::error_code)
     Log::debug() << "sending metrics...";
     auto current_time = metricq::Clock::now();
 
-    if (first_time_.time_since_epoch().count() == 0) {
+    if (first_time_.time_since_epoch().count() == 0)
+    {
         Log::info() << "first timer";
         first_time_ = current_time;
     }
