@@ -33,6 +33,7 @@ from .data_client import DataClient
 from .history_client import HistoryClient
 from .interval_source import IntervalSource
 from .logging import get_logger
+from .management_agent import ManagementAgent
 from .rpc import rpc_handler
 from .sink import DurableSink, Sink
 from .source import Source
