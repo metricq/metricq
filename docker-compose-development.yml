@@ -1,0 +1,94 @@
+version: "3.7"
+services:
+  metricq-python:
+    image: metricq-python
+    build:
+      context: .
+      dockerfile: Dockerfile-python
+    networks:
+      - metricq-network
+
+  metricq-manager:
+    build:
+      context: https://github.com/metricq/metricq-manager.git
+    image: metricq-manager
+    environment:
+      wait_for_couchdb_url: "couchdb-server:5984"
+      couchdb_url: "http://couchdb-server:5984"
+      couchdb_user: "admin"
+      couchdb_pw: "admin"
+      wait_for_rabbitmq_url: "rabbitmq-server:5672"
+      rpc_url: "amqp://rabbitmq:rabbitmq@rabbitmq-server/"
+      data_url: "amqp://rabbitmq:rabbitmq@rabbitmq-server/"
+    volumes:
+      - "./config:/home/metricq/manager/config"
+    depends_on:
+      - rabbitmq-server
+      - couchdb-server
+    networks:
+      - metricq-network
+
+  metricq-wizard-frontend:
+    build:
+      context: https://github.com/metricq/metricq-wizard-frontend.git
+      args:
+        - api_url=http://localhost:8000/api
+    image: metricq-wizard-frontend
+    depends_on:
+      - rabbitmq-server
+      - couchdb-server
+    ports:
+      - "3000:3000"
+    networks:
+      - metricq-network
+
+  metricq-wizard-backend:
+    build:
+      context: https://github.com/metricq/metricq-wizard-backend.git
+    image: metricq-wizard-backend
+    environment:
+      COUCHDB_URL: "http://couchdb-server:5984"
+      COUCHDB_USER: "admin"
+      COUCHDB_PW: "admin"
+      AMQP_SERVER: "amqp://rabbitmq:rabbitmq@rabbitmq-server/"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - rabbitmq-server
+      - couchdb-server
+    networks:
+      - metricq-network
+
+  metricq-cxx:
+    image: metricq-cxx
+    build:
+      context: .
+      dockerfile: Dockerfile-cxx
+    networks:
+      - metricq-network
+
+  rabbitmq-server:
+    image: rabbitmq:management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: "rabbitmq"
+      RABBITMQ_DEFAULT_PASS: "rabbitmq"
+      RABBITMQ_DEFAULT_VHOST: "/"
+    networks:
+      - metricq-network
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  couchdb-server:
+    image: couchdb
+    environment:
+      COUCHDB_USER: "admin"
+      COUCHDB_PASSWORD: "admin"
+    networks:
+      - metricq-network
+    ports:
+      - "5984:5984"
+
+networks:
+  metricq-network:
+    driver: bridge
