@@ -38,7 +38,7 @@ services:
       - rabbitmq-server
       - couchdb-server
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     networks:
       - metricq-network
 
@@ -52,7 +52,7 @@ services:
       COUCHDB_PW: "admin"
       AMQP_SERVER: "amqp://rabbitmq:rabbitmq@rabbitmq-server/"
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     depends_on:
       - rabbitmq-server
       - couchdb-server
@@ -76,8 +76,8 @@ services:
     networks:
       - metricq-network
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
 
   couchdb-server:
     image: couchdb
@@ -87,7 +87,7 @@ services:
     networks:
       - metricq-network
     ports:
-      - "5984:5984"
+      - "127.0.0.1:5984:5984"
 
 networks:
   metricq-network:
