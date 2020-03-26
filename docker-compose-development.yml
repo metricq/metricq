@@ -18,10 +18,8 @@ services:
       couchdb_user: "admin"
       couchdb_pw: "admin"
       wait_for_rabbitmq_url: "rabbitmq-server:5672"
-      rpc_url: "amqp://rabbitmq:rabbitmq@rabbitmq-server/"
-      data_url: "amqp://rabbitmq:rabbitmq@rabbitmq-server/"
-    volumes:
-      - "./config:/home/metricq/manager/config"
+      rpc_url: "amqp://admin:admin@rabbitmq-server/"
+      data_url: "amqp://admin:admin@rabbitmq-server/"
     depends_on:
       - rabbitmq-server
       - couchdb-server
@@ -35,8 +33,7 @@ services:
         - api_url=http://localhost:8000/api
     image: metricq-wizard-frontend
     depends_on:
-      - rabbitmq-server
-      - couchdb-server
+      - metricq-wizard-backend
     ports:
       - "127.0.0.1:3000:3000"
     networks:
@@ -50,7 +47,7 @@ services:
       COUCHDB_URL: "http://couchdb-server:5984"
       COUCHDB_USER: "admin"
       COUCHDB_PW: "admin"
-      AMQP_SERVER: "amqp://rabbitmq:rabbitmq@rabbitmq-server/"
+      AMQP_SERVER: "amqp://admin:admin@rabbitmq-server/"
     ports:
       - "127.0.0.1:8000:8000"
     depends_on:
@@ -70,8 +67,8 @@ services:
   rabbitmq-server:
     image: rabbitmq:management-alpine
     environment:
-      RABBITMQ_DEFAULT_USER: "rabbitmq"
-      RABBITMQ_DEFAULT_PASS: "rabbitmq"
+      RABBITMQ_DEFAULT_USER: "admin"
+      RABBITMQ_DEFAULT_PASS: "admin"
       RABBITMQ_DEFAULT_VHOST: "/"
     networks:
       - metricq-network
@@ -80,7 +77,7 @@ services:
       - "127.0.0.1:15672:15672"
 
   couchdb-server:
-    image: couchdb
+    image: couchdb:3
     environment:
       COUCHDB_USER: "admin"
       COUCHDB_PASSWORD: "admin"
@@ -88,6 +85,15 @@ services:
       - metricq-network
     ports:
       - "127.0.0.1:5984:5984"
+    command: /opt/couchdb/bin/couchdb
+
+  couchdb-setup:
+    image: curlimages/curl:latest
+    depends_on:
+      - couchdb-server
+    networks:
+      - metricq-network
+    command: "curl --retry-connrefused --retry 5 --retry-delay 10 -X POST -H \"Content-Type: application/json\" http://admin:admin@couchdb-server:5984/_cluster_setup -d '{\"action\": \"enable_single_node\", \"bind_address\":\"0.0.0.0\", \"username\": \"admin\", \"password\":\"admin\"}'"
 
 networks:
   metricq-network:
