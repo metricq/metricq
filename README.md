@@ -21,3 +21,21 @@ This will setup:
 - wizard frontend (port 3000 forwarded to localhost, open http://localhost:3000/wizard/ in a web browser)
 - wizard backend (port 8000 forwarded to localhost)
 - manager
+
+To run it in the background append ```-d```:
+
+```
+docker-compose -f docker-compose-development.yml up -d
+```
+
+To stop everything run:
+
+```
+docker-compose -f docker-compose-development.yml stop
+```
+
+To stop and remove everything run
+
+```
+docker-compose -f docker-compose-development.yml down
+```
