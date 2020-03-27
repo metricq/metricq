@@ -32,10 +32,6 @@
 #include <metricq/ostream.hpp>
 #include <metricq/types.hpp>
 
-#include <nlohmann/json_fwd.hpp>
-
-using json = nlohmann::json;
-
 #include <cmath>
 #include <metricq/exception.hpp>
 

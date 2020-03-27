@@ -71,7 +71,7 @@ DummySource::~DummySource()
 {
 }
 
-void DummySource::on_source_config(const nlohmann::json&)
+void DummySource::on_source_config(const metricq::json&)
 {
     Log::debug() << "DummySource::on_source_config() called";
     (*this)[metric_];

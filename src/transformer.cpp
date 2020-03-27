@@ -35,11 +35,16 @@ namespace metricq
 {
 Transformer::Transformer(const std::string& token) : Sink(token)
 {
+    register_management_callback("config", [this](const json& config) -> json {
+        this->on_transformer_config(config);
+        this->subscribe_metrics();
+        return metricq::json::object();
+    });
 }
 
 void Transformer::on_connected()
 {
-    rpc("transformer.register", [this](const auto& response) { config(response); });
+    rpc("transformer.register", [this](const auto& response) { on_register_response(response); });
 }
 
 void Transformer::send(const std::string& id, const DataChunk& dc)
@@ -53,21 +58,8 @@ void Transformer::send(const std::string& id, TimeValue tv)
     data_channel_->publish(data_exchange_, id, DataChunk(tv).SerializeAsString());
 }
 
-void Transformer::config(const json& config)
+void Transformer::subscribe_metrics()
 {
-    if (!data_exchange_.empty() && config["dataExchange"] != data_exchange_)
-    {
-        log::fatal("changing dataExchange on the fly is not currently supported");
-        std::abort();
-    }
-
-    data_exchange_ = config["dataExchange"];
-
-    if (config.find("config") != config.end())
-    {
-        on_transformer_config(config["config"]);
-    }
-
     if (input_metrics.empty())
     {
         log::fatal("required input metrics not set");
@@ -88,6 +80,17 @@ void Transformer::config(const json& config)
             declare_metrics();
         },
         { { "metrics", input_metrics } });
+}
+
+void Transformer::on_register_response(const json& response)
+{
+    assert(this->data_exchange_.empty());
+
+    // TODO: check if there's a better error to throw than what at() and get() throw in case any of
+    // the required fields is missing.
+    this->data_exchange_ = response.at("dataExchange").get<std::string>();
+    this->on_transformer_config(response.at("config"));
+    this->subscribe_metrics();
 }
 
 void Transformer::declare_metrics()

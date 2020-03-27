@@ -68,7 +68,7 @@ StressTestSource::~StressTestSource()
 {
 }
 
-void StressTestSource::on_source_config(const nlohmann::json& config)
+void StressTestSource::on_source_config(const metricq::json& config)
 {
     Log::debug() << "StressTestSource::on_source_config() called";
 

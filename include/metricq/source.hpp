@@ -78,7 +78,7 @@ protected:
     void clear_metrics();
 
 private:
-    void config(const json& config);
+    void on_register_response(const json& response);
 
 private:
     std::string data_exchange_;
