@@ -81,6 +81,7 @@ void DummySource::on_source_ready()
 {
     Log::debug() << "DummySource::on_source_ready() called";
     (*this)[metric_].metadata.unit("kittens");
+    (*this)[metric_].metadata.rate(messages_per_chunk_ / (interval.count() * 1e-9));
     (*this)[metric_].metadata["color"] = "pink";
     (*this)[metric_].metadata["paws"] = 4;
 
