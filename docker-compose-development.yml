@@ -28,6 +28,20 @@ services:
     networks:
       - metricq-network
 
+  metricq-db-hta:
+    build:
+      context: https://github.com/metricq/metricq-db-hta.git
+    image: metricq-db-hta
+    environment:
+      token: metricq-db-hta
+      metricq_url: "amqp://admin:admin@rabbitmq-server/"
+      wait_for_rabbitmq_url: "rabbitmq-server:5672"
+    depends_on:
+      - rabbitmq-server
+      - metricq-manager
+    networks:
+      - metricq-network
+
   metricq-wizard-frontend:
     build:
       context: https://github.com/metricq/metricq-wizard-frontend.git
