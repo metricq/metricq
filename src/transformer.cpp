@@ -36,7 +36,8 @@ namespace metricq
 Transformer::Transformer(const std::string& token) : Sink(token)
 {
     register_management_callback("config", [this](const json& config) -> json {
-        this->configure(config);
+        this->on_transformer_config(config);
+        this->subscribe_metrics();
         return metricq::json::object();
     });
 }
@@ -57,10 +58,8 @@ void Transformer::send(const std::string& id, TimeValue tv)
     data_channel_->publish(data_exchange_, id, DataChunk(tv).SerializeAsString());
 }
 
-void Transformer::configure(const json& config)
+void Transformer::subscribe_metrics()
 {
-    on_transformer_config(config);
-
     if (input_metrics.empty())
     {
         log::fatal("required input metrics not set");
@@ -90,7 +89,8 @@ void Transformer::on_register_response(const json& response)
     // TODO: check if there's a better error to throw than what at() and get() throw in case any of
     // the required fields is missing.
     this->data_exchange_ = response.at("dataExchange").get<std::string>();
-    this->configure(response.at("config"));
+    this->on_transformer_config(response.at("config"));
+    this->subscribe_metrics();
 }
 
 void Transformer::declare_metrics()

@@ -64,7 +64,8 @@ protected:
     void declare_metrics();
 
 private:
-    void configure(const json& config);
+    // Subscribe to all metrics listed in input_metrics
+    void subscribe_metrics();
     void on_register_response(const json& response);
 
 private:
