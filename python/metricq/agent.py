@@ -111,6 +111,7 @@ class Agent(RPCDispatcher):
         self._event_loop = event_loop
         self._stop_in_progress = False
         self._stop_future: Optional[Awaitable[None]] = None
+        self._cancel_on_exception = False
 
         self._management_url = management_url
         self._management_broadcast_exchange_name = "metricq.broadcast"
@@ -203,8 +204,8 @@ class Agent(RPCDispatcher):
             "{}-rpc".format(self.token), exclusive=True
         )
 
+        self._management_connection_watchdog.start(loop=self.event_loop)
         self._management_connection_watchdog.set_established()
-        self._management_connection_watchdog.start()
 
     def run(
         self, catch_signals=("SIGINT", "SIGTERM"), cancel_on_exception=False
@@ -227,9 +228,8 @@ class Agent(RPCDispatcher):
             Any exception passed to :py:meth:`stop`, or any exception raised by
             :py:meth:`connect`.
         """
-        self.event_loop.set_exception_handler(
-            functools.partial(self.on_exception, cancel_on_exception)
-        )
+        self._cancel_on_exception = cancel_on_exception
+        self.event_loop.set_exception_handler(self.on_exception)
         for signame in catch_signals:
             try:
                 self.event_loop.add_signal_handler(
@@ -400,7 +400,7 @@ class Agent(RPCDispatcher):
         )
 
     def on_exception(
-        self, cancel_on_exception: bool, loop: asyncio.AbstractEventLoop, context
+        self, loop: asyncio.AbstractEventLoop, context
     ):
         logger.error("Exception in event loop: {}".format(context["message"]))
 
@@ -412,19 +412,19 @@ class Agent(RPCDispatcher):
 
         ex: Optional[Exception] = context.get("exception")
         if ex is not None:
-            logger.critical(
-                f"Agent {type(self).__qualname__} encountered an unhandled exception",
-                exc_info=(ex.__class__, ex, ex.__traceback__),
-            )
-
             is_keyboard_interrupt = isinstance(ex, KeyboardInterrupt)
-            if cancel_on_exception or is_keyboard_interrupt:
+            if self._cancel_on_exception or is_keyboard_interrupt:
                 if not is_keyboard_interrupt:
                     logger.error(
                         "Stopping Agent on unhandled exception ({})",
                         type(ex).__qualname__,
                     )
                 self._schedule_stop(exception=ex, loop=loop)
+            else:
+                logger.error(
+                    f"Agent {type(self).__qualname__} encountered an unhandled exception",
+                    exc_info=(ex.__class__, ex, ex.__traceback__),
+                )
 
     def _schedule_stop(
         self,
@@ -587,6 +587,9 @@ class Agent(RPCDispatcher):
         logger.info("Reconnected to {}", connection)
 
     def _on_close(self, exception):
+        if isinstance(exception, asyncio.CancelledError):
+            logger.debug("Connection closed regularly")
+            return
         logger.info(
             "Connection closed: {} ({})", exception, type(exception).__qualname__
         )

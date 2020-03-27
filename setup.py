@@ -35,7 +35,7 @@ def make_proto(command):
         out_file = source.replace(".proto", "_pb2.py")
 
         if not os.path.exists(out_file) or os.path.getmtime(source) > os.path.getmtime(
-            out_file
+                out_file
         ):
             out_dir = command.get_package_dir("metricq")
             sys.stderr.write("[protobuf] {} -> {}\n".format(source, out_dir))
@@ -63,7 +63,7 @@ class ProtoDevelop(develop):
 
 setup(
     name="metricq",
-    version="1.1.2",
+    version="1.1.3",
     author="TU Dresden",
     description="A highly-scalable, distributed metric data processing framework based on RabbitMQ",
     url="https://github.com/metricq/metricq",

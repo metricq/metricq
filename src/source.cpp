@@ -46,11 +46,16 @@ namespace metricq
 
 Source::Source(const std::string& token) : DataClient(token)
 {
+    register_management_callback("config", [this](const json& config) -> json {
+        on_source_config(config);
+        declare_metrics();
+        return json::object();
+    });
 }
 
 void Source::on_connected()
 {
-    rpc("source.register", [this](const auto& response) { config(response); });
+    rpc("source.register", [this](const auto& response) { on_register_response(response); });
 }
 
 void Source::send(const std::string& id, const DataChunk& dc)
@@ -64,22 +69,16 @@ void Source::send(const std::string& id, TimeValue tv)
     data_channel_->publish(data_exchange_, id, DataChunk(tv).SerializeAsString());
 }
 
-void Source::config(const json& config)
+void Source::on_register_response(const json& response)
 {
-    data_config(config);
+    data_config(response);
 
-    if (!data_exchange_.empty() && config["dataExchange"] != data_exchange_)
-    {
-        log::fatal("changing dataExchange on the fly is not currently supported");
-        std::abort();
-    }
+    assert(this->data_exchange_.empty());
 
-    data_exchange_ = config["dataExchange"];
-
-    if (config.find("config") != config.end())
-    {
-        on_source_config(config["config"]);
-    }
+    // TODO: check if there's a better error to throw than what at() and get() throw in case any of
+    // the required fields is missing.
+    this->data_exchange_ = response.at("dataExchange").get<std::string>();
+    this->on_source_config(response.at("config"));
 }
 
 void Source::on_data_channel_ready()

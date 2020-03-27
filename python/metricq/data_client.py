@@ -92,7 +92,7 @@ class DataClient(Client):
             # TODO configurable prefetch count
             await self.data_channel.set_qos(prefetch_count=400)
 
-            self._data_connection_watchdog.start()
+            self._data_connection_watchdog.start(loop=self.event_loop)
             self._data_connection_watchdog.set_established()
 
     async def stop(self, exception: Optional[Exception] = None):
@@ -102,7 +102,8 @@ class DataClient(Client):
             await self.data_channel.close()
             self.data_channel = None
         if self.data_connection:
-            await self.data_connection.close(exception)
+            # We need not pass anything as exception to this close. It will only hurt.
+            await self.data_connection.close()
             self.data_connection = None
         self.data_exchange = None
         await super().stop(exception)
