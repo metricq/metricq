@@ -65,7 +65,7 @@ class DataClient(Client):
             raise ValueError(
                 "invalid dataServerAddress provided: {}".format(dataServerAddress)
             )
-        dataServerAddress = self.add_credentials(dataServerAddress)
+        dataServerAddress = self.derive_address(dataServerAddress)
         if self.data_connection:
             if dataServerAddress != self.data_server_address:
                 logger.error(

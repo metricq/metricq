@@ -140,7 +140,7 @@ void HistoryClient::on_history_channel_ready()
 void HistoryClient::history_config(const json& config)
 {
     AMQP::Address new_data_server_address =
-        add_credentials(config["dataServerAddress"].get<std::string>());
+        derive_address(config["dataServerAddress"].get<std::string>());
     log::debug("start parsing history config");
     if (history_connection_)
     {
