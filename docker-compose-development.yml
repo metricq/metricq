@@ -8,36 +8,36 @@ services:
     networks:
       - metricq-network
 
-    metricq-manager:
-      build:
-        context: https://github.com/metricq/metricq-manager.git
-      image: metricq-manager
-      environment:
-        wait_for_couchdb_url: "couchdb-server:5984"
-        couchdb_url: "http://couchdb-server:5984"
-        couchdb_user: "admin"
-        couchdb_pw: "admin"
-        wait_for_rabbitmq_url: "rabbitmq-server:5672"
-        rpc_url: "amqp://admin:admin@rabbitmq-server/"
-        data_url: "amqp://admin:admin@rabbitmq-server/"
-      depends_on:
-        - rabbitmq-server
-        - couchdb-server
-      networks:
-        - metricq-network
+  metricq-manager:
+    build:
+      context: https://github.com/metricq/metricq-manager.git
+    image: metricq-manager
+    environment:
+      wait_for_couchdb_url: "couchdb-server:5984"
+      couchdb_url: "http://couchdb-server:5984"
+      couchdb_user: "admin"
+      couchdb_pw: "admin"
+      wait_for_rabbitmq_url: "rabbitmq-server:5672"
+      rpc_url: "amqp://admin:admin@rabbitmq-server/"
+      data_url: "amqp://admin:admin@rabbitmq-server/"
+    depends_on:
+      - rabbitmq-server
+      - couchdb-server
+    networks:
+      - metricq-network
 
-    db-hta-dummy:
-      build:
-        context: https://github.com/metricq/metricq-db-hta.git
-      image: metricq-db-hta
-      depends_on:
-        - rabbitmq-server
-        - metricq-manager
-        - setup-db-dummy
-      restart: unless-stopped
-      command: "/home/metricq/metricq-db-hta/build/metricq-db-hta --token db-hta-dummy --server amqp://admin:admin@rabbitmq-server"
-      networks:
-        - metricq-network
+  db-hta-dummy:
+    build:
+      context: https://github.com/metricq/metricq-db-hta.git
+    image: metricq-db-hta
+    depends_on:
+      - rabbitmq-server
+      - metricq-manager
+      - setup-db-dummy
+    restart: unless-stopped
+    command: "/home/metricq/metricq-db-hta/build/metricq-db-hta --token db-hta-dummy --server amqp://admin:admin@rabbitmq-server"
+    networks:
+      - metricq-network
 
   setup-db-dummy:
     image: curlimages/curl:latest
