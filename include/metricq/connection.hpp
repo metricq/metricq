@@ -86,7 +86,7 @@ protected:
     void stop();
     virtual void close();
 
-    AMQP::Address add_credentials(const AMQP::Address& address);
+    AMQP::Address derive_address(const std::string& address);
 
 private:
     void handle_management_message(const AMQP::Message& incoming_message, uint64_t deliveryTag,

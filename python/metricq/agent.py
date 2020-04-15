@@ -98,13 +98,13 @@ class Agent(RPCDispatcher):
     LOG_MAX_WIDTH = 200
 
     def __init__(
-        self,
-        token,
-        management_url,
-        *,
-        connection_timeout: Union[int, float] = 60,
-        event_loop=None,
-        add_uuid=False,
+            self,
+            token,
+            management_url,
+            *,
+            connection_timeout: Union[int, float] = 60,
+            event_loop=None,
+            add_uuid=False,
     ):
         self.token = f"{token}.{uuid.uuid4().hex}" if add_uuid else token
 
@@ -137,10 +137,12 @@ class Agent(RPCDispatcher):
         self._rpc_response_handlers = dict()
         logger.debug("Initialized Agent")
 
-    def add_credentials(self, address):
+    def derive_address(self, address: str):
         """ Add the credentials from the management connection to the provided address """
         management_obj = URL(self._management_url)
         address_obj = URL(address)
+        if not address_obj.is_absolute():  # relative url, just the vhost
+            return management_obj.with_path(address_obj.path)
         return str(
             address_obj.with_user(management_obj.user).with_password(
                 management_obj.password
@@ -208,7 +210,7 @@ class Agent(RPCDispatcher):
         self._management_connection_watchdog.set_established()
 
     def run(
-        self, catch_signals=("SIGINT", "SIGTERM"), cancel_on_exception=False
+            self, catch_signals=("SIGINT", "SIGTERM"), cancel_on_exception=False
     ) -> None:
         """Run an Agent by calling :py:meth:`connect` and waiting for it to be
         :py:meth:`stop`ped.
@@ -283,13 +285,13 @@ class Agent(RPCDispatcher):
             logger.debug("Event loop completed, exiting...")
 
     async def rpc(
-        self,
-        exchange: aio_pika.Exchange,
-        routing_key: str,
-        response_callback=None,
-        timeout=60,
-        cleanup_on_response=True,
-        **kwargs,
+            self,
+            exchange: aio_pika.Exchange,
+            routing_key: str,
+            response_callback=None,
+            timeout=60,
+            cleanup_on_response=True,
+            **kwargs,
     ):
         """
         :param function: tag of the RPC
@@ -400,7 +402,7 @@ class Agent(RPCDispatcher):
         )
 
     def on_exception(
-        self, loop: asyncio.AbstractEventLoop, context
+            self, loop: asyncio.AbstractEventLoop, context
     ):
         logger.error("Exception in event loop: {}".format(context["message"]))
 
@@ -427,9 +429,9 @@ class Agent(RPCDispatcher):
                 )
 
     def _schedule_stop(
-        self,
-        exception: Optional[Exception] = None,
-        loop: asyncio.AbstractEventLoop = None,
+            self,
+            exception: Optional[Exception] = None,
+            loop: asyncio.AbstractEventLoop = None,
     ):
         loop = self.event_loop if loop is None else loop
         loop.create_task(self.stop(exception=exception))

@@ -111,7 +111,7 @@ class HistoryResponse:
 
         if self._mode == HistoryResponseType.AGGREGATES:
             for time_delta, proto_aggregate in zip(
-                self._proto.time_delta, self._proto.aggregate
+                    self._proto.time_delta, self._proto.aggregate
             ):
                 time_ns = time_ns + time_delta
                 timestamp = Timestamp(time_ns)
@@ -121,7 +121,7 @@ class HistoryResponse:
 
         if self._mode == HistoryResponseType.LEGACY:
             for time_delta, average in zip(
-                self._proto.time_delta, self._proto.value_avg
+                    self._proto.time_delta, self._proto.value_avg
             ):
                 time_ns = time_ns + time_delta
                 yield TimeValue(Timestamp(time_ns), average)
@@ -138,7 +138,7 @@ class HistoryResponse:
         time_ns = 0
         if self._mode == HistoryResponseType.AGGREGATES:
             for time_delta, proto_aggregate in zip(
-                self._proto.time_delta, self._proto.aggregate
+                    self._proto.time_delta, self._proto.aggregate
             ):
                 time_ns = time_ns + time_delta
                 timestamp = Timestamp(time_ns)
@@ -160,7 +160,7 @@ class HistoryResponse:
             previous_timestamp = Timestamp(time_ns)
             # First interval is useless here
             for time_delta, value in zip(
-                self._proto.time_delta[1:], self._proto.value[1:]
+                    self._proto.time_delta[1:], self._proto.value[1:]
             ):
                 time_ns = time_ns + time_delta
                 timestamp = Timestamp(time_ns)
@@ -172,10 +172,10 @@ class HistoryResponse:
 
         if self._mode == HistoryResponseType.LEGACY:
             for time_delta, minimum, maximum, average in zip(
-                self._proto.time_delta,
-                self._proto.value_min,
-                self._proto.value_max,
-                self._proto.value_avg,
+                    self._proto.time_delta,
+                    self._proto.value_min,
+                    self._proto.value_max,
+                    self._proto.value_avg,
             ):
                 time_ns = time_ns + time_delta
                 # That of course only makes sense if you just use mean or mean_sum
@@ -211,7 +211,7 @@ class HistoryClient(Client):
         response = await self.rpc("history.register")
         logger.debug("register response: {}", response)
 
-        self.data_server_address = self.add_credentials(response["dataServerAddress"])
+        self.data_server_address = self.derive_address(response["dataServerAddress"])
         self.history_connection = await self.make_connection(self.data_server_address)
         self.history_channel = await self.history_connection.channel()
         self.history_exchange = await self.history_channel.declare_exchange(
@@ -239,13 +239,13 @@ class HistoryClient(Client):
         await super().stop(exception)
 
     async def history_data_request(
-        self,
-        metric: str,
-        start_time: Timestamp,
-        end_time: Timestamp,
-        interval_max: Timedelta,
-        request_type: HistoryRequestType = HistoryRequestType.AGGREGATE_TIMELINE,
-        timeout=60,
+            self,
+            metric: str,
+            start_time: Timestamp,
+            end_time: Timestamp,
+            interval_max: Timedelta,
+            request_type: HistoryRequestType = HistoryRequestType.AGGREGATE_TIMELINE,
+            timeout=60,
     ):
         if not metric:
             raise ValueError("metric must be a non-empty string")

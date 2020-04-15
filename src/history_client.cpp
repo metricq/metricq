@@ -40,13 +40,14 @@ namespace metricq
 {
 HistoryClient::HistoryClient(const std::string& token, bool add_uuid) : Connection(token, add_uuid)
 {
-    TimePoint starting_time = Clock::now();
-    register_management_callback("discover", [token, starting_time](const json&) {
-        json response;
-        response["alive"] = true;
-        response["currentTime"] = Clock::format_iso(Clock::now());
-        response["startingTime"] = Clock::format_iso(starting_time);
-        return response;
+    register_management_callback("discover", [starting_time = Clock::now()](const json&) -> json {
+        auto current_time = Clock::now();
+        auto uptime = (current_time - starting_time).count(); // current uptime in nanoseconds
+
+        return { { "alive", true },
+                 { "currentTime", Clock::format_iso(current_time) },
+                 { "startingTime", Clock::format_iso(starting_time) },
+                 { "uptime", uptime } };
     });
 }
 
@@ -140,7 +141,7 @@ void HistoryClient::on_history_channel_ready()
 void HistoryClient::history_config(const json& config)
 {
     AMQP::Address new_data_server_address =
-        add_credentials(config["dataServerAddress"].get<std::string>());
+        derive_address(config["dataServerAddress"].get<std::string>());
     log::debug("start parsing history config");
     if (history_connection_)
     {

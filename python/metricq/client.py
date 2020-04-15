@@ -47,7 +47,7 @@ class Client(Agent):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.starting_time = datetime.now()
+        self.starting_time = Timestamp.now()
 
     @property
     def name(self):
@@ -88,11 +88,13 @@ class Client(Agent):
     @rpc_handler("discover")
     async def _on_discover(self, **kwargs):
         logger.info("responding to discover")
-        t = datetime.now()
+        now = Timestamp.now()
+        uptime: int = (now - self.starting_time).ns
         return {
             "alive": True,
-            "uptime": Timedelta.from_timedelta(t - self.starting_time).ns,
-            "time": Timestamp.from_datetime(t).posix_ns,
+            "currentTime": now.datetime.isoformat(),
+            "startingTime": self.starting_time.datetime.isoformat(),
+            "uptime": uptime,
         }
 
     async def get_metrics(

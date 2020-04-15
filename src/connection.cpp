@@ -265,10 +265,20 @@ void Connection::handle_management_message(const AMQP::Message& incoming_message
     log::warn("no rpc callback registered for function: {}\n{}", function, content_str);
 }
 
-AMQP::Address Connection::add_credentials(const AMQP::Address& address)
+AMQP::Address Connection::derive_address(const std::string& address_str)
 {
-    return AMQP::Address(address.hostname(), address.port(), management_address_->login(),
-                         address.vhost(), address.secure());
+    if (address_str[0] == '/') // .startswith ... cries in C++20
+    {
+        return AMQP::Address(management_address_->hostname(), management_address_->port(),
+                             management_address_->login(), address_str.substr(1),
+                             management_address_->secure());
+    }
+    else
+    {
+        AMQP::Address address(address_str);
+        return AMQP::Address(address.hostname(), address.port(), management_address_->login(),
+                             address.vhost(), address.secure());
+    }
 }
 
 void Connection::close()
