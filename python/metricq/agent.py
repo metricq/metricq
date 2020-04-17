@@ -142,12 +142,10 @@ class Agent(RPCDispatcher):
         management_obj = URL(self._management_url)
         address_obj = URL(address)
         if not address_obj.is_absolute():  # relative url, just the vhost
-            return management_obj.with_path(address_obj.path)
-        return str(
-            address_obj.with_user(management_obj.user).with_password(
-                management_obj.password
-            )
-        )
+            derived_obj = management_obj.with_path(address_obj.path)
+        else:
+            derived_obj = address_obj.with_user(management_obj.user).with_password(management_obj.password)
+        return str(derived_obj)
 
     @property
     def event_loop(self):
