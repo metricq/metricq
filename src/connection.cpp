@@ -267,11 +267,12 @@ void Connection::handle_management_message(const AMQP::Message& incoming_message
 
 AMQP::Address Connection::derive_address(const std::string& address_str)
 {
-    if (address_str[0] == '/') // .startswith ... cries in C++20
+    std::string vhost_prefix = "vhost:";
+    if (address_str.rfind(vhost_prefix, 0) == 0) // .startswith, cries in C++20
     {
+        auto vhost = address_str.substr(vhost_prefix.length());
         return AMQP::Address(management_address_->hostname(), management_address_->port(),
-                             management_address_->login(), address_str.substr(1),
-                             management_address_->secure());
+                             management_address_->login(), vhost, management_address_->secure());
     }
     else
     {
