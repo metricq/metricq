@@ -140,14 +140,13 @@ class Agent(RPCDispatcher):
     def derive_address(self, address: str):
         """ Add the credentials from the management connection to the provided address """
         management_obj = URL(self._management_url)
-        address_obj = URL(address)
-        if not address_obj.is_absolute():  # relative url, just the vhost
-            return management_obj.with_path(address_obj.path)
-        return str(
-            address_obj.with_user(management_obj.user).with_password(
-                management_obj.password
-            )
-        )
+        vhost_prefix = "vhost:"
+        if address.startswith(vhost_prefix):
+            derived_obj = management_obj.with_path(address[len(vhost_prefix):])
+        else:
+            address_obj = URL(address)
+            derived_obj = address_obj.with_user(management_obj.user).with_password(management_obj.password)
+        return str(derived_obj)
 
     @property
     def event_loop(self):
