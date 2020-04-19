@@ -34,6 +34,7 @@
 #include <metricq/sink.hpp>
 
 #include <functional>
+#include <vector>
 
 namespace metricq
 {
@@ -122,7 +123,8 @@ protected:
      * This can be enforced e.g. by owning all threads in the subclass of Db.
      */
     virtual void on_db_config(const json& config, ConfigCompletion complete);
-    virtual void on_db_config(const json& config);
+    // returns the metrics to subscribe to
+    virtual std::vector<std::string> on_db_config(const json& config);
 
     virtual void on_history(const std::string& id, const HistoryRequest& content,
                             HistoryCompletion complete);
@@ -137,6 +139,9 @@ private:
     void setup_history_queue(const AMQP::QueueCallback& callback);
 
     void on_register_response(const json& response);
+    // We keep this private to avoid confusion because this is done automatically through return of
+    // on_db_config
+    void db_subscribe(const std::vector<std::string>& metrics);
 
 protected:
     void on_connected() override;
