@@ -136,8 +136,9 @@ private:
     void setup_history_queue();
     void setup_history_queue(const AMQP::QueueCallback& callback);
 
+    void on_register_response(const json& response);
+
 protected:
-    void config(const json& config);
     void on_connected() override;
 
 protected:

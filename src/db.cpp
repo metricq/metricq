@@ -124,18 +124,18 @@ void Db::HistoryCompletion::operator()(const metricq::HistoryResponse& response)
 
 void Db::on_connected()
 {
-    rpc("db.register", [this](const auto& response) { config(response); });
+    rpc("db.register", [this](const auto& response) { on_register_response(response); });
 }
 
-void Db::config(const json& config)
+void Db::on_register_response(const json& response)
 {
     log::debug("start parsing config");
 
-    sink_config(config);
+    sink_config(response);
 
-    history_queue_ = config["historyQueue"];
+    history_queue_ = response["historyQueue"];
 
-    on_db_config(config["config"], ConfigCompletion(*this));
+    on_db_config(response["config"], ConfigCompletion(*this));
 }
 
 void Db::setup_history_queue()
