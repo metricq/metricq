@@ -47,10 +47,10 @@ protected:
 
 private:
     void on_history(const AMQP::Message&);
+    void setup_history_queue(const AMQP::QueueCallback& callback);
+    void on_register_response(const json& response);
 
 protected:
-    void setup_history_queue(const AMQP::QueueCallback& callback);
-    void config(const json& config);
     void on_connected() override;
 
 protected:
