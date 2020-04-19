@@ -30,7 +30,7 @@
 #pragma once
 
 #include <metricq/history.pb.h>
-#include <metricq/json_fwd.hpp>
+#include <metricq/json.hpp>
 #include <metricq/sink.hpp>
 
 #include <vector>
@@ -45,7 +45,7 @@ public:
 protected:
     virtual HistoryResponse on_history(const std::string& id, const HistoryRequest& content) = 0;
     // returns the metrics to subscribe to
-    virtual std::vector<std::string> on_db_config(const json& config) = 0;
+    virtual json on_db_config(const json& config) = 0;
     virtual void on_db_ready() = 0;
 
 private:
@@ -54,7 +54,7 @@ private:
     void on_register_response(const json& response);
     // We keep this private to avoid confusion because this is done automatically through return of
     // on_db_config
-    void db_subscribe(const std::vector<std::string>& metrics);
+    void db_subscribe(const json& metrics);
 
 protected:
     void on_connected() override;

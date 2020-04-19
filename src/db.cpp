@@ -121,7 +121,7 @@ void Db::on_register_response(const json& response)
     on_db_ready();
 }
 
-void Db::db_subscribe(const std::vector<std::string>& metrics)
+void Db::db_subscribe(const json& metrics)
 {
     // TODO reduce redundancy with Sink::subscribe
     rpc("db.subscribe",
