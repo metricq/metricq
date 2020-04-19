@@ -53,7 +53,7 @@ void Db::setup_history_queue(const AMQP::QueueCallback& callback)
     data_channel_->declareQueue(history_queue_, AMQP::passive).onSuccess(callback);
 }
 
-void Db::on_db_config(const metricq::json&)
+json Db::on_db_config(const metricq::json&)
 {
     log::fatal("unhandled DataChunk, implementation error.");
     std::abort();
@@ -170,7 +170,7 @@ void Db::setup_history_queue()
     on_db_ready();
 }
 
-void Db::db_subscribe(const std::vector<std::string>& metrics)
+void Db::db_subscribe(const json& metrics)
 {
     // TODO reduce redundancy with Sink::subscribe
     rpc("db.subscribe",
