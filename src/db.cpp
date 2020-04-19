@@ -41,8 +41,11 @@ namespace metricq
 Db::Db(const std::string& token) : Sink(token)
 {
     register_management_callback("config", [this](const json& config) {
-        auto subscribe_metrics = on_db_config(config);
-        this->subscribe(subscribe_metrics);
+        on_db_config(config, ConfigCompletion(*this, false));
+        // Unfortunately we must send the response now because of how the management callback stuff
+        // is working. Technically, a threaded DB could wait for the event of another thread here.
+        // Hopefully ... coroutines soon
+        // Subscription is handled by the completion
         return json::object();
     });
 }
@@ -61,15 +64,21 @@ json Db::on_db_config(const metricq::json&)
 
 void Db::on_db_config(const metricq::json& config, metricq::Db::ConfigCompletion complete)
 {
-    on_db_config(config);
-    complete();
+    complete(on_db_config(config));
 }
 
-void Db::ConfigCompletion::operator()()
+void Db::ConfigCompletion::operator()(json subscribe_metrics)
 {
-    auto run = [& self = this->self]() {
-        self.setup_data_queue();
-        self.setup_history_queue();
+    auto run = [& self = this->self, initial = this->initial,
+                subscribe_metrics = std::move(subscribe_metrics)]() {
+        if (initial)
+        {
+            self.setup_data_queue();
+            self.setup_history_queue();
+        }
+        // We don't respond to the config RPC here, that's done int he RPC handler already
+        // No async there...
+        self.db_subscribe(subscribe_metrics);
     };
     asio::dispatch(self.io_service, run);
 }
@@ -136,7 +145,7 @@ void Db::on_register_response(const json& response)
 
     history_queue_ = response["historyQueue"];
 
-    on_db_config(response["config"], ConfigCompletion(*this));
+    on_db_config(response["config"], ConfigCompletion(*this, true));
 }
 
 void Db::setup_history_queue()

@@ -59,7 +59,7 @@ protected:
         friend class Db;
 
     private:
-        ConfigCompletion(Db& self) : self(self)
+        ConfigCompletion(Db& self, bool initial) : self(self), initial(initial)
         {
         }
 
@@ -69,10 +69,12 @@ protected:
         ConfigCompletion& operator=(const ConfigCompletion&) = delete;
         ConfigCompletion& operator=(ConfigCompletion&&) = delete;
 
-        void operator()();
+        // We take by value so we can move around without worrying about lifetime when dispatcing
+        void operator()(json subscribe_metrics);
 
     private:
         Db& self;
+        bool initial;
     };
 
     class HistoryCompletion
