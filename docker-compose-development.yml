@@ -1,10 +1,9 @@
 version: "3.7"
 services:
   metricq-python:
-    image: metricq-python
     build:
-      context: .
-      dockerfile: Dockerfile-python
+      context: https://github.com/metricq/metricq-python.git
+    image: metricq-python
     networks:
       - metricq-network
 
@@ -80,14 +79,6 @@ services:
     networks:
       - metricq-network
 
-  metricq-cxx:
-    image: metricq-cxx
-    build:
-      context: .
-      dockerfile: Dockerfile-cxx
-    networks:
-      - metricq-network
-
   setup-source-dummy:
     image: curlimages/curl:latest
     depends_on:
@@ -97,6 +88,8 @@ services:
     command: "curl --retry-connrefused --retry 5 --retry-delay 10 -X PUT -H \"Content-Type: application/json\" http://admin:admin@couchdb-server:5984/config/source-dummy -d '{}'"
 
   metricq-source-dummy:
+    build:
+      context: https://github.com/metricq/metricq-cpp.git
     image: metricq-cxx
     depends_on:
       - rabbitmq-server
