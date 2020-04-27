@@ -1,10 +1,18 @@
 ![BSD 3-clause](https://img.shields.io/badge/license-BSD%203--clause-blue.svg)
-![Python package](https://github.com/metricq/metricq/workflows/Python%20package/badge.svg)
-![C++ Interface](https://github.com/metricq/metricq/workflows/C++%20Interface/badge.svg)
-![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)
 [![PyPI](https://img.shields.io/pypi/v/metricq)](https://pypi.org/project/metricq/)
-![PyPI - Wheel](https://img.shields.io/pypi/wheel/metricq)
+
 # metricq
+
+MetricQ is a highly-scalable, distributed metric data processing framework based on RabbitMQ.
+This repository used to be the central repository, but has since been splitted into several other
+repositories.
+
+The different MetricQ language implementations can be found here:
+
+- [C++](https://github.com/metricq/metricq-cpp)
+- [Python](https://github.com/metricq/metricq-python)
+
+The proto files of the used Protobuf definitions can be found [here](https://github.com/metricq/metricq-python).
 
 ## Setup development environemt with ```docker-compose```
 
