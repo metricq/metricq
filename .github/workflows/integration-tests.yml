@@ -8,7 +8,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Build the stack
-        run: docker-compose -f docker-compose-test.yml up -d -p metricq
+        run: docker-compose -f docker-compose-test.yml up -d
       - name: "Test 1: Setup config"
         run: "docker run --rm --network metricq_metricq-network curlimages/curl:latest curl --retry-connrefused --retry 5 --retry-delay 10 -X PUT -H \"Content-Type: application/json\" http://admin:admin@couchdb-server:5984/config/source-dummy-1 -d '{}'"
       - name: "Test 1: simple source test"
