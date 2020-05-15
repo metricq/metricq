@@ -17,8 +17,8 @@ jobs:
           output_file: tests/docker-compose-test.yml
           strict: true
           variables: |
-            manager=master
-            cxx=master
+            manager=${{ github.event.client_payload.manager_ref || "master" }}
+            cxx=${{ github.event.client_payload.cxx_ref || "master" }}
       - name: Build the stack
         run: docker-compose -f tests/docker-compose-test.yml up -d
       - name: Sleep a bit (why not?)
