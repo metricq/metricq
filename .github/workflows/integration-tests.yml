@@ -24,6 +24,8 @@ jobs:
         with:
           name: docker-compose-file
           path: tests/docker-compose-test.yml
+      - name: start rabbitmq and couchdb server
+        run: docker-compose -f tests/docker-compose-test.yml up -d rabbitmq-server couchdb-server couchdb-setup
       - name: Build the stack
         run: docker-compose -f tests/docker-compose-test.yml up -d
       - name: Sleep a bit (why not?)
