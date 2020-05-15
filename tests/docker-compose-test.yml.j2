@@ -9,7 +9,7 @@ services:
 
   metricq-manager:
     build:
-      context: https://github.com/metricq/metricq-manager.git#{{manager}}
+      context: https://github.com/metricq/metricq-manager.git{% if manager %}#{{manager}}{% endif %}
     image: metricq-manager
     environment:
       wait_for_couchdb_url: "couchdb-server:5984"
@@ -28,7 +28,7 @@ services:
   metricq-cxx:
     image: metricq-cxx
     build:
-      context: https://github.com/metricq/metricq-cpp.git#{{cxx}}
+      context: https://github.com/metricq/metricq-cpp.git{% if cxx %}#{{cxx}}{% endif %}
       dockerfile: Dockerfile
     networks:
       - metricq-network
