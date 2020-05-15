@@ -1,14 +1,26 @@
 name: Integration tests
 
-on: [push]
+on: 
+  push: {}
+  repository_dispatch:
+    types: [integration-test]
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Generate docker compose config
+        uses: cuchi/jinja2-action@v1.1.0
+        with:
+          template: tests/docker-compose-test.yml.j2
+          output_file: tests/docker-compose-test.yml
+          strict: true
+          variables: |
+            manager=master
+            cxx=master
       - name: Build the stack
-        run: docker-compose -f docker-compose-test.yml up -d
+        run: docker-compose -f tests/docker-compose-test.yml up -d
       - name: Sleep a bit (why not?)
         run: sleep 30
       - name: "Test 1: Setup config"
