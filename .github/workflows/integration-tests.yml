@@ -31,11 +31,9 @@ jobs:
         run: "docker run --rm --network tests_metricq-network curlimages/curl:latest curl --retry-connrefused --retry 5 --retry-delay 10 -X PUT -H \"Content-Type: application/json\" http://admin:admin@couchdb-server:5984/config/source-dummy-test2 -d '{}'"
       - name: "Test 2: source and sink combined"
         run: |
-          TEST_UID=$(cat /dev/urandom | LC_ALL=C tr -dc 'a-zA-Z0-9' | fold -w 5 | head -n 1)
-          echo "Test uid is $TEST_UID" 
-          TEST_2_SINK_ID=$(docker-compose -f tests/docker-compose-test.yml run --rm --name "test_2_sink_$TEST_UID" -d metricq-cxx metricq-sink-dummy -s amqp://admin:admin@rabbitmq-server/ --count 10 --timeout 10 -m dummy.pets)
+          TEST_2_SINK_ID=$(docker-compose -f tests/docker-compose-test.yml run --rm --name "test_2_sink" -d metricq-cxx metricq-sink-dummy -s amqp://admin:admin@rabbitmq-server/ --count 10 --timeout 10 -m dummy.pets)
           echo "Test sink started! ID is $TEST_2_SINK_ID"
-          docker-compose -f tests/docker-compose-test.yml run --rm --name "test_2_source_$TEST_UID" metricq-cxx metricq-source-dummy -s amqp://admin:admin@rabbitmq-server/ --token source-dummy-test2 --metric "dummy.pets" --messages-per-chunk 10 --chunk-count 10
+          docker-compose -f tests/docker-compose-test.yml run --rm --name "test_2_source" metricq-cxx metricq-source-dummy -s amqp://admin:admin@rabbitmq-server/ --token source-dummy-test2 --metric "dummy.pets" --messages-per-chunk 10 --chunk-count 10
           echo "Source run completed, checking for running sink"
           (docker ps | grep -q $TEST_2_SINK_ID) && docker attach --no-stdin $TEST_2_SINK_ID
           echo "Sink is done"
