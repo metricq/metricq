@@ -49,3 +49,57 @@ To stop and remove everything run
 ```
 docker-compose -f docker-compose-development.yml down
 ```
+
+## Cluster setup in development environment
+
+If you follow the docker compose steps from above, there will be three running RabbitMQ instances,
+but they do not form a cluster yet.
+
+The container names will be:
+
+- metricq_rabbitmq-server-node0_1
+- metricq_rabbitmq-server-node1_1
+- metricq_rabbitmq-server-node2_1
+
+
+### Initialize Cluster
+
+Once all servers are running, open a shell into the node1 rabbitmq:
+
+```
+docker exec -it metricq_rabbitmq-server-node1_1 bash
+```
+
+In that shell execute this:
+
+```
+rabbitmqctl stop_app
+rabbitmqctl join_cluster rabbit@node0
+rabbitmqctl start_app
+exit
+```
+
+Analogous for node2 to setup a cluster with three nodes.
+
+Until the composed services are stopped with docker-compose down, the nodes will form a cluster.
+
+### Configure like live Cluster
+
+- Create a user-policy with
+    - Name: ManagementAsHA
+    - Pattern: `management`
+    - Definition: `ha-mode:	all`
+
+### Connecting to nodes from docker network
+
+Use the hostname `rabbitmq-server` and the client will connect to random node in the cluster.
+
+For specific nodes, use the hostnames node0, node1, or node2.
+
+### Connecting to nodes from host or remotely
+
+The different RabbitMQ nodes are listening on on the network interface of their host.
+
+- node0: 5671 / 15671
+- node1: 5672 / 15672
+- node2: 5673 / 15673

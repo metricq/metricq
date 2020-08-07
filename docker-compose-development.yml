@@ -18,9 +18,9 @@ services:
       couchdb_pw: "admin"
       wait_for_rabbitmq_url: "rabbitmq-server:5672"
       rpc_url: "amqp://admin:admin@rabbitmq-server/"
-      data_url: "amqp://admin:admin@rabbitmq-server/"
+      data_url: "vhost:/"
     depends_on:
-      - rabbitmq-server
+      - rabbitmq-server-node0
       - couchdb-server
     networks:
       - metricq-network
@@ -30,7 +30,7 @@ services:
       context: https://github.com/metricq/metricq-db-hta.git
     image: metricq-db-hta
     depends_on:
-      - rabbitmq-server
+      - rabbitmq-server-node0
       - metricq-manager
       - setup-db-dummy
     environment:
@@ -74,7 +74,7 @@ services:
     ports:
       - "127.0.0.1:8000:8000"
     depends_on:
-      - rabbitmq-server
+      - rabbitmq-server-node0
       - couchdb-server
     networks:
       - metricq-network
@@ -92,23 +92,62 @@ services:
       context: https://github.com/metricq/metricq-cpp.git
     image: metricq-cxx
     depends_on:
-      - rabbitmq-server
+      - rabbitmq-server-node0
     networks:
       - metricq-network
     restart: unless-stopped
     command: "metricq-source-dummy -s amqp://admin:admin@rabbitmq-server"
 
-  rabbitmq-server:
+  rabbitmq-server-node0:
     image: rabbitmq:management-alpine
     environment:
       RABBITMQ_DEFAULT_USER: "admin"
       RABBITMQ_DEFAULT_PASS: "admin"
       RABBITMQ_DEFAULT_VHOST: "/"
+      RABBITMQ_ERLANG_COOKIE: "Leibniz Butterkeks"
+      RABBITMQ_NODENAME: "rabbit@node0"
     networks:
-      - metricq-network
+      metricq-network:
+        aliases:
+          - rabbitmq-server
+          - node0
     ports:
       - "127.0.0.1:5672:5672"
       - "127.0.0.1:15672:15672"
+
+  rabbitmq-server-node1:
+    image: rabbitmq:management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: "admin"
+      RABBITMQ_DEFAULT_PASS: "admin"
+      RABBITMQ_DEFAULT_VHOST: "/"
+      RABBITMQ_ERLANG_COOKIE: "Leibniz Butterkeks"
+      RABBITMQ_NODENAME: "rabbit@node1"
+    networks:
+      metricq-network:
+        aliases:
+          - rabbitmq-server
+          - node1
+    ports:
+      - "127.0.0.1:5673:5672"
+      - "127.0.0.1:15673:15672"
+
+  rabbitmq-server-node2:
+    image: rabbitmq:management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: "admin"
+      RABBITMQ_DEFAULT_PASS: "admin"
+      RABBITMQ_DEFAULT_VHOST: "/"
+      RABBITMQ_ERLANG_COOKIE: "Leibniz Butterkeks"
+      RABBITMQ_NODENAME: "rabbit@node2"
+    networks:
+      metricq-network:
+        aliases:
+          - rabbitmq-server
+          - node2
+    ports:
+      - "127.0.0.1:5674:5672"
+      - "127.0.0.1:15674:15672"
 
   couchdb-server:
     image: couchdb:3
@@ -148,9 +187,9 @@ services:
       wait_for_rabbitmq_url: "rabbitmq-server:5672"
       metricq_url: "amqp://admin:admin@rabbitmq-server/"
     depends_on:
-      - rabbitmq-server
+      - rabbitmq-server-node0
     ports:
-      - "127.0.0.1:3001:4000"
+      - "127.0.0.1:3002:4000"
     restart: unless-stopped
     networks:
       - metricq-network
