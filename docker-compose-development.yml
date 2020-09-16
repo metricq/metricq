@@ -115,39 +115,39 @@ services:
       - "127.0.0.1:5672:5672"
       - "127.0.0.1:15672:15672"
 
-  rabbitmq-server-node1:
-    image: rabbitmq:management-alpine
-    environment:
-      RABBITMQ_DEFAULT_USER: "admin"
-      RABBITMQ_DEFAULT_PASS: "admin"
-      RABBITMQ_DEFAULT_VHOST: "/"
-      RABBITMQ_ERLANG_COOKIE: "Leibniz Butterkeks"
-      RABBITMQ_NODENAME: "rabbit@node1"
-    networks:
-      metricq-network:
-        aliases:
-          - rabbitmq-server
-          - node1
-    ports:
-      - "127.0.0.1:5673:5672"
-      - "127.0.0.1:15673:15672"
-
-  rabbitmq-server-node2:
-    image: rabbitmq:management-alpine
-    environment:
-      RABBITMQ_DEFAULT_USER: "admin"
-      RABBITMQ_DEFAULT_PASS: "admin"
-      RABBITMQ_DEFAULT_VHOST: "/"
-      RABBITMQ_ERLANG_COOKIE: "Leibniz Butterkeks"
-      RABBITMQ_NODENAME: "rabbit@node2"
-    networks:
-      metricq-network:
-        aliases:
-          - rabbitmq-server
-          - node2
-    ports:
-      - "127.0.0.1:5674:5672"
-      - "127.0.0.1:15674:15672"
+#  rabbitmq-server-node1:
+#    image: rabbitmq:management-alpine
+#    environment:
+#      RABBITMQ_DEFAULT_USER: "admin"
+#      RABBITMQ_DEFAULT_PASS: "admin"
+#      RABBITMQ_DEFAULT_VHOST: "/"
+#      RABBITMQ_ERLANG_COOKIE: "Leibniz Butterkeks"
+#      RABBITMQ_NODENAME: "rabbit@node1"
+#    networks:
+#      metricq-network:
+#        aliases:
+#          - rabbitmq-server
+#          - node1
+#    ports:
+#      - "127.0.0.1:5673:5672"
+#      - "127.0.0.1:15673:15672"
+#
+#  rabbitmq-server-node2:
+#    image: rabbitmq:management-alpine
+#    environment:
+#      RABBITMQ_DEFAULT_USER: "admin"
+#      RABBITMQ_DEFAULT_PASS: "admin"
+#      RABBITMQ_DEFAULT_VHOST: "/"
+#      RABBITMQ_ERLANG_COOKIE: "Leibniz Butterkeks"
+#      RABBITMQ_NODENAME: "rabbit@node2"
+#    networks:
+#      metricq-network:
+#        aliases:
+#          - rabbitmq-server
+#          - node2
+#    ports:
+#      - "127.0.0.1:5674:5672"
+#      - "127.0.0.1:15674:15672"
 
   couchdb-server:
     image: couchdb:3
