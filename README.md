@@ -31,6 +31,10 @@ This will setup:
 - wizard backend (port 8000 forwarded to localhost)
 - manager
 - metricq-grafana (port 4000 forwarded to localhost:3001)
+- dummy source with a metric called `dummy.source`
+- hta database that stores the `dummy.source` metric.
+
+By default, all logins are `admin` / `admin`. Do not use this dockerfile for production use!
 
 To run it in the background append ```-d```:
 
@@ -48,6 +52,15 @@ To stop and remove everything run
 
 ```
 docker-compose -f docker-compose-development.yml down
+```
+
+## Connecting to the MetricQ network
+
+You can now connect to the network with `amqp://admin:admin@localhost` as url and `dummy.source` as a metric. Using the examples from [metricq-python](https://github.com/metricq/metricq-python).
+
+```
+pip install ".[examples]"
+./examples/metricq_sink.py --server amqp://admin:admin@localhost -m dummy.source
 ```
 
 ## Cluster setup in development environment
