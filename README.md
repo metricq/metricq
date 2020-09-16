@@ -54,6 +54,15 @@ To stop and remove everything run
 docker-compose -f docker-compose-development.yml down
 ```
 
+## Connecting to the MetricQ network
+
+You can now connect to the network with `amqp://admin:admin@localhost` as url and `dummy.source` as a metric. Using the examples from [metricq-python](https://github.com/metricq/metricq-python).
+
+```
+pip install ".[examples]"
+./examples/metricq_sink.py --server amqp://admin:admin@localhost -m dummy.source
+```
+
 ## Cluster setup in development environment
 
 If you follow the docker compose steps from above, there will be three running RabbitMQ instances,
