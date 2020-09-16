@@ -31,6 +31,10 @@ This will setup:
 - wizard backend (port 8000 forwarded to localhost)
 - manager
 - metricq-grafana (port 4000 forwarded to localhost:3001)
+- dummy source with a metric called `dummy.source`
+- hta database that stores the `dummy.source` metric.
+
+By default, all logins are `admin` / `admin`. Do not use this dockerfile for production use!
 
 To run it in the background append ```-d```:
 
