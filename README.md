@@ -14,7 +14,7 @@ The different MetricQ language implementations can be found here:
 
 The proto files of the used Protobuf definitions can be found [here](https://github.com/metricq/metricq-python).
 
-## Setup development environemt with ```docker-compose```
+## Setup development environment with ```docker-compose```
 
 Just run:
 
@@ -63,21 +63,22 @@ pip install ".[examples]"
 ./examples/metricq_sink.py --server amqp://admin:admin@localhost -m dummy.source
 ```
 
-## Cluster setup in development environment
+## Setup clustered development environment with ```docker-compose```
 
-If you follow the docker compose steps from above, there will be three running RabbitMQ instances,
-but they do not form a cluster yet.
+If you follow the docker compose steps from above, with the additional `docker-compose-cluster.yml`
+there will be three running RabbitMQ instances, but they do not form a cluster yet.
 
-The container names will be:
+The container names will be (might be different for your specific setup):
 
 - metricq_rabbitmq-server-node0_1
 - metricq_rabbitmq-server-node1_1
 - metricq_rabbitmq-server-node2_1
 
+By default, all MetricQ agents started by the docker compose will connect to `rabbitmq-node0`.
 
 ### Initialize Cluster
 
-Once all servers are running, open a shell into the node1 rabbitmq:
+Once all servers are running, open a shell into the `rabbitmq-node1` rabbitmq:
 
 ```
 docker exec -it metricq_rabbitmq-server-node1_1 bash
@@ -87,14 +88,15 @@ In that shell execute this:
 
 ```
 rabbitmqctl stop_app
-rabbitmqctl join_cluster rabbit@node0
+rabbitmqctl join_cluster rabbit@rabbitmq-node0
 rabbitmqctl start_app
 exit
 ```
 
-Analogous for node2 to setup a cluster with three nodes.
+Analogous for `rabbitmq-node2` to setup a cluster with three nodes.
 
-Until the composed services are stopped with docker-compose down, the nodes will form a cluster.
+Until the composed services are stopped with `docker-compose -f docker-compose-cluster.yml down`,
+the nodes will form a cluster on every restart.
 
 ### Configure like live Cluster
 
@@ -107,12 +109,12 @@ Until the composed services are stopped with docker-compose down, the nodes will
 
 Use the hostname `rabbitmq-server` and the client will connect to random node in the cluster.
 
-For specific nodes, use the hostnames node0, node1, or node2.
+For specific nodes, use the hostnames `rabbitmq-node0`, `rabbitmq-node1`, or `rabbitmq-node2`.
 
 ### Connecting to nodes from host or remotely
 
-The different RabbitMQ nodes are listening on on the network interface of their host.
+The different RabbitMQ nodes are listening on the network interface of their host.
 
-- node0: 5671 / 15671
-- node1: 5672 / 15672
-- node2: 5673 / 15673
+- rabbitmq-node0: 5671 / 15671
+- rabbitmq-node1: 5672 / 15672
+- rabbitmq-node2: 5673 / 15673
