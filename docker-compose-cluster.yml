@@ -118,7 +118,7 @@ services:
       - "127.0.0.1:15672:15672"
 
   rabbitmq-server-node1:
-    image: rabbitmq:alpine
+    image: rabbitmq:management-alpine
     environment:
       RABBITMQ_DEFAULT_USER: "admin"
       RABBITMQ_DEFAULT_PASS: "admin"
@@ -134,7 +134,7 @@ services:
       - "127.0.0.1:5673:5672"
 
   rabbitmq-server-node2:
-    image: rabbitmq:alpine
+    image: rabbitmq:management-alpine
     environment:
       RABBITMQ_DEFAULT_USER: "admin"
       RABBITMQ_DEFAULT_PASS: "admin"
