@@ -184,9 +184,9 @@ services:
       context: https://github.com/metricq/metricq-grafana.git
     image: metricq-grafana
     environment:
-      wait_for_rabbitmq_url: "rabbitmq-server:5672"
+      wait_for_rabbitmq_url: "rabbitmq-node0:5672"
       WAITFORIT_TIMEOUT: 0
-      metricq_url: "amqp://admin:admin@rabbitmq-server/"
+      metricq_url: "amqp://admin:admin@rabbitmq-node0/"
     depends_on:
       - rabbitmq-server-node0
     ports:
