@@ -111,8 +111,8 @@ services:
           - rabbitmq-server
           - rabbitmq-node0
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
 
   rabbitmq-server-node1:
     build:
@@ -127,8 +127,8 @@ services:
           - rabbitmq-server
           - rabbitmq-node1
     ports:
-      - "5673:5672"
-      - "15673:15672"
+      - "127.0.0.1:5673:5672"
+      - "127.0.0.1:15673:15672"
 
   rabbitmq-server-node2:
     build:
@@ -143,8 +143,8 @@ services:
           - rabbitmq-server
           - rabbitmq-node2
     ports:
-      - "5674:5672"
-      - "15674:15672"
+      - "127.0.0.1:5674:5672"
+      - "127.0.0.1:15674:15672"
 
   couchdb-server:
     image: couchdb:3
