@@ -65,8 +65,9 @@ pip install ".[examples]"
 
 ## Setup clustered development environment with ```docker-compose```
 
-If you follow the docker compose steps from above, with the additional `docker-compose-cluster.yml`
-there will be three running RabbitMQ instances, but they do not form a cluster yet.
+If you follow the steps from above instead with `docker-compose-cluster.yml`,
+three RabbitMQ nodes will be set up.
+On start, they will automatically form a cluster.
 
 The container names will be (might be different for your specific setup):
 
@@ -74,29 +75,8 @@ The container names will be (might be different for your specific setup):
 - metricq_rabbitmq-server-node1_1
 - metricq_rabbitmq-server-node2_1
 
-By default, all MetricQ agents started by the docker compose will connect to `rabbitmq-node0`.
-
-### Initialize Cluster
-
-Once all servers are running, open a shell into the `rabbitmq-node1` rabbitmq:
-
-```
-docker exec -it metricq_rabbitmq-server-node1_1 bash
-```
-
-In that shell execute this:
-
-```
-rabbitmqctl stop_app
-rabbitmqctl join_cluster rabbit@rabbitmq-node0
-rabbitmqctl start_app
-exit
-```
-
-Analogous for `rabbitmq-node2` to setup a cluster with three nodes.
-
-Until the composed services are stopped with `docker-compose -f docker-compose-cluster.yml down`,
-the nodes will form a cluster on every restart.
+By default, all MetricQ agents started from the compose file will connect to
+`rabbitmq-server`, which resolves to any of the three nodes.
 
 ### Configure like live Cluster
 
