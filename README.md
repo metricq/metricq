@@ -78,6 +78,9 @@ The container names will be (might be different for your specific setup):
 By default, all MetricQ agents started from the compose file will connect to
 `rabbitmq-server`, which resolves to any of the three nodes.
 
+> Note: You need to make sure to use the new buildkit by for instance setting the ENV variable
+> COMPOSE_DOCKER_CLI_BUILD to 1.
+
 ### Configure like live Cluster
 
 - Create a user-policy with
