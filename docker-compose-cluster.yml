@@ -1,12 +1,5 @@
 version: "3.7"
 services:
-  metricq-python:
-    build:
-      context: https://github.com/metricq/metricq-python.git
-    image: metricq-python
-    networks:
-      - metricq-network
-
   metricq-manager:
     build:
       context: https://github.com/metricq/metricq-manager.git
@@ -23,6 +16,7 @@ services:
     depends_on:
       - rabbitmq-server-node0
       - couchdb-server
+      - couchdb-setup
     networks:
       - metricq-network
 
@@ -33,7 +27,7 @@ services:
     depends_on:
       - rabbitmq-server-node0
       - metricq-manager
-      - setup-db-dummy
+      - couchdb-setup
     environment:
       token: "db-hta-dummy"
       metricq_url: "amqp://admin:admin@rabbitmq-server"
@@ -42,14 +36,6 @@ services:
     restart: unless-stopped
     networks:
       - metricq-network
-
-  setup-db-dummy:
-    image: curlimages/curl:latest
-    depends_on:
-      - couchdb-server
-    networks:
-      - metricq-network
-    command: "curl --retry-connrefused --retry 5 --retry-delay 10 -X PUT -H \"Content-Type: application/json\" http://admin:admin@couchdb-server:5984/config/db-hta-dummy -d '{ \"threads\": 4, \"type\": \"file\", \"path\": \"/var/hta\", \"metrics\" : { \"dummy.source\": { \"mode\": \"RW\", \"interval_min\": 400000000, \"interval_max\": 400000000000000, \"interval_factor\": 10 } }}'"
 
   metricq-wizard-frontend:
     build:
@@ -69,10 +55,12 @@ services:
       context: https://github.com/metricq/metricq-wizard-backend.git
     image: metricq-wizard-backend
     environment:
+      wait_for_couchdb_url: "couchdb-server:5984"
       COUCHDB_URL: "http://couchdb-server:5984"
       COUCHDB_USER: "admin"
       COUCHDB_PW: "admin"
       AMQP_SERVER: "amqp://admin:admin@rabbitmq-server/"
+      wait_for_rabbitmq_url: "rabbitmq-server:5672"
     ports:
       - "127.0.0.1:8000:8000"
     depends_on:
@@ -81,20 +69,13 @@ services:
     networks:
       - metricq-network
 
-  setup-source-dummy:
-    image: curlimages/curl:latest
-    depends_on:
-      - couchdb-server
-    networks:
-      - metricq-network
-    command: "curl --retry-connrefused --retry 5 --retry-delay 10 -X PUT -H \"Content-Type: application/json\" http://admin:admin@couchdb-server:5984/config/source-dummy -d '{}'"
-
   metricq-source-dummy:
     build:
       context: https://github.com/metricq/metricq-cpp.git
     image: metricq-cxx
     depends_on:
       - rabbitmq-server-node0
+      - couchdb-setup
     networks:
       - metricq-network
     restart: unless-stopped
@@ -103,6 +84,7 @@ services:
   rabbitmq-server-node0:
     build:
       context: ./docker/metricq-clustered/
+    image: rabbitmq-cluster-node
     environment:
       RABBITMQ_NODENAME: "rabbit@rabbitmq-node0"
     networks:
@@ -117,6 +99,7 @@ services:
   rabbitmq-server-node1:
     build:
       context: ./docker/metricq-clustered/
+    image: rabbitmq-cluster-node
     environment:
       RABBITMQ_NODENAME: "rabbit@rabbitmq-node1"
     depends_on:
@@ -133,6 +116,7 @@ services:
   rabbitmq-server-node2:
     build:
       context: ./docker/metricq-clustered/
+    image: rabbitmq-cluster-node
     environment:
       RABBITMQ_NODENAME: "rabbit@rabbitmq-node2"
     depends_on:
@@ -158,12 +142,13 @@ services:
     command: /opt/couchdb/bin/couchdb
 
   couchdb-setup:
-    image: curlimages/curl:latest
+    build:
+      context: ./docker/couchdb-setup/
+    image: metricq-couchdb-setup
     depends_on:
       - couchdb-server
     networks:
       - metricq-network
-    command: "curl --retry-connrefused --retry 5 --retry-delay 10 -X POST -H \"Content-Type: application/json\" http://admin:admin@couchdb-server:5984/_cluster_setup -d '{\"action\": \"enable_single_node\", \"bind_address\":\"0.0.0.0\", \"username\": \"admin\", \"password\":\"admin\"}'"
 
   grafana-server:
     build:

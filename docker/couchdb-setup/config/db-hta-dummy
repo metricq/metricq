@@ -1,0 +1,13 @@
+{ 
+  "threads": 4,
+  "type": "file",
+  "path": "/var/hta",
+  "metrics" : {
+    "dummy.source": {
+      "mode": "RW",
+      "interval_min": 400000000,
+      "interval_max": 400000000000000,
+      "interval_factor": 10
+    }
+  }
+}
