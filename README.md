@@ -122,3 +122,15 @@ The different RabbitMQ nodes are listening on the network interface of their hos
 - rabbitmq-node0: 5671 / 15671
 - rabbitmq-node1: 5672 / 15672
 - rabbitmq-node2: 5673 / 15673
+
+# Acknowledgements
+
+This work is supported in part by the German Research Foundation (DFG) within the CRC 912 - HAEC.
+
+# Primary Reference
+
+Thomas Ilsche, Daniel Hackenberg, Robert Schöne, Mario Bielert, Franz Höpfner and Wolfgang E. Nagel: [MetricQ: A Scalable Infrastructure for Processing High-Resolution Time Series Data 📕](https://tu-dresden.de/zih/forschung/ressourcen/dateien/projekte/haec/metricq-a-scalable-infrastructure-for-processing-high-resolution-time-series-data) 2019 IEEE/ACM Industry/University Joint International Workshop on Data-center Automation, Analytics, and Control (DAAC), Denver, CO, USA, 2019, pp. 7-12, DOI: [`10.1109/DAAC49578.2019.00007`](https://doi.org/10.1109/DAAC49578.2019.00007).
+
+# Additional Reference
+
+Thomas Ilsche: [Energy Measurements of High Performance Computing Systems: From Instrumentation to Analysis 📕](https://tud.qucosa.de/api/qucosa%3A71600/attachment/ATT-0/) 2020 Doctoral dissertation TU Dresden, URN: [`urn:nbn:de:bsz:14-qucosa2-716000`](https://nbn-resolving.org/urn:nbn:de:bsz:14-qucosa2-716000)
