@@ -14,7 +14,28 @@ The different MetricQ language implementations can be found here:
 
 The proto files of the used Protobuf definitions can be found [here](https://github.com/metricq/metricq-python).
 
+## Documentation
+
+Given the distributed architecture of MetricQ, the documentation is scattered over several repositories and webpages:
+
+- [The documentation of the Python implementation is a good entry point](https://metricq.github.io/metricq-python/)
+- [The Wiki in this repository still contains some information](https://github.com/metricq/metricq/wiki)
+- [The HTA README.md talks about some details of persistence layer](https://github.com/metricq/hta/blob/master/README.md)
+- [The Management protocol documentation lists all RPC's used](https://metricq.github.io/metricq-rpc-docs/)
+
+There are also a lot of client implementations available:
+
+- [Tools using the Python implementation](https://github.com/metricq/metricq-python/tree/master/tools)
+- [Examples for the Python implementation](https://github.com/metricq/metricq-python/tree/master/examples)
+- [Tools using the C++ implementation](https://github.com/metricq/metricq-cpp/tree/master/tools)
+- [Examples for the C++ implementation](https://github.com/metricq/metricq-cpp/tree/master/examples)
+- [All MetricQ clients in the MetricQ GitHub organization](https://github.com/metricq?q=topic%3Ametricq-client&type=&language=)
+- [MetricQ client implementations on GitHub](https://github.com/search?p=2&q=metricq-client&type=Repositories)
+
+
 ## Setup development environment with ```docker-compose```
+
+> Note: During the startup, especially on the first one, errors and restarts of some services are normal! Please be patient.
 
 Just run:
 
@@ -54,7 +75,7 @@ To stop and remove everything run
 docker-compose -f docker-compose-development.yml down
 ```
 
-## Connecting to the MetricQ network
+### Connecting to the MetricQ network
 
 You can now connect to the network with `amqp://admin:admin@localhost` as url and `dummy.source` as a metric. Using the examples from [metricq-python](https://github.com/metricq/metricq-python).
 
@@ -78,8 +99,8 @@ The container names will be (might be different for your specific setup):
 By default, all MetricQ agents started from the compose file will connect to
 `rabbitmq-server`, which resolves to any of the three nodes.
 
-> Note: You need to make sure to use the new buildkit by for instance setting the ENV variable
-> COMPOSE_DOCKER_CLI_BUILD to 1.
+> Note: You need to make sure to use the new BuildKit by for instance setting the ENV variable
+> COMPOSE_DOCKER_CLI_BUILD to 1, or use docker-compose newer than 1.28.0-rc3.
 
 ### Configure like live Cluster
 
