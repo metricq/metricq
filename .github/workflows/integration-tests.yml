@@ -19,6 +19,11 @@ jobs:
           variables: |
             manager=${{ github.event.client_payload.manager_ref }}
             cxx=${{ github.event.client_payload.cxx_ref }}
+      - name: Upload docker compose file as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: docker-compose-file
+          path: tests/docker-compose-test.yml
       - name: Build the stack
         run: docker-compose -f tests/docker-compose-test.yml up -d
       - name: Sleep a bit (why not?)
