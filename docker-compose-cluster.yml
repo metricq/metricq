@@ -58,7 +58,7 @@ services:
       wait_for_couchdb_url: "couchdb-server:5984"
       COUCHDB_URL: "http://couchdb-server:5984"
       COUCHDB_USER: "admin"
-      COUCHDB_PW: "admin"
+      COUCHDB_PASSWORD: "admin"
       AMQP_SERVER: "amqp://admin:admin@rabbitmq-server/"
       wait_for_rabbitmq_url: "rabbitmq-server:5672"
     ports:
