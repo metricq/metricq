@@ -51,7 +51,7 @@ This will setup:
 - [wizard frontend](http://localhost:3000/wizard/) (port 3000 forwarded to localhost)
 - wizard backend (port 8000 forwarded to localhost)
 - manager
-- metricq-grafana (port 4000 forwarded to localhost:3001)
+- metricq-grafana (port 4000 forwarded to localhost:3002)
 - dummy source with a metric called `dummy.source`
 - hta database that stores the `dummy.source` metric.
 
