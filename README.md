@@ -25,7 +25,7 @@ Given the distributed architecture of MetricQ, the documentation is scattered ov
 
 There are also a lot of client implementations available:
 
-- [Tools using the Python implementation](https://github.com/metricq/metricq-python/tree/master/tools)
+- [Tools using the Python implementation](https://github.com/metricq/metricq-tools)
 - [Examples for the Python implementation](https://github.com/metricq/metricq-python/tree/master/examples)
 - [Tools using the C++ implementation](https://github.com/metricq/metricq-cpp/tree/master/tools)
 - [Examples for the C++ implementation](https://github.com/metricq/metricq-cpp/tree/master/examples)
