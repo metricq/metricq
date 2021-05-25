@@ -109,7 +109,7 @@ services:
   couchdb-setup:
     build:
       context: ./docker/couchdb-setup/
-    image: rabbitmq-cluster-node
+    image: metricq-couchdb-setup
     depends_on:
       - couchdb-server
     networks:
@@ -129,6 +129,8 @@ services:
   metricq-grafana:
     build:
       context: https://github.com/metricq/metricq-grafana.git
+      args:
+        - SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0-dev
     image: metricq-grafana
     environment:
       wait_for_rabbitmq_url: "rabbitmq-server:5672"
