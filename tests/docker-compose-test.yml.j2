@@ -29,7 +29,6 @@ services:
     image: metricq-cxx
     build:
       context: https://github.com/metricq/metricq-cpp.git{% if cxx %}#{{cxx}}{% endif %}
-      dockerfile: Dockerfile
     networks:
       - metricq-network
 
