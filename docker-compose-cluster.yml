@@ -155,7 +155,7 @@ services:
       context: https://github.com/metricq/grafana-metricq-datasource.git
     image: metricq-grafana-server
     ports:
-      - "127.0.0.1:4000:3000"
+      - "127.0.0.1:3001:3000"
     depends_on:
       - metricq-grafana
     networks:
@@ -174,11 +174,25 @@ services:
     depends_on:
       - rabbitmq-server-node0
     ports:
-      - "127.0.0.1:3002:4000"
+      - "127.0.0.1:4000:4000"
     restart: unless-stopped
     networks:
       - metricq-network
 
+  metricq-webview:
+    build:
+      context: https://github.com/metricq/metricq-webview.git
+      args:
+        - METRICQ_BACKEND=http://localhost:4000
+        - METRICQ_BACKEND_AUTH=
+    depends_on:
+      - metricq-grafana
+    ports:
+      - "127.0.0.1:3002:80"
+    restart: unless-stopped
+    networks:
+      - metricq-network
+      
 networks:
   metricq-network:
     driver: bridge

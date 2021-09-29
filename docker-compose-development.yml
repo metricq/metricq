@@ -9,8 +9,8 @@ services:
       couchdb_url: "http://couchdb-server:5984"
       couchdb_user: "admin"
       couchdb_pw: "admin"
-      wait_for_rabbitmq_url: "rabbitmq-server:5672"
       WAITFORIT_TIMEOUT: 0
+      wait_for_rabbitmq_url: "rabbitmq-server:5672"
       rpc_url: "amqp://admin:admin@rabbitmq-server/"
       data_url: "vhost:/"
     depends_on:
@@ -120,7 +120,7 @@ services:
       context: https://github.com/metricq/grafana-metricq-datasource.git
     image: metricq-grafana-server
     ports:
-      - "127.0.0.1:4000:3000"
+      - "127.0.0.1:3001:3000"
     depends_on:
       - metricq-grafana
     networks:
@@ -139,7 +139,21 @@ services:
     depends_on:
       - rabbitmq-server
     ports:
-      - "127.0.0.1:3002:4000"
+      - "127.0.0.1:4000:4000"
+    restart: unless-stopped
+    networks:
+      - metricq-network
+
+  metricq-webview:
+    build:
+      context: https://github.com/metricq/metricq-webview.git
+      args:
+        - METRICQ_BACKEND=http://localhost:4000
+        - METRICQ_BACKEND_AUTH=
+    depends_on:
+      - metricq-grafana
+    ports:
+      - "127.0.0.1:3002:80"
     restart: unless-stopped
     networks:
       - metricq-network
