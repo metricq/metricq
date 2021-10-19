@@ -1,0 +1,14 @@
+name: Integration trigger on push
+
+on: push
+
+jobs:
+  trigger-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Integration Workflow
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: 'MetricQ integration test'
+          token: ${{ secrets.PERSONAL_TOKEN }}
+          repo: metricq/metricq
