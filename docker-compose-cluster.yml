@@ -53,6 +53,8 @@ services:
   metricq-wizard-backend:
     build:
       context: https://github.com/metricq/metricq-wizard-backend.git
+      args:
+        - SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0-dev
     image: metricq-wizard-backend
     environment:
       wait_for_couchdb_url: "couchdb-server:5984"
