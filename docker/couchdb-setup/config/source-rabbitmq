@@ -1,0 +1,58 @@
+{
+  "interval": 10,
+  "host": "http://rabbitmq-server:15672",
+  "username": "admin",
+  "password": "admin",
+  "prefix": "metricq.rabbitmq",
+  "vhosts": [
+    {
+      "vhost": "/",
+      "name": "management",
+      "queues": {},
+      "exchanges": {
+        "metricq.broadcast": {
+          "rates": [
+            "publish_in",
+            "publish_out"
+          ]
+        },
+        "metricq.management": {
+          "rates": [
+            "publish_in",
+            "publish_out"
+          ]
+        }
+      }
+    },
+    {
+      "vhost": "/",
+      "name": "data",
+      "queues": {
+        "db-hta-dummy": {
+          "rates": [
+            "ack",
+            "deliver",
+            "publish"
+          ],
+          "counts": [
+            "messages"
+          ]
+        }
+      },
+      "exchanges": {
+        "metricq.data": {
+          "rates": [
+            "publish_in",
+            "publish_out"
+          ]
+        },
+        "metricq.history": {
+          "rates": [
+            "publish_in",
+            "publish_out"
+          ]
+        }
+      }
+    }
+  ]
+}

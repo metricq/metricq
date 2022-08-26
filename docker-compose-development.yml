@@ -51,11 +51,7 @@ services:
       - metricq-network
 
   metricq-wizard-backend:
-    build:
-      context: https://github.com/metricq/metricq-wizard-backend.git
-      args:
-        - SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0-dev
-    image: metricq-wizard-backend
+    image: metricq/metricq-wizard-backend:edge
     environment:
       wait_for_couchdb_url: "couchdb-server:5984"
       COUCHDB_URL: "http://couchdb-server:5984"
@@ -128,16 +124,27 @@ services:
     networks:
       - metricq-network
 
+  metricq-sink-websocket:
+    image: metricq/metricq-sink-websocket:edge
+    depends_on:
+      - rabbitmq-server
+    ports:
+      - "127.0.0.1:3003:3000"
+    networks:
+      - metricq-network
+    restart: unless-stopped
+    command: --token sink-websocket amqp://admin:admin@rabbitmq-server
+
+  metricq-source-rabbitmq:
+    image: metricq/metricq-source-rabbitmq:edge
+    networks:
+      - metricq-network
+    restart: unless-stopped
+    command: --token source-rabbitmq --server amqp://admin:admin@rabbitmq-server
+
   metricq-grafana:
-    build:
-      context: https://github.com/metricq/metricq-grafana.git
-      args:
-        - SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0-dev
-    image: metricq-grafana
-    environment:
-      wait_for_rabbitmq_url: "rabbitmq-server:5672"
-      WAITFORIT_TIMEOUT: 0
-      metricq_url: "amqp://admin:admin@rabbitmq-server/"
+    image: metricq/metricq-grafana:edge
+    command: amqp://admin:admin@rabbitmq-server
     depends_on:
       - rabbitmq-server
     ports:
@@ -159,6 +166,20 @@ services:
     restart: unless-stopped
     networks:
       - metricq-network
+
+  # rabbitmq-exporter:
+  #   image: kbudde/rabbitmq-exporter
+  #   ports:
+  #     - "127.0.0.1:9419:9419"
+  #   environment:
+  #     - RABBIT_URL=http://rabbitmq-server:15672
+  #     - RABBIT_USER=admin
+  #     - RABBIT_PASSWORD=admin
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - rabbitmq-server
+  #   networks:
+  #     - metricq-network
 
 networks:
   metricq-network:

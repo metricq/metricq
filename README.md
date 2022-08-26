@@ -51,6 +51,7 @@ This will setup:
 - [wizard frontend](http://localhost:3000/wizard/) (port 3000 forwarded to localhost)
 - [MetricQ Webview](http://localhost:3002/webview/) (port 80 forwarded to localhost:3002)
 - wizard backend (port 8000 forwarded to localhost)
+- metricq-sink-websocket (port 3000 forwarded to localhost:3003)
 - manager
 - metricq-grafana (port 4000 forwarded to localhost)
 - dummy source with a metric called `dummy.source`

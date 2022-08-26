@@ -1,11 +1,83 @@
-{ 
+{
   "threads": 4,
   "type": "file",
   "path": "/var/hta",
-  "metrics" : {
+  "metrics": {
     "dummy.source": {
       "mode": "RW",
       "interval_min": 400000000,
+      "interval_max": 400000000000000,
+      "interval_factor": 10
+    },
+    "metricq.rabbitmq.data.exchange.metricq_data.publish_in.rate": {
+      "mode": "RW",
+      "interval_min": 400000000000,
+      "interval_max": 400000000000000,
+      "interval_factor": 10
+    },
+    "metricq.rabbitmq.data.exchange.metricq_data.publish_out.rate": {
+      "mode": "RW",
+      "interval_min": 400000000000,
+      "interval_max": 400000000000000,
+      "interval_factor": 10
+    },
+    "metricq.rabbitmq.data.exchange.metricq_history.publish_in.rate": {
+      "mode": "RW",
+      "interval_min": 400000000000,
+      "interval_max": 400000000000000,
+      "interval_factor": 10
+    },
+    "metricq.rabbitmq.data.exchange.metricq_history.publish_out.rate": {
+      "mode": "RW",
+      "interval_min": 400000000000,
+      "interval_max": 400000000000000,
+      "interval_factor": 10
+    },
+    "metricq.rabbitmq.data.queue.db_hta_dummy.ack.rate": {
+      "mode": "RW",
+      "interval_min": 400000000000,
+      "interval_max": 400000000000000,
+      "interval_factor": 10
+    },
+    "metricq.rabbitmq.data.queue.db_hta_dummy.deliver.rate": {
+      "mode": "RW",
+      "interval_min": 400000000000,
+      "interval_max": 400000000000000,
+      "interval_factor": 10
+    },
+    "metricq.rabbitmq.data.queue.db_hta_dummy.messages.count": {
+      "mode": "RW",
+      "interval_min": 400000000000,
+      "interval_max": 400000000000000,
+      "interval_factor": 10
+    },
+    "metricq.rabbitmq.data.queue.db_hta_dummy.publish.rate": {
+      "mode": "RW",
+      "interval_min": 400000000000,
+      "interval_max": 400000000000000,
+      "interval_factor": 10
+    },
+    "metricq.rabbitmq.management.exchange.metricq_broadcast.publish_in.rate": {
+      "mode": "RW",
+      "interval_min": 400000000000,
+      "interval_max": 400000000000000,
+      "interval_factor": 10
+    },
+    "metricq.rabbitmq.management.exchange.metricq_broadcast.publish_out.rate": {
+      "mode": "RW",
+      "interval_min": 400000000000,
+      "interval_max": 400000000000000,
+      "interval_factor": 10
+    },
+    "metricq.rabbitmq.management.exchange.metricq_management.publish_in.rate": {
+      "mode": "RW",
+      "interval_min": 400000000000,
+      "interval_max": 400000000000000,
+      "interval_factor": 10
+    },
+    "metricq.rabbitmq.management.exchange.metricq_management.publish_out.rate": {
+      "mode": "RW",
+      "interval_min": 400000000000,
       "interval_max": 400000000000000,
       "interval_factor": 10
     }
