@@ -32,8 +32,7 @@ There are also a lot of client implementations available:
 - [All MetricQ clients in the MetricQ GitHub organization](https://github.com/metricq?q=topic%3Ametricq-client&type=&language=)
 - [MetricQ client implementations on GitHub](https://github.com/search?p=2&q=metricq-client&type=Repositories)
 
-
-## Setup development environment with ```docker-compose```
+## Setup development environment with `docker-compose`
 
 > Note: During the startup, especially on the first one, errors and restarts of some services are normal! Please be patient.
 
@@ -50,16 +49,18 @@ This will setup:
 - [RabbitMQ server](http://localhost:15672/) (port 5672 and 15672 forwarded to localhost)
 - [wizard frontend](http://localhost:3000/wizard/) (port 3000 forwarded to localhost)
 - [MetricQ Webview](http://localhost:3002/webview/) (port 80 forwarded to localhost:3002)
+- [MetricQ Explorer](http://localhost:3004/) (port 80 forwarded to localhost:3004)
 - wizard backend (port 8000 forwarded to localhost)
 - metricq-sink-websocket (port 3000 forwarded to localhost:3003)
 - manager
 - metricq-grafana (port 4000 forwarded to localhost)
 - dummy source with a metric called `dummy.source`
-- hta database that stores the `dummy.source` metric.
+- rabbitmq source for the running RabbitMQ server providing `metricq.rabbitmq.[...]` metrics
+- hta database that stores the metrics.
 
 By default, all logins are `admin` / `admin`. Do not use this dockerfile for production use!
 
-To run it in the background append ```-d```:
+To run it in the background append `-d`:
 
 ```
 docker-compose -f docker-compose-development.yml up -d
@@ -86,7 +87,7 @@ pip install ".[examples]"
 ./examples/metricq_sink.py --server amqp://admin:admin@localhost -m dummy.source
 ```
 
-## Setup clustered development environment with ```docker-compose```
+## Setup clustered development environment with `docker-compose`
 
 If you follow the steps from above instead with `docker-compose-cluster.yml`,
 three RabbitMQ nodes will be set up.
@@ -107,9 +108,9 @@ By default, all MetricQ agents started from the compose file will connect to
 ### Configure like live Cluster
 
 - Create a user-policy with
-    - Name: ManagementAsHA
-    - Pattern: `management`
-    - Definition: `ha-mode:	all`
+  - Name: ManagementAsHA
+  - Pattern: `management`
+  - Definition: `ha-mode: all`
 
 ### Connecting to nodes from docker network
 
