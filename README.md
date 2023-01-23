@@ -47,7 +47,7 @@ This will setup:
 - [Grafana server](http://localhost:3001) (port 3000 forwarded to localhost:3001)
 - [CouchDB server](http://localhost:5984/_utils) (port 5984 forwarded to localhost)
 - [RabbitMQ server](http://localhost:15672/) (port 5672 and 15672 forwarded to localhost)
-- [wizard frontend](http://localhost:3000/wizard/) (port 3000 forwarded to localhost)
+- [wizard frontend](http://localhost:3000/) (port 3000 forwarded to localhost)
 - [MetricQ Webview](http://localhost:3002/webview/) (port 80 forwarded to localhost:3002)
 - [MetricQ Explorer](http://localhost:3004/) (port 80 forwarded to localhost:3004)
 - wizard backend (port 8000 forwarded to localhost)
