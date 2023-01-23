@@ -38,12 +38,12 @@ services:
     depends_on:
       - metricq-wizard-backend
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:3000:80"
     networks:
       - metricq-network
 
   metricq-wizard-backend:
-    image: metricq/metricq-wizard-backend:explorer-backend
+    image: metricq/metricq-wizard-backend:edge
     environment:
       wait_for_couchdb_url: "couchdb-server:5984"
       COUCHDB_URL: "http://couchdb-server:5984"
