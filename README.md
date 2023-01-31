@@ -47,16 +47,16 @@ This will setup:
 - [Grafana server](http://localhost:3001) (port 3000 forwarded to localhost:3001)
 - [CouchDB server](http://localhost:5984/_utils) (port 5984 forwarded to localhost)
 - [RabbitMQ server](http://localhost:15672/) (port 5672 and 15672 forwarded to localhost)
-- [wizard frontend](http://localhost:3000/) (port 3000 forwarded to localhost)
+- [MetricQ Wizard](http://localhost:3000/) (port 3000 forwarded to localhost)
 - [MetricQ Webview](http://localhost:3002/webview/) (port 80 forwarded to localhost:3002)
 - [MetricQ Explorer](http://localhost:3004/) (port 80 forwarded to localhost:3004)
-- wizard backend (port 8000 forwarded to localhost)
+- MetricQ Wizard backend (port 8000 forwarded to localhost)
 - metricq-sink-websocket (port 3000 forwarded to localhost:3003)
-- manager
-- metricq-grafana (port 4000 forwarded to localhost)
-- dummy source with a metric called `dummy.source`
-- rabbitmq source for the running RabbitMQ server providing `metricq.rabbitmq.[...]` metrics
-- hta database that stores the metrics.
+- MetricQ Manager
+- `metricq-grafana` (port 4000 forwarded to localhost)
+- C++ example source generating a metric called `dummy.source`
+- `metricq-rabbitmq-source` providing `metricq.rabbitmq.[...]` performance metrics for the running RabbitMQ server
+- `metricq-db-hta` database that stores the metrics
 
 By default, all logins are `admin` / `admin`. Do not use this dockerfile for production use!
 
