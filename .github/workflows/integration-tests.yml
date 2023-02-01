@@ -45,12 +45,12 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: docker-compose-file
-          path: tests/docker-compose-test.yml
+          path: tests/
       - name: Download Docker images from artifacts
         uses: actions/download-artifact@v3
         with:
           name: docker-images
-          path: docker_images_for_integration.tar
+          path: .
       - name: import Docker images
         run: docker load < docker_images_for_integration.tar
       - name: start rabbitmq and couchdb server
