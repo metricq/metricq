@@ -16,19 +16,24 @@ services:
       couchdb_url: "http://couchdb-server:5984"
       couchdb_user: "admin"
       couchdb_pw: "admin"
+      WAITFORIT_TIMEOUT: 0
       wait_for_rabbitmq_url: "rabbitmq-server:5672"
       rpc_url: "amqp://admin:admin@rabbitmq-server/"
-      data_url: "amqp://admin:admin@rabbitmq-server/"
+      data_url: "vhost:/"
     depends_on:
       - rabbitmq-server
       - couchdb-server
+      - couchdb-setup
     networks:
       - metricq-network
 
   metricq-cxx:
-    image: metricq-cxx
     build:
       context: https://github.com/metricq/metricq-cpp.git{% if cxx %}#{{cxx}}{% endif %}
+    image: metricq-cxx
+    depends_on:
+      - rabbitmq-server
+      - couchdb-setup
     networks:
       - metricq-network
 
@@ -38,6 +43,8 @@ services:
       RABBITMQ_DEFAULT_USER: "admin"
       RABBITMQ_DEFAULT_PASS: "admin"
       RABBITMQ_DEFAULT_VHOST: "/"
+      RABBITMQ_ERLANG_COOKIE: "Leibniz Butterkeks"
+      RABBITMQ_NODENAME: "rabbit@rabbitmq-server"
     networks:
       - metricq-network
 
@@ -51,12 +58,13 @@ services:
     command: /opt/couchdb/bin/couchdb
 
   couchdb-setup:
-    image: curlimages/curl:latest
+    build:
+      context: ./docker/couchdb-setup/
+    image: metricq-couchdb-setup
     depends_on:
       - couchdb-server
     networks:
       - metricq-network
-    command: "curl --retry-connrefused --retry 5 --retry-delay 10 -X POST -H \"Content-Type: application/json\" http://admin:admin@couchdb-server:5984/_cluster_setup -d '{\"action\": \"enable_single_node\", \"bind_address\":\"0.0.0.0\", \"username\": \"admin\", \"password\":\"admin\"}'"
 
 
 networks:
