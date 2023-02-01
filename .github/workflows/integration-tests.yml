@@ -1,9 +1,16 @@
-name: Integration tests
+name: MetricQ integration test based on images
 
-on: 
-  push: {}
-  repository_dispatch:
-    types: [integration-test]
+on:
+  workflow_dispatch:
+    inputs:
+      manager-ref:
+        description: git ref for metricq-manager
+        default: master
+        required: false
+      cpp-ref:
+        description: git ref for metricq-python
+        default: master
+        required: false
 
 jobs:
   prepare:
@@ -17,8 +24,8 @@ jobs:
           output_file: tests/docker-compose-test.yml
           strict: true
           variables: |
-            manager=${{ github.event.client_payload.manager_ref }}
-            cxx=${{ github.event.client_payload.cxx_ref }}
+            manager=${{ github.event.inputs.manager-ref }}
+            cxx=${{ github.event.inputs.cpp-ref }}
       - name: Upload docker compose file as artifact
         uses: actions/upload-artifact@v3
         with:

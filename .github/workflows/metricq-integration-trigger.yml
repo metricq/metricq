@@ -10,5 +10,11 @@ jobs:
         uses: benc-uk/workflow-dispatch@v1
         with:
           workflow: 'MetricQ integration test'
-          token: ${{ secrets.PERSONAL_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repo: metricq/metricq
+      - name: Trigger Integration Workflow with Docker Images
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: 'MetricQ integration test based on images'
+          token: ${{ secrets.GITHUB_TOKEN }}
           repo: metricq/metricq
