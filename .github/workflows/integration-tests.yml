@@ -27,9 +27,13 @@ jobs:
       - name: start rabbitmq and couchdb server
         run: docker-compose -f tests/docker-compose-test.yml up -d rabbitmq-server couchdb-server couchdb-setup
       - name: Build the stack
-        run: docker-compose -f tests/docker-compose-test.yml up -d
+        run: docker-compose -f tests/docker-compose-test.yml build
+      - name: Start metricq-manager
+        run: docker-compose -f tests/docker-compose-test.yml up -d metricq-manager
       - name: Sleep a bit (why not?)
         run: sleep 30
+      - name: Get manager log
+        run: docker-compose -f tests/docker-compose-test.yml logs metricq-manager
       - name: "Test 1: Setup config"
         run: "docker run --rm --network tests_metricq-network curlimages/curl:latest curl --retry-connrefused --retry 5 --retry-delay 10 -X PUT -H \"Content-Type: application/json\" http://admin:admin@couchdb-server:5984/config/source-dummy-test1 -d '{}'"
       - name: "Test 1: simple source test"
