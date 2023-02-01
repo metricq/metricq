@@ -4,8 +4,6 @@ services:
     image: metricq-python
     build:
       context: https://github.com/metricq/metricq-python.git
-    networks:
-      - metricq-network
 
   metricq-manager:
     build:
@@ -13,53 +11,13 @@ services:
     image: metricq-manager
     hostname: metricq
     command: --couchdb-url http://couchdb-server:5984 --couchdb-user admin --couchdb-password admin amqp://admin:admin@rabbitmq-server/ vhost:/
-    depends_on:
-      - rabbitmq-server
-      - couchdb-server
-      - couchdb-setup
-    networks:
-      - metricq-network
 
   metricq-cxx:
     build:
       context: https://github.com/metricq/metricq-cpp.git{% if cxx %}#{{cxx}}{% endif %}
     image: metricq-cxx
-    depends_on:
-      - rabbitmq-server
-      - couchdb-setup
-    networks:
-      - metricq-network
-
-  rabbitmq-server:
-    image: rabbitmq:management-alpine
-    environment:
-      RABBITMQ_DEFAULT_USER: "admin"
-      RABBITMQ_DEFAULT_PASS: "admin"
-      RABBITMQ_DEFAULT_VHOST: "/"
-      RABBITMQ_ERLANG_COOKIE: "Leibniz Butterkeks"
-      RABBITMQ_NODENAME: "rabbit@rabbitmq-server"
-    networks:
-      - metricq-network
-
-  couchdb-server:
-    image: couchdb:3
-    environment:
-      COUCHDB_USER: "admin"
-      COUCHDB_PASSWORD: "admin"
-    networks:
-      - metricq-network
-    command: /opt/couchdb/bin/couchdb
 
   couchdb-setup:
     build:
       context: ../docker/couchdb-setup/
     image: metricq-couchdb-setup
-    depends_on:
-      - couchdb-server
-    networks:
-      - metricq-network
-
-
-networks:
-  metricq-network:
-    driver: bridge
