@@ -35,21 +35,21 @@ jobs:
 
     steps:
       - name: Set up Python 3.10
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4
         with:
           python-version: "3.10"
       - name: Install Protoc
         uses: arduino/setup-protoc@master
 
       - name: Checkout metricq-python
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: metricq/metricq-python
           ref: ${{ github.event.inputs.python-ref }}
           path: metricq-python
 
       - name: Checkout metricq-manager
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: metricq/metricq-manager
           ref: ${{ github.event.inputs.manager-ref }}
