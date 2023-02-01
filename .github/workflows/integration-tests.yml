@@ -27,7 +27,9 @@ jobs:
       - name: Build the stack
         run: docker-compose -f tests/docker-compose-test.yml build
       - name: Export all docker images
-        run: docker save $(docker images -q) -o docker_images_for_integration.tar
+        run: docker save EXPORTED_DOCKER_IMAGES -o docker_images_for_integration.tar
+        env:
+          EXPORTED_DOCKER_IMAGES: metricq-manager metricq-cxx metricq-python
       - name: Upload artifact with Docker images
         uses: actions/upload-artifact@v2
         with:
