@@ -39,6 +39,20 @@ jobs:
   integrate:
     needs: prepare
     runs-on: ubuntu-latest
+    services:
+      couchdb-server:
+        image: couchdb
+        env:
+          COUCHDB_USER: admin
+          COUCHDB_PASSWORD: admin
+      rabbitmq-server:
+        image: rabbitmq:alpine
+        env:
+          RABBITMQ_DEFAULT_USER: admin
+          RABBITMQ_DEFAULT_PASS: admin
+          RABBITMQ_DEFAULT_VHOST: /
+          RABBITMQ_ERLANG_COOKIE: Leibniz Butterkeks
+          RABBITMQ_NODENAME: rabbit@rabbitmq-server
     steps:
       - uses: actions/checkout@v3
       - name: Download compose file from artifacts
@@ -53,8 +67,8 @@ jobs:
           path: .
       - name: import Docker images
         run: docker load < docker_images_for_integration.tar
-      - name: start rabbitmq and couchdb server
-        run: docker-compose -f tests/docker-compose-test.yml up -d rabbitmq-server couchdb-server couchdb-setup
+      - name: setup couchdb server
+        run: docker-compose -f tests/docker-compose-test.yml up -d couchdb-setup
       - name: Start metricq-manager
         run: docker-compose -f tests/docker-compose-test.yml up -d metricq-manager
       - name: Sleep a bit (why not?)
