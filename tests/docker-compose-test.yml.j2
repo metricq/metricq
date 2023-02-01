@@ -59,7 +59,7 @@ services:
 
   couchdb-setup:
     build:
-      context: ./docker/couchdb-setup/
+      context: ../docker/couchdb-setup/
     image: metricq-couchdb-setup
     depends_on:
       - couchdb-server
