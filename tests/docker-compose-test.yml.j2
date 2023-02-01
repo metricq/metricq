@@ -11,15 +11,8 @@ services:
     build:
       context: https://github.com/metricq/metricq-manager.git{% if manager %}#{{manager}}{% endif %}
     image: metricq-manager
-    environment:
-      wait_for_couchdb_url: "couchdb-server:5984"
-      couchdb_url: "http://couchdb-server:5984"
-      couchdb_user: "admin"
-      couchdb_pw: "admin"
-      WAITFORIT_TIMEOUT: 0
-      wait_for_rabbitmq_url: "rabbitmq-server:5672"
-      rpc_url: "amqp://admin:admin@rabbitmq-server/"
-      data_url: "vhost:/"
+    hostname: metricq
+    command: --couchdb-url http://couchdb-server:5984 --couchdb-user admin --couchdb-password admin amqp://admin:admin@rabbitmq-server/ vhost:/
     depends_on:
       - rabbitmq-server
       - couchdb-server
