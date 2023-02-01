@@ -64,7 +64,7 @@ jobs:
       - name: start rabbitmq and couchdb server
         run: docker-compose -f tests/docker-compose-test.yml up -d rabbitmq-server couchdb-server couchdb-setup
       - name: wait for rabbitmq server
-        run: docker-compose -f tests/docker-compose-test.yml exec -T rabbitmq-server rabbitmqctl await_startup --erlang-cookie "Leibniz Butterkeks"
+        run: docker-compose -f tests/docker-compose-test.yml exec -T rabbitmq-server rabbitmqctl wait --timeout 30 --erlang-cookie "Leibniz Butterkeks"
       - name: Start metricq-manager
         run: docker-compose -f tests/docker-compose-test.yml up -d metricq-manager
       - name: Get manager log
