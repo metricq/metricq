@@ -1,4 +1,5 @@
 #/bin/bash
+set -e
 
 TEST_2_SINK_ID=$(docker-compose -f tests/docker-compose-test.yml run --rm --name "test_2_sink" -d metricq-cxx metricq-sink-dummy -s amqp://admin:admin@rabbitmq-server/ --count 10 --timeout 10 -m dummy.pets)
 echo "Test sink started! ID is $TEST_2_SINK_ID"
