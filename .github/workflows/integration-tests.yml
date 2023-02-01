@@ -1,6 +1,8 @@
 name: MetricQ integration test based on images
 
 on:
+  schedule:
+    - cron: "00 5,17 * * *"
   workflow_dispatch:
     inputs:
       manager-ref:
