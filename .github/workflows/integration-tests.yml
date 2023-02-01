@@ -9,9 +9,9 @@ jobs:
   prepare:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Generate docker compose config
-        uses: cuchi/jinja2-action@v1.1.0
+        uses: cuchi/jinja2-action@v1.2.1
         with:
           template: tests/docker-compose-test.yml.j2
           output_file: tests/docker-compose-test.yml
@@ -20,18 +20,18 @@ jobs:
             manager=${{ github.event.client_payload.manager_ref }}
             cxx=${{ github.event.client_payload.cxx_ref }}
       - name: Upload docker compose file as artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: docker-compose-file
           path: tests/docker-compose-test.yml
       - name: Build the stack
         run: docker-compose -f tests/docker-compose-test.yml build
       - name: Export all docker images
-        run: docker save EXPORTED_DOCKER_IMAGES -o docker_images_for_integration.tar
+        run: docker save $EXPORTED_DOCKER_IMAGES -o docker_images_for_integration.tar
         env:
           EXPORTED_DOCKER_IMAGES: metricq-manager metricq-cxx metricq-python
       - name: Upload artifact with Docker images
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: docker-images
           path: docker_images_for_integration.tar
@@ -40,14 +40,14 @@ jobs:
     needs: prepare
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Download compose file from artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: docker-compose-file
           path: tests/docker-compose-test.yml
       - name: Download Docker images from artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: docker-images
           path: docker_images_for_integration.tar
