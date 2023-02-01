@@ -64,7 +64,8 @@ jobs:
         run: docker load < docker_images_for_integration.tar
       - name: start rabbitmq and couchdb server
         run: docker-compose -f tests/docker-compose-test.yml up -d rabbitmq-server couchdb-server couchdb-setup
-      - run: docker-compose -f tests/docker-compose-test.yml exec -T rabbitmq-server ls /var/lib/rabbitmq/mnesia/
+      - run: docker-compose -f tests/docker-compose-test.yml exec -T rabbitmq-server sh -c "while [ ! -f /var/lib/rabbitmq/mnesia/rabbit@rabbitmq-server.pid ]; do sleep 1; done"
+      -  run: docker-compose -f tests/docker-compose-test.yml exec -T rabbitmq-server ls /var/lib/rabbitmq/mnesia/
       - name: wait for rabbitmq server
         run: docker-compose -f tests/docker-compose-test.yml exec -T rabbitmq-server rabbitmqctl wait --timeout 30 --erlang-cookie "Leibniz Butterkeks" /var/lib/rabbitmq/mnesia/rabbit@rabbitmq-server.pid
       - name: Start metricq-manager
