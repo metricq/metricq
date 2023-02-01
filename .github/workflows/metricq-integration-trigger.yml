@@ -9,12 +9,12 @@ jobs:
       - name: Trigger Integration Workflow
         uses: benc-uk/workflow-dispatch@v1
         with:
-          workflow: 'MetricQ integration test'
+          workflow: metricq-integration.yml
           token: ${{ secrets.GITHUB_TOKEN }}
           repo: metricq/metricq
       - name: Trigger Integration Workflow with Docker Images
         uses: benc-uk/workflow-dispatch@v1
         with:
-          workflow: 'MetricQ integration test based on images'
+          workflow: integration-tests.yml
           token: ${{ secrets.GITHUB_TOKEN }}
           repo: metricq/metricq
