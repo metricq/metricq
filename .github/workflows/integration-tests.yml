@@ -1,6 +1,7 @@
 name: MetricQ integration test based on images
 
 on:
+  push: {}
   workflow_dispatch:
     inputs:
       manager-ref:
