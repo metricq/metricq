@@ -26,6 +26,8 @@ services:
       wait_for_rabbitmq_url: "rabbitmq-server:5672"
       WAITFORIT_TIMEOUT: 0
     restart: unless-stopped
+    volumes:
+      - hta-dummy:/var/hta
     networks:
       - metricq-network
 
@@ -91,6 +93,8 @@ services:
     environment:
       COUCHDB_USER: "admin"
       COUCHDB_PASSWORD: "admin"
+    volumes:
+      - couchdb-data:/opt/couchdb/data
     networks:
       - metricq-network
     ports:
@@ -187,3 +191,9 @@ services:
 networks:
   metricq-network:
     driver: bridge
+
+volumes:
+  hta-dummy:
+    driver: local
+  couchdb-data:
+    driver: local
