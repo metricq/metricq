@@ -6,15 +6,15 @@ jobs:
   trigger-integration:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Integration Workflow
+      - name: Trigger Integration Workflow on runner machine
         uses: benc-uk/workflow-dispatch@v1
         with:
-          workflow: metricq-integration.yml
+          workflow: integration-tests-on-runner.yml
           token: ${{ secrets.GITHUB_TOKEN }}
           repo: metricq/metricq
       - name: Trigger Integration Workflow with Docker Images
         uses: benc-uk/workflow-dispatch@v1
         with:
-          workflow: integration-tests.yml
+          workflow: integration-tests-in-containers.yml
           token: ${{ secrets.GITHUB_TOKEN }}
           repo: metricq/metricq

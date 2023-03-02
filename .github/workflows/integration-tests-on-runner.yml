@@ -1,4 +1,4 @@
-name: MetricQ integration test
+name: MetricQ integration test on runner machine
 
 on:
   schedule:
@@ -24,6 +24,8 @@ jobs:
         env:
           COUCHDB_USER: admin
           COUCHDB_PASSWORD: admin
+        ports:
+          - 5984:5984
       rabbitmq:
         image: rabbitmq:alpine
         env:
@@ -32,6 +34,8 @@ jobs:
           RABBITMQ_DEFAULT_VHOST: /
           RABBITMQ_ERLANG_COOKIE: Leibniz Butterkeks
           RABBITMQ_NODENAME: rabbit@rabbitmq-server
+        ports:
+          - 5672:5672
 
     steps:
       - name: Set up Python 3.10
@@ -66,5 +70,5 @@ jobs:
       - name: Start MetricQ-Manager
         run: |
           metricq-manager/venv/bin/metricq-manager \
-            amqp://admin:admin@rabbitmq amqp://admin:admin@rabbitmq \
-            --couchdb-url http://couchdb:5984 --couchdb-user admin --couchdb-password admin
+            amqp://admin:admin@localhost amqp://admin:admin@localhost \
+            --couchdb-url http://localhost:5984 --couchdb-user admin --couchdb-password admin
