@@ -36,6 +36,7 @@ services:
       context: https://github.com/metricq/metricq-wizard-frontend.git
       args:
         - api_url=http://localhost:8000/api
+        - metricq_websocket_url=ws://localhost:3003/
     image: metricq-wizard-frontend
     depends_on:
       - metricq-wizard-backend
@@ -47,13 +48,10 @@ services:
   metricq-wizard-backend:
     image: metricq/metricq-wizard-backend:edge
     environment:
-      wait_for_couchdb_url: "couchdb-server:5984"
-      COUCHDB_URL: "http://couchdb-server:5984"
-      COUCHDB_USER: "admin"
-      COUCHDB_PASSWORD: "admin"
-      AMQP_SERVER: "amqp://admin:admin@rabbitmq-server/"
-      RABBITMQ_URL: "http://rabbitmq-server:15672"
-      wait_for_rabbitmq_url: "rabbitmq-server:5672"
+      COUCHDB_URL: "http://admin:admin@couchdb-server:5984"
+      RABBITMQ_URL: "amqp://admin:admin@rabbitmq-server/"
+      RABBITMQ_API_URL: "http://admin:admin@rabbitmq-server:15672/api"
+      RABBITMQ_DATA_HOST: "/"
     ports:
       - "127.0.0.1:8000:8000"
     depends_on:
@@ -165,7 +163,7 @@ services:
   metricq-explorer:
     image: metricq/metricq-explorer-frontend:edge
     environment:
-      METRICQ_WIZARD_BACKEND: http://localhost:8000
+      METRICQ_WIZARD_BACKEND: http://localhost:8000/api
     depends_on:
       - metricq-wizard-backend
     ports:
