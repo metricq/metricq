@@ -10,7 +10,7 @@ on:
         default: master
         required: false
       cpp-ref:
-        description: git ref for metricq-python
+        description: git ref for metricq-cpp
         default: master
         required: false
 

@@ -1,0 +1,36 @@
+name: Trigger integration workflows with a single workflow_dispatch
+
+on:
+  workflow_dispatch:
+    inputs:
+      manager-ref:
+        description: git ref for metricq-manager
+        default: master
+        required: false
+      python-ref:
+        description: git ref for metricq-python
+        default: master
+        required: false
+      cpp-ref:
+        description: git ref for metricq-cpp
+        default: master
+        required: false
+
+jobs:
+  trigger-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Integration Workflow on runner machine
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: integration-tests-on-runner.yml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repo: metricq/metricq
+          inputs: ${{ toJSON(inputs) }}
+      - name: Trigger Integration Workflow with Docker Images
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: integration-tests-in-containers.yml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repo: metricq/metricq
+          inputs: ${{ toJSON(inputs) }}
