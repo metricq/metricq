@@ -1,29 +1,100 @@
-name: Integration tests
+name: MetricQ integration test based on images
 
-on: 
-  push: {}
-  repository_dispatch:
-    types: [integration-test]
+on:
+  schedule:
+    - cron: "00 5,17 * * *"
+  workflow_dispatch:
+    inputs:
+      manager-ref:
+        description: git ref for metricq-manager
+        default: master
+        required: false
+      cpp-ref:
+        description: git ref for metricq-python
+        default: master
+        required: false
 
 jobs:
-  test:
+  prepare:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Generate docker compose config
-        uses: cuchi/jinja2-action@v1.1.0
+        uses: cuchi/jinja2-action@v1.2.1
         with:
           template: tests/docker-compose-test.yml.j2
           output_file: tests/docker-compose-test.yml
           strict: true
           variables: |
-            manager=${{ github.event.client_payload.manager_ref }}
-            cxx=${{ github.event.client_payload.cxx_ref }}
+            manager=${{ github.event.inputs.manager-ref }}
+            cxx=${{ github.event.inputs.cpp-ref }}
+      - name: Upload docker compose file as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: docker-compose-file
+          path: tests/docker-compose-test.yml
       - name: Build the stack
-        run: docker-compose -f tests/docker-compose-test.yml up -d
-      - name: Sleep a bit (why not?)
-        run: sleep 30
-      - name: "Test 1: Setup config"
-        run: "docker run --rm --network tests_metricq-network curlimages/curl:latest curl --retry-connrefused --retry 5 --retry-delay 10 -X PUT -H \"Content-Type: application/json\" http://admin:admin@couchdb-server:5984/config/source-dummy-test1 -d '{}'"
-      - name: "Test 1: simple source test"
-        run: docker-compose -f tests/docker-compose-test.yml run --rm metricq-cxx metricq-source-dummy -s amqp://admin:admin@rabbitmq-server/ --token source-dummy-test1 --metric "dummy.pets" --messages-per-chunk 10 --chunk-count 100
+        run: docker-compose -f tests/docker-compose-test.yml build
+      - name: Export all docker images
+        run: docker save $EXPORTED_DOCKER_IMAGES -o docker_images_for_integration.tar
+        env:
+          EXPORTED_DOCKER_IMAGES: metricq-manager metricq-cxx metricq-python
+      - name: Upload artifact with Docker images
+        uses: actions/upload-artifact@v3
+        with:
+          name: docker-images
+          path: docker_images_for_integration.tar
+
+  list-integration-tests:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Get list of integrations test
+        id: set-matrix
+        run: echo "matrix=$(ls tests/docker_tests | jq -R -s -c 'split("\n")[:-1]')" >> $GITHUB_OUTPUT
+
+  integrate:
+    needs: [prepare, list-integration-tests]
+    runs-on: ubuntu-latest
+    name: Integration test ${{ matrix.integration-test }}
+    strategy:
+      matrix:
+        integration-test: ${{ fromJson(needs.list-integration-tests.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check and prepare integration test
+        id: prepare-test
+        run: ./tests/scripts/check_prepare_integration_test.sh ${{ matrix.integration-test }}
+      - name: Download compose file from artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-compose-file
+          path: tests/
+      - name: Download Docker images from artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-images
+          path: .
+      - name: import Docker images
+        run: docker load < docker_images_for_integration.tar
+      - name: start rabbitmq and couchdb server
+        run: docker-compose -f tests/docker-compose-test.yml up -d rabbitmq-server couchdb-server couchdb-setup
+      - name: wait for rabbitmq pid file
+        run: docker-compose -f tests/docker-compose-test.yml exec -T rabbitmq-server sh -c "while [ ! -f /var/lib/rabbitmq/mnesia/rabbit@rabbitmq-server.pid ]; do sleep 1; done"
+      - name: wait for rabbitmq server
+        run: docker-compose -f tests/docker-compose-test.yml exec -T rabbitmq-server rabbitmqctl wait --timeout 30 --erlang-cookie "Leibniz Butterkeks" /var/lib/rabbitmq/mnesia/rabbit@rabbitmq-server.pid
+      - name: Start metricq-manager
+        run: docker-compose -f tests/docker-compose-test.yml up -d metricq-manager
+      - name: Get manager log
+        run: docker-compose -f tests/docker-compose-test.yml logs metricq-manager
+      - name: Setup integration test ${{ steps.prepare-test.outputs.friendly_name }}
+        if: ${{ steps.prepare-test.outputs.has-setup == 'true' }}
+        run: ./tests/docker_tests/${{ matrix.integration-test }}/setup.sh
+      - name: Run integration test ${{ steps.prepare-test.outputs.friendly_name }}
+        run: |
+          ./tests/docker_tests/${{ matrix.integration-test }}/run.sh
+      - name: Teardown integration test ${{ steps.prepare-test.outputs.friendly_name }}
+        if: ${{ steps.prepare-test.outputs.has-teardown == 'true' }}
+        run: ./tests/docker_tests/${{ matrix.integration-test }}/teardown.sh

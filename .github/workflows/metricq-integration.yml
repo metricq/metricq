@@ -1,0 +1,70 @@
+name: MetricQ integration test
+
+on:
+  schedule:
+    - cron: "00 5,17 * * *"
+  workflow_dispatch:
+    inputs:
+      manager-ref:
+        description: git ref for metricq-manager
+        default: master
+        required: false
+      python-ref:
+        description: git ref for metricq-python
+        default: master
+        required: false
+
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+
+    services:
+      couchdb:
+        image: couchdb
+        env:
+          COUCHDB_USER: admin
+          COUCHDB_PASSWORD: admin
+      rabbitmq:
+        image: rabbitmq:alpine
+        env:
+          RABBITMQ_DEFAULT_USER: admin
+          RABBITMQ_DEFAULT_PASS: admin
+          RABBITMQ_DEFAULT_VHOST: /
+          RABBITMQ_ERLANG_COOKIE: Leibniz Butterkeks
+          RABBITMQ_NODENAME: rabbit@rabbitmq-server
+
+    steps:
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Install Protoc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+      - name: Checkout metricq-python
+        uses: actions/checkout@v3
+        with:
+          repository: metricq/metricq-python
+          ref: ${{ github.event.inputs.python-ref }}
+          path: metricq-python
+
+      - name: Checkout metricq-manager
+        uses: actions/checkout@v3
+        with:
+          repository: metricq/metricq-manager
+          ref: ${{ github.event.inputs.manager-ref }}
+          path: metricq-manager
+
+      - name: Setup MetricQ Manager
+        run: |
+          python -m venv metricq-manager/venv
+          source metricq-manager/venv/bin/activate
+          pip install -e ./metricq-python
+          pip install -e ./metricq-manager
+
+      - name: Start MetricQ-Manager
+        run: |
+          metricq-manager/venv/bin/metricq-manager \
+            amqp://admin:admin@rabbitmq amqp://admin:admin@rabbitmq \
+            --couchdb-url http://couchdb:5984 --couchdb-user admin --couchdb-password admin
