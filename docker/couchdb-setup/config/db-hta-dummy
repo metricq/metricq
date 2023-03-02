@@ -80,6 +80,12 @@
       "interval_min": 400000000000,
       "interval_max": 400000000000000,
       "interval_factor": 10
+    },
+    "metricq.rabbitmq.data.exchange.metricq.publish_in.rate": {
+      "mode": "RW",
+      "interval_min": 400000000000,
+      "interval_max": 400000000000000,
+      "interval_factor": 10
     }
   }
 }

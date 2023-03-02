@@ -137,6 +137,15 @@ services:
     restart: unless-stopped
     command: --token source-rabbitmq --server amqp://admin:admin@rabbitmq-server
 
+  metricq-combinator:
+    image: metricq/metricq-combinator:edge
+    depends_on:
+      - rabbitmq-server
+    networks:
+      - metricq-network
+    restart: unless-stopped
+    command: --token transformer-example-combinator --server amqp://admin:admin@rabbitmq-server
+
   metricq-grafana:
     image: metricq/metricq-grafana:edge
     command: amqp://admin:admin@rabbitmq-server

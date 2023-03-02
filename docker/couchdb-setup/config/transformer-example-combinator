@@ -1,0 +1,13 @@
+{
+  "metrics": {
+    "metricq.rabbitmq.data.exchange.metricq.publish_in.rate": {
+      "expression": {
+        "operation": "sum",
+        "inputs": [
+          "metricq.rabbitmq.data.exchange.metricq_data.publish_in.rate",
+          "metricq.rabbitmq.data.exchange.metricq_history.publish_in.rate"
+        ]
+      }
+    }
+  }
+}
