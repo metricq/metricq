@@ -39,8 +39,9 @@ jobs:
         with:
           python-version: "3.10"
       - name: Install Protoc
-        uses: arduino/setup-protoc@master
-
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
       - name: Checkout metricq-python
         uses: actions/checkout@v3
         with:
