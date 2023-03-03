@@ -137,6 +137,12 @@ services:
     restart: unless-stopped
     command: --token source-rabbitmq --server amqp://admin:admin@rabbitmq-server
 
+  metricq-source-sysinfo:
+    image: metricq/metricq-source-sysinfo:edge
+    restart: unless-stopped
+    network_mode: "host"
+    command: --token source-sysinfo amqp://admin:admin@localhost
+
   metricq-combinator:
     image: metricq/metricq-combinator:edge
     depends_on:

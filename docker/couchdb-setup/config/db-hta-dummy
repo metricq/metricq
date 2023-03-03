@@ -86,6 +86,48 @@
       "interval_min": 400000000000,
       "interval_max": 400000000000000,
       "interval_factor": 10
+    },
+    "localhost.cpu.usage": {
+      "mode": "RW",
+      "interval_min": 400000000000,
+      "interval_max": 400000000000000,
+      "interval_factor": 10
+    },
+    "localhost.mem.buffers": {
+      "mode": "RW",
+      "interval_min": 400000000000,
+      "interval_max": 400000000000000,
+      "interval_factor": 10
+    },
+    "localhost.mem.cached": {
+      "mode": "RW",
+      "interval_min": 400000000000,
+      "interval_max": 400000000000000,
+      "interval_factor": 10
+    },
+    "localhost.mem.shared": {
+      "mode": "RW",
+      "interval_min": 400000000000,
+      "interval_max": 400000000000000,
+      "interval_factor": 10
+    },
+    "localhost.mem.used": {
+      "mode": "RW",
+      "interval_min": 400000000000,
+      "interval_max": 400000000000000,
+      "interval_factor": 10
+    },
+    "localhost.swap.free": {
+      "mode": "RW",
+      "interval_min": 400000000000,
+      "interval_max": 400000000000000,
+      "interval_factor": 10
+    },
+    "localhost.swap.used": {
+      "mode": "RW",
+      "interval_min": 400000000000,
+      "interval_max": 400000000000000,
+      "interval_factor": 10
     }
   }
 }
