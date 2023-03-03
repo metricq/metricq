@@ -56,7 +56,9 @@ This will setup:
 - `metricq-grafana` (port 4000 forwarded to localhost)
 - C++ example source generating a metric called `dummy.source`
 - `metricq-rabbitmq-source` providing `metricq.rabbitmq.[...]` performance metrics for the running RabbitMQ server
+- `metricq-source-sysinfo` providing `loalhost.[...]` performance metrics for the docker host
 - `metricq-db-hta` database that stores the metrics
+- `metricq-example-combinator` a combinator that can combine metrics into new metrics
 
 By default, all logins are `admin` / `admin`. Do not use this dockerfile for production use!
 
