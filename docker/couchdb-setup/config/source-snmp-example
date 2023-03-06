@@ -1,0 +1,38 @@
+{
+  "default_community": "public",
+  "default_interval": 10,
+  "default_prefix": "example.snmp",
+  "default_object_collections": [
+    "default_objects"
+  ],
+  "additional_metric_attributes": [
+    "unit"
+  ],
+  "snmp_object_collections": {
+    "default_objects": {
+      ".1.3.6.1.2.1.2.2.1.17.2": {
+        "suffix": "counter.changing",
+        "unit": "kittens",
+        "short_description": "A changing SNMP counter"
+      }
+    },
+    "more_objects": {
+      ".1.3.6.1.2.1.2.2.1.16.1": {
+        "suffix": "counter.static",
+        "unit": "A",
+        "short_description": "A static SNMP counter"
+      }
+    }
+  },
+  "hosts": {
+    "demo.pysnmp.com": {
+      "infix": "demo",
+      "rack": "simulated",
+      "description": "pySNMP Demo Host",
+      "objects": [
+        "default_objects",
+        "more_objects"
+      ]
+    }
+  }
+}

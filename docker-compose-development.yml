@@ -152,6 +152,13 @@ services:
     restart: unless-stopped
     command: --token transformer-example-combinator --server amqp://admin:admin@rabbitmq-server
 
+  metricq-source-snmp:
+    image: metricq/metricq-source-snmp:edge
+    networks:
+      - metricq-network
+    restart: unless-stopped
+    command: --token source-snmp-example --server amqp://admin:admin@rabbitmq-server
+
   metricq-grafana:
     image: metricq/metricq-grafana:edge
     command: amqp://admin:admin@rabbitmq-server
