@@ -2,7 +2,7 @@ version: "3.7"
 services:
   metricq-manager:
     hostname: metricq
-    image: metricq/metricq-manager:edge
+    image: ghcr.io/metricq/metricq-manager:edge
     command: --couchdb-url http://couchdb-server:5984 --couchdb-user admin --couchdb-password admin amqp://admin:admin@rabbitmq-server/ vhost:/
     restart: unless-stopped
     depends_on:
@@ -46,7 +46,7 @@ services:
       - metricq-network
 
   metricq-wizard-backend:
-    image: metricq/metricq-wizard-backend:edge
+    image: ghcr.io/metricq/metricq-wizard-backend:edge
     environment:
       COUCHDB_URL: "http://admin:admin@couchdb-server:5984"
       RABBITMQ_URL: "amqp://admin:admin@rabbitmq-server/"
@@ -120,7 +120,7 @@ services:
       - metricq-network
 
   metricq-sink-websocket:
-    image: metricq/metricq-sink-websocket:edge
+    image: ghcr.io/metricq/metricq-sink-websocket:edge
     depends_on:
       - rabbitmq-server
     ports:
@@ -131,20 +131,20 @@ services:
     command: --token sink-websocket amqp://admin:admin@rabbitmq-server
 
   metricq-source-rabbitmq:
-    image: metricq/metricq-source-rabbitmq:edge
+    image: ghcr.io/metricq/metricq-source-rabbitmq:edge
     networks:
       - metricq-network
     restart: unless-stopped
     command: --token source-rabbitmq --server amqp://admin:admin@rabbitmq-server
 
   metricq-source-sysinfo:
-    image: metricq/metricq-source-sysinfo:edge
+    image: ghcr.io/metricq/metricq-source-sysinfo:edge
     restart: unless-stopped
     network_mode: "host"
     command: --token source-sysinfo amqp://admin:admin@localhost
 
   metricq-combinator:
-    image: metricq/metricq-combinator:edge
+    image: ghcr.io/metricq/metricq-combinator:edge
     depends_on:
       - rabbitmq-server
     networks:
@@ -153,14 +153,14 @@ services:
     command: --token transformer-example-combinator --server amqp://admin:admin@rabbitmq-server
 
   metricq-source-snmp:
-    image: metricq/metricq-source-snmp:edge
+    image: ghcr.io/metricq/metricq-source-snmp:edge
     networks:
       - metricq-network
     restart: unless-stopped
     command: --token source-snmp-example --server amqp://admin:admin@rabbitmq-server
 
   metricq-grafana:
-    image: metricq/metricq-grafana:edge
+    image: ghcr.io/metricq/metricq-grafana:edge
     command: amqp://admin:admin@rabbitmq-server
     depends_on:
       - rabbitmq-server
@@ -171,7 +171,7 @@ services:
       - metricq-network
 
   metricq-webview:
-    image: metricq/metricq-webview:edge
+    image: ghcr.io/metricq/metricq-webview:edge
     environment:
       METRICQ_BACKEND: http://localhost:4000
     depends_on:
@@ -183,7 +183,7 @@ services:
       - metricq-network
 
   metricq-explorer:
-    image: metricq/metricq-explorer-frontend:edge
+    image: ghcr.io/metricq/metricq-explorer-frontend:edge
     environment:
       METRICQ_WIZARD_BACKEND: http://localhost:8000/api
     depends_on:
