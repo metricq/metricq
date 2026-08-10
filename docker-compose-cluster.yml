@@ -1,4 +1,3 @@
-version: "3.7"
 services:
   metricq-manager:
     build:
@@ -194,7 +193,21 @@ services:
     restart: unless-stopped
     networks:
       - metricq-network
-      
+
+  metricq-codex:
+    image: ghcr.io/metricq/metricq-codex:edge
+    environment:
+      LISTEN_ADDR: ":80"
+      METRICQ_SERVER: amqp://admin:admin@rabbitmq-server
+      METRICQ_TOKEN: metricq-codex
+    depends_on:
+      - metricq-manager
+    ports:
+      - "127.0.0.1:3004:80"
+    restart: unless-stopped
+    networks:
+      - metricq-networkb
+
 networks:
   metricq-network:
     driver: bridge

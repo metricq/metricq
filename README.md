@@ -49,7 +49,7 @@ This will setup:
 - [RabbitMQ server](http://localhost:15672/) (port 5672 and 15672 forwarded to localhost)
 - [MetricQ Wizard](http://localhost:3000/) (port 3000 forwarded to localhost)
 - [MetricQ Webview](http://localhost:3002/webview/) (port 80 forwarded to localhost:3002)
-- [MetricQ Explorer](http://localhost:3004/) (port 80 forwarded to localhost:3004)
+- [MetricQ Codex](http://localhost:3004/) (port 80 forwarded to localhost:3004)
 - MetricQ Wizard backend (port 8000 forwarded to localhost)
 - metricq-sink-websocket (port 3000 forwarded to localhost:3003)
 - MetricQ Manager
