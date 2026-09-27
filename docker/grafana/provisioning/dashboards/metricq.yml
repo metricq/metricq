@@ -1,0 +1,12 @@
+apiVersion: 1
+
+providers:
+  - name: MetricQ
+    orgId: 1
+    folder: MetricQ Development
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/dashboards

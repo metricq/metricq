@@ -1,0 +1,10 @@
+apiVersion: 1
+
+datasources:
+  - name: MetricQ
+    type: metricq-metricq-datasource
+    access: proxy
+    isDefault: true
+    editable: true
+    secureJsonData:
+      server: "$METRICQ_SERVER"

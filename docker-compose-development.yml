@@ -81,9 +81,12 @@ services:
       RABBITMQ_NODENAME: "rabbit@rabbitmq-server"
     networks:
       - metricq-network
+    volumes:
+      - ./docker/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins:ro
     ports:
       - "127.0.0.1:5672:5672"
       - "127.0.0.1:15672:15672"
+      - "127.0.0.1:15692:15692"
 
   couchdb-server:
     image: couchdb:3
@@ -109,12 +112,58 @@ services:
 
   grafana-server:
     build:
-      context: https://github.com/metricq/grafana-metricq-datasource.git
+      # context: https://github.com/metricq/grafana-metricq-datasource.git#v2
+      context: ../grafana-metricq-datasource
     image: metricq-grafana-server
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: metricq-metricq-datasource
+      METRICQ_SERVER: amqp://admin:admin@rabbitmq-server
+    volumes:
+      - ./docker/grafana/provisioning/datasources/prometheus.yml:/etc/grafana/provisioning/datasources/prometheus.yml:ro
+      - ./docker/grafana/provisioning/datasources/metricq.yml:/etc/grafana/provisioning/datasources/metricq.yml:ro
+      - ./docker/grafana/provisioning/dashboards/metricq.yml:/etc/grafana/provisioning/dashboards/metricq.yml:ro
+      - ./docker/grafana/provisioning/alerting/gombinator.yml:/etc/grafana/provisioning/alerting/gombinator.yml:ro
+      - ./docker/grafana/dashboards:/etc/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
     ports:
       - "127.0.0.1:3001:3000"
     depends_on:
-      - metricq-grafana
+      - rabbitmq-server
+      - prometheus-server
+    networks:
+      - metricq-network
+
+  prometheus-server:
+    image: prom/prometheus:latest
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+      - --storage.tsdb.retention.size=1GB
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    restart: unless-stopped
+    networks:
+      - metricq-network
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/rootfs
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+    pid: host
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro,rslave
     networks:
       - metricq-network
 
@@ -144,13 +193,16 @@ services:
     command: --token source-sysinfo amqp://admin:admin@localhost
 
   metricq-combinator:
-    image: ghcr.io/metricq/metricq-combinator:edge
+    image: ghcr.io/metricq/metricq-gombinator:edge
     depends_on:
-      - rabbitmq-server
+      rabbitmq-server:
+        condition: service_started
+      couchdb-setup:
+        condition: service_completed_successfully
     networks:
       - metricq-network
     restart: unless-stopped
-    command: --token transformer-example-combinator --server amqp://admin:admin@rabbitmq-server
+    command: --token transformer-example-combinator --server amqp://admin:admin@rabbitmq-server --observe 0.0.0.0:8080
 
   metricq-source-snmp:
     image: ghcr.io/metricq/metricq-source-snmp:edge
@@ -204,4 +256,8 @@ volumes:
   hta-dummy:
     driver: local
   couchdb-data:
+    driver: local
+  grafana-data:
+    driver: local
+  prometheus-data:
     driver: local
